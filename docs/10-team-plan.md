@@ -99,3 +99,15 @@
 - Планшеты и альбомная ориентация — не проверяются в MVP.
 - Нет локализации, только русский.
 - Родительский бонус — минимальная реализация без истории.
+
+## Бэклог в GitHub Issues
+
+Задачи по этапам выше заведены в `scripts/issues.json` (38 issues, 5 milestones, 8 labels).
+Создать или обновить их в репозитории:
+
+```bash
+GITHUB_TOKEN=<fine-grained PAT с правом Issues: write> python3 scripts/create_github_issues.py
+```
+
+Скрипт идемпотентен: повторный запуск не дублирует issues и обновляет labels. Проверить без записи:
+`python3 scripts/create_github_issues.py --dry-run`. Чтобы добавить задачу, правим `issues.json` и запускаем снова.
