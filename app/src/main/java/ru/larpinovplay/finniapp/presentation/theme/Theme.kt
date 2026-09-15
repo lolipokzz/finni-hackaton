@@ -1,56 +1,44 @@
 package ru.larpinovplay.finniapp.presentation.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+/**
+ * Одна светлая схема без динамических цветов: детское приложение должно выглядеть
+ * одинаково на любом устройстве и совпадать с иллюстрациями.
+ */
+private val FinniColorScheme = lightColorScheme(
+    primary = FinniColors.Blue,
     onPrimary = Color.White,
+    primaryContainer = FinniColors.BlueLight,
+    onPrimaryContainer = FinniColors.Navy,
+    secondary = FinniColors.BlueDeep,
     onSecondary = Color.White,
+    secondaryContainer = FinniColors.Lavender,
+    onSecondaryContainer = FinniColors.Navy,
+    tertiary = FinniColors.Coral,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiaryContainer = FinniColors.Sunny,
+    onTertiaryContainer = FinniColors.Navy,
+    background = FinniColors.Wall,
+    onBackground = FinniColors.Navy,
+    surface = Color.White,
+    onSurface = FinniColors.Navy,
+    surfaceVariant = FinniColors.BlueLight,
+    onSurfaceVariant = FinniColors.NavyMuted,
+    outline = FinniColors.LavenderDeep,
+    error = FinniColors.Warning,
+    onError = Color.White,
 )
 
 @Composable
 fun FinniAppTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = FinniColorScheme,
         typography = Typography,
         content = content
     )

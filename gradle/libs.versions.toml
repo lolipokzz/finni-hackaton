@@ -20,6 +20,8 @@ koin = "4.2.2"
 ksp = "2.3.10"
 room = "2.8.5"
 
+filament = "1.71.5"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -57,6 +59,11 @@ koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 koin-navigation = { module = "io.insert-koin:koin-androidx-navigation" }
 koin-test = { module = "io.insert-koin:koin-test" }
 koin-test-junit4 = { module = "io.insert-koin:koin-test-junit4" }
+
+# Filament (3D, glTF)
+filament-android = { group = "com.google.android.filament", name = "filament-android", version.ref = "filament" }
+filament-gltfio = { group = "com.google.android.filament", name = "gltfio-android", version.ref = "filament" }
+filament-utils = { group = "com.google.android.filament", name = "filament-utils-android", version.ref = "filament" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

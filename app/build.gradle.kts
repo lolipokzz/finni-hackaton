@@ -80,6 +80,11 @@ dependencies {
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // Filament: 3D-модель питомца (glTF) и анимации
+    implementation(libs.filament.android)
+    implementation(libs.filament.gltfio)
+    implementation(libs.filament.utils)
+
     // Koin
     // Подключение BOM-платформы (управляет версиями всех модулей Koin)
     implementation(platform(libs.koin.bom))
