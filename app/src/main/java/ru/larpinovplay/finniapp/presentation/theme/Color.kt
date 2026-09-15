@@ -1,4 +1,4 @@
-package ru.larpinovplay.finniapp.ui.theme
+package ru.larpinovplay.finniapp.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
