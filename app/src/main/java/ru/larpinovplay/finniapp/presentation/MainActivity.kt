@@ -1,4 +1,4 @@
-package ru.larpinovplay.finniapp
+package ru.larpinovplay.finniapp.presentation
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,7 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import ru.larpinovplay.finniapp.ui.theme.FinniAppTheme
+import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
