@@ -72,11 +72,10 @@ fun SectionStubScreen(section: HomeSection, onBack: () -> Unit, modifier: Modifi
 }
 
 private fun sectionHint(section: HomeSection): String = when (section) {
-    HomeSection.PLAN -> "Три степпера: нужное, желаемое, копилка. Остаток виден всегда. После подтверждения — план и факт. (ТЗ 2.5.5, П3)"
-    HomeSection.TASKS -> "Задания по трём темам: планирую, коплю, покупаю. Ситуация с выбором, объяснение после любого ответа. (ТЗ 2.5.8, П4)"
-    HomeSection.SHOP -> "Нужное и желаемое, чек-лист недели, цена и эффект до покупки, при нехватке — варианты, не отказ. (ТЗ 2.5.6, П5)"
-    HomeSection.SAVINGS -> "Цель с ценой, накоплено и осталось, срок ≈ N недель, пополнение, снятие с предпросмотром. (ТЗ 2.5.7, П6–П7)"
-    HomeSection.PROGRESS -> "Стадия питомца, выполненные задания, итоги последней недели, журнал монет. (ТЗ 2.5.11, П10)"
+    HomeSection.TASKS -> "Задания реализованы в TasksScreen"
+    HomeSection.SHOP -> "Магазин реализован в ShopScreen"
+    HomeSection.SAVINGS -> "Копилка реализована в SavingsScreen"
+    HomeSection.PROGRESS -> "Прогресс реализован в ProgressScreen"
     HomeSection.HELP -> "Три карточки знакомства и глоссарий. Доступно в любой момент. (ТЗ 2.5.1)"
     HomeSection.ADULT -> "Арифметический барьер, цели приложения, прогресс без оценок, сброс и удаление профиля, демо-режим. (ТЗ 2.5.12, П11)"
 }

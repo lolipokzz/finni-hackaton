@@ -100,9 +100,7 @@ fun HomeScreen(
             NameCard(state)
             Spacer(Modifier.height(10.dp))
             state.activeTask?.let { TaskCard(it) { onAction(HomeAction.OpenSection(HomeSection.TASKS)) } }
-            if (state.planConfirmed) {
-                FinishWeekButton { onAction(HomeAction.FinishWeek) }
-            }
+            FinishWeekButton { onAction(HomeAction.FinishWeek) }
             Spacer(Modifier.height(10.dp))
             BottomMenu(selected = state.suggestedSection, onOpen = { onAction(HomeAction.OpenSection(it)) })
             Spacer(Modifier.height(8.dp))
@@ -165,13 +163,6 @@ private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit) 
             modifier = Modifier.weight(1f),
             onClick = { onAction(HomeAction.OpenSection(HomeSection.TASKS)) }
         )
-        ResourceCard(
-            icon = R.drawable.ic_pig,
-            label = state.goal?.name ?: "Выбери цель",
-            value = state.goal?.let { "${state.savings} / ${it.cost}" } ?: "${state.savings}",
-            modifier = Modifier.weight(1f),
-            onClick = { onAction(HomeAction.OpenSection(HomeSection.SAVINGS)) }
-        )
         RoundIconButton(R.drawable.ic_lock, "Для взрослых") {
             onAction(HomeAction.OpenSection(HomeSection.ADULT))
         }
@@ -211,7 +202,6 @@ private fun StatsRow(stats: PetStats) {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         StatCard(R.drawable.ic_apple, "Сытость", stats.satiety, FinniColors.Satiety, FinniColors.CardPeach, Modifier.weight(1f))
-        StatCard(R.drawable.ic_heart, "Уход", stats.care, FinniColors.Care, FinniColors.CardPink, Modifier.weight(1f))
         StatCard(R.drawable.ic_smile, "Настроение", stats.mood, FinniColors.Mood, FinniColors.CardMint, Modifier.weight(1f))
     }
 }
@@ -259,7 +249,6 @@ private fun StatCard(
 
 @Composable
 private fun WeekLine(state: HomeUiState) {
-    val status = if (state.planConfirmed) "план составлен" else "составь план"
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -269,7 +258,7 @@ private fun WeekLine(state: HomeUiState) {
     ) {
         Surface(shape = RoundedCornerShape(12.dp), color = FinniColors.Card) {
             Text(
-                "Неделя ${state.week} · $status",
+                "Неделя ${state.week}",
                 style = MaterialTheme.typography.labelMedium,
                 color = FinniColors.NavyMuted,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -432,7 +421,6 @@ private fun FinishWeekButton(onClick: () -> Unit) {
 private data class MenuItem(val section: HomeSection, @DrawableRes val icon: Int, val label: String)
 
 private val menuItems = listOf(
-    MenuItem(HomeSection.PLAN, R.drawable.ic_clipboard, "План"),
     MenuItem(HomeSection.TASKS, R.drawable.ic_target, "Задания"),
     MenuItem(HomeSection.SHOP, R.drawable.ic_cart, "Магазин"),
     MenuItem(HomeSection.SAVINGS, R.drawable.ic_pig, "Копилка"),
@@ -495,6 +483,6 @@ private fun HomeScreenPreview() {
         growthProgress = 0
     )
     FinniAppTheme {
-        HomeScreen(state = HomeUiState.sample(pet).copy(planConfirmed = true), onAction = {})
+        HomeScreen(state = HomeUiState.sample(pet), onAction = {})
     }
 }

@@ -24,8 +24,21 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeAction
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeScreen
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
+import ru.larpinovplay.finniapp.presentation.screens.home.GoalUi
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeUiState
+import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsScreen
+import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsUiState
+import ru.larpinovplay.finniapp.presentation.screens.home.NeedUi
+import ru.larpinovplay.finniapp.presentation.screens.home.PetStats
+import ru.larpinovplay.finniapp.presentation.screens.home.SampleGame
+import ru.larpinovplay.finniapp.presentation.screens.shop.PurchaseFeedback
+import ru.larpinovplay.finniapp.presentation.screens.shop.ShopScreen
 import ru.larpinovplay.finniapp.presentation.screens.home.SectionStubScreen
+import ru.larpinovplay.finniapp.presentation.screens.home.TaskUi
+import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksScreen
+import ru.larpinovplay.finniapp.presentation.screens.home.WeekSummaryDialog
+import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressScreen
+import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressUiState
 
 @Composable
 fun PetRoomScreen(
@@ -132,20 +145,89 @@ private fun NameStep(
  */
 @Composable
 private fun HomeRoute(pet: Pet) {
+    val game = remember { SampleGame(mood = pet.mood.value) }
     var section by remember { mutableStateOf<HomeSection?>(null) }
+    var weekSummary by remember { mutableStateOf<SampleGame.WeekSummary?>(null) }
     val current = section
-    if (current != null) {
-        SectionStubScreen(section = current, onBack = { section = null })
-        return
-    }
-    HomeScreen(
-        state = HomeUiState.sample(pet),
-        onAction = { action ->
-            when (action) {
-                is HomeAction.OpenSection -> section = action.section
-                HomeAction.FinishWeek -> Unit      // TODO: команда ClosePeriod, экран итогов (П8)
-                HomeAction.PetTapped -> Unit       // TODO: реакция питомца
-            }
-        }
+
+    val homeState = HomeUiState.sample(pet).copy(
+        balance = game.balance,
+        activeTask = game.availableTasks.firstOrNull()?.let { TaskUi(title = it.title, reward = it.reward) },
+        stats = PetStats(satiety = game.satiety, mood = game.mood),
+        needs = listOf(NeedUi("Еда", covered = game.foodCovered)),
+        savings = game.savings,
+        goal = game.goal?.let { GoalUi(name = it.name, cost = it.cost) },
+        tip = if (game.goal == null) "Выбери цель в копилке!" else "Отложи немного на «${game.goal!!.name}»",
+        week = game.week,
+        moodExplanation = when {
+            game.satiety < 30 -> "Голоден: купи еду в магазине"
+            game.history.lastOrNull()?.let { it.stageAfter != it.stageBefore } == true -> "Подрос! Продолжай в том же духе"
+            game.purchases.isNotEmpty() -> "Рад покупке: ${game.purchases.last().name.lowercase()}"
+            else -> "Ждёт твоих решений"
+        },
     )
+
+    when (current) {
+        null -> HomeScreen(
+            state = homeState,
+            onAction = { action ->
+                when (action) {
+                    is HomeAction.OpenSection -> section = action.section
+                    HomeAction.FinishWeek -> weekSummary = game.finishWeek()
+                    HomeAction.PetTapped -> Unit       // TODO: реакция питомца
+                }
+            }
+        )
+        HomeSection.SHOP -> ShopScreen(
+            balance = game.balance,
+            foodCovered = game.foodCovered,
+            onBuy = { item ->
+                when (val r = game.buy(item)) {
+                    is SampleGame.PurchaseResult.Success -> PurchaseFeedback.Bought(item, r.balanceAfter)
+                    is SampleGame.PurchaseResult.NotEnough -> PurchaseFeedback.NotEnough(item, r.missing)
+                }
+            },
+            onGoToTasks = { section = HomeSection.TASKS },
+            onBack = { section = null }
+        )
+        HomeSection.TASKS -> TasksScreen(
+            statusOf = game::taskStatus,
+            tasksDoneThisWeek = game.tasksDoneThisWeek,
+            tasksPerWeek = 2,
+            onAnswer = game::answerTask,
+            onBack = { section = null }
+        )
+        HomeSection.PROGRESS -> ProgressScreen(
+            state = ProgressUiState(
+                petName = pet.name,
+                week = game.week,
+                stage = game.stage,
+                growthPoints = game.growthPoints,
+                pointsToNextStage = game.pointsToNextStage,
+                goal = game.goal,
+                savings = game.savings,
+                completedGoals = game.completedGoals.toList(),
+                taskTopics = game.taskTopics,
+                lastWeek = game.history.lastOrNull(),
+                weeksCompleted = game.history.size,
+                ledgerThisWeek = game.ledger.filter { it.week == game.week },
+            ),
+            onBack = { section = null }
+        )
+        HomeSection.SAVINGS -> SavingsScreen(
+            state = SavingsUiState(
+                balance = game.balance,
+                savings = game.savings,
+                goal = game.goal,
+                weeksToGoal = game.weeksToGoal(),
+                completedGoalIds = game.completedGoals.map { it.id }.toSet(),
+            ),
+            onChooseGoal = game::chooseGoal,
+            onDeposit = game::deposit,
+            onReachGoal = game::reachGoal,
+            onBack = { section = null }
+        )
+        else -> SectionStubScreen(section = current, onBack = { section = null })
+    }
+    weekSummary?.let { WeekSummaryDialog(it, onDismiss = { weekSummary = null }) }
 }
