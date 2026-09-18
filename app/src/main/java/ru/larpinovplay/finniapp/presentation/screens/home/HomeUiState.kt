@@ -1,6 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
+import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 
 /**
@@ -12,6 +13,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 data class HomeUiState(
     val petName: String,
     val petLook: PetLook,
+    val stage: PetGrowthStage,          // определяет, какая 3D-модель показывается
     val stats: PetStats,
     val moodExplanation: String,       // одна фраза под питомцем: «Голоден: на этой неделе не было еды»
     val balance: Int,                  // доступные монеты
@@ -29,6 +31,7 @@ data class HomeUiState(
         fun sample(pet: Pet): HomeUiState = HomeUiState(
             petName = pet.name,
             petLook = pet.look,
+            stage = pet.growthStage,
             stats = PetStats(satiety = 70, mood = pet.mood.value),
             moodExplanation = "Ждёт твоих решений",
             balance = 100,

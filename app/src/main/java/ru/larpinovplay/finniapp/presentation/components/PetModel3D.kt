@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.Choreographer
 import android.view.SurfaceView
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
@@ -41,19 +42,23 @@ fun PetModel3D(
     cameraDistance: Float = 3.5f,
     contentDescription: String = "Питомец. Нажми, и он помашет",
 ) {
-    val controller = remember(assetName, tintArgb, cameraDistance) {
-        PetModelController(assetName, tintArgb, tintMaterial, idleAnimation, tapAnimation, cameraDistance)
+    // key: при смене файла (другая стадия роста) SurfaceView и движок создаются заново,
+    // иначе AndroidView оставил бы старую вью с прежней моделью.
+    key(assetName, tintArgb, cameraDistance) {
+        val controller = remember {
+            PetModelController(assetName, tintArgb, tintMaterial, idleAnimation, tapAnimation, cameraDistance)
+        }
+        AndroidView(
+            modifier = modifier,
+            factory = { context ->
+                controller.createView(context).apply {
+                    this.contentDescription = contentDescription
+                    setOnClickListener { controller.playTapAnimation() }
+                }
+            },
+            onRelease = { controller.release() },
+        )
     }
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            controller.createView(context).apply {
-                this.contentDescription = contentDescription
-                setOnClickListener { controller.playTapAnimation() }
-            }
-        },
-        onRelease = { controller.release() },
-    )
 }
 
 private class PetModelController(

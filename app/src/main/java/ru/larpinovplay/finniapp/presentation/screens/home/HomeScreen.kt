@@ -75,35 +75,36 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(horizontal = 12.dp)
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             TopResourcesRow(state, onAction)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
             StatsRow(state.stats)
-            WeekLine(state)
 
+            // Питомец занимает всё место между шапкой и действиями; плашка недели и подсказка лежат поверх
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
             ) {
                 PetArea(state, modifier = Modifier.align(Alignment.BottomCenter))
+                WeekLine(state, modifier = Modifier.align(Alignment.TopStart).padding(top = 8.dp))
                 state.tip?.let {
                     TipBubble(
                         text = it,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(top = 12.dp)
+                            .padding(top = 8.dp)
                     )
                 }
             }
 
             NameCard(state)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             state.activeTask?.let { TaskCard(it) { onAction(HomeAction.OpenSection(HomeSection.TASKS)) } }
             FinishWeekButton { onAction(HomeAction.FinishWeek) }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             BottomMenu(selected = state.suggestedSection, onOpen = { onAction(HomeAction.OpenSection(it)) })
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
@@ -135,11 +136,11 @@ private fun RoundIconButton(@DrawableRes icon: Int, contentDescription: String, 
         shape = CircleShape,
         color = FinniColors.Lavender,
         modifier = Modifier
-            .size(48.dp)
+            .size(44.dp)
             .shadow(6.dp, CircleShape, ambientColor = FinniColors.Navy.copy(alpha = 0.12f), spotColor = FinniColors.Navy.copy(alpha = 0.12f))
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Image(painterResource(icon), contentDescription = contentDescription, modifier = Modifier.size(26.dp))
+            Image(painterResource(icon), contentDescription = contentDescription, modifier = Modifier.size(22.dp))
         }
     }
 }
@@ -178,16 +179,15 @@ private fun ResourceCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    WhiteCard(modifier = modifier.height(60.dp), onClick = onClick) {
+    WhiteCard(modifier = modifier.height(44.dp), shape = RoundedCornerShape(22.dp), onClick = onClick) {
         Row(
             modifier = Modifier.padding(start = 8.dp, end = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(painterResource(icon), null, Modifier.size(32.dp))
-            Column(Modifier.weight(1f).padding(start = 6.dp)) {
-                Text(label, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, softWrap = false)
-            }
+            Image(painterResource(icon), null, Modifier.size(26.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp))
+            Spacer(Modifier.weight(1f))
+            Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, softWrap = false)
             Image(painterResource(R.drawable.ic_chevron), null, Modifier.size(18.dp))
         }
     }
@@ -217,19 +217,19 @@ private fun StatCard(
     modifier: Modifier = Modifier,
 ) {
     val low = value < 30
-    WhiteCard(modifier = modifier, color = cardColor, shape = RoundedCornerShape(20.dp)) {
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+    WhiteCard(modifier = modifier, color = cardColor, shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(icon), null, Modifier.size(24.dp))
+                Image(painterResource(icon), null, Modifier.size(20.dp))
+                Text(label, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp))
                 Spacer(Modifier.weight(1f))
-                Text("$value", style = MaterialTheme.typography.titleMedium)
+                Text(if (low) "$value · мало" else "$value", style = MaterialTheme.typography.labelLarge, color = if (low) FinniColors.Warning else FinniColors.Navy)
             }
-            Text(label, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(9.dp)
+                    .height(7.dp)
                     .clip(RoundedCornerShape(5.dp))
                     .background(FinniColors.Track)
             ) {
@@ -240,20 +240,14 @@ private fun StatCard(
                         .background(if (low) FinniColors.Warning else barColor, RoundedCornerShape(5.dp))
                 )
             }
-            if (low) {
-                Text("мало", style = MaterialTheme.typography.labelSmall, color = FinniColors.Warning)
-            }
         }
     }
 }
 
 @Composable
-private fun WeekLine(state: HomeUiState) {
+private fun WeekLine(state: HomeUiState, modifier: Modifier = Modifier) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
-        horizontalArrangement = Arrangement.Center,
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(shape = RoundedCornerShape(12.dp), color = FinniColors.Card) {
@@ -277,13 +271,14 @@ private fun WeekLine(state: HomeUiState) {
 
 @Composable
 private fun PetArea(state: HomeUiState, modifier: Modifier = Modifier) {
-    val asset = state.petLook.modelAsset()
+    val asset = state.petLook.modelAsset(state.stage)
     if (asset != null) {
         PetModel3D(
             assetName = asset,
             tintArgb = state.petLook.color.argb,
+            cameraDistance = 3.1f,
             modifier = modifier
-                .fillMaxWidth(0.72f)
+                .fillMaxWidth(0.9f)
                 .fillMaxHeight(),
         )
     } else {
@@ -303,16 +298,16 @@ private fun PetArea(state: HomeUiState, modifier: Modifier = Modifier) {
 /** Белое облачко с лампочкой и хвостиком снизу слева. */
 @Composable
 private fun TipBubble(text: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.widthIn(max = 170.dp)) {
+    Column(modifier = modifier.widthIn(max = 150.dp)) {
         WhiteCard(shape = RoundedCornerShape(18.dp)) {
             Row(
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.Top
             ) {
-                Image(painterResource(R.drawable.ic_bulb), null, Modifier.size(24.dp))
+                Image(painterResource(R.drawable.ic_bulb), null, Modifier.size(20.dp))
                 Text(
                     text,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(start = 6.dp)
                 )
             }
@@ -336,25 +331,26 @@ private fun NameCard(state: HomeUiState) {
     WhiteCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        shape = RoundedCornerShape(32.dp)
+            .padding(horizontal = 8.dp),
+        shape = RoundedCornerShape(24.dp)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(state.petName, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center)
+            Column(Modifier.weight(1f)) {
+                Text(state.petName, style = MaterialTheme.typography.titleMedium)
                 Text(
                     state.moodExplanation,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     color = FinniColors.NavyMuted,
-                    textAlign = TextAlign.Center
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-            Surface(shape = CircleShape, color = FinniColors.BlueLight, modifier = Modifier.size(44.dp)) {
+            Surface(shape = CircleShape, color = FinniColors.BlueLight, modifier = Modifier.size(36.dp)) {
                 Box(contentAlignment = Alignment.Center) {
-                    Image(painterResource(R.drawable.ic_pencil), contentDescription = "Переименовать", Modifier.size(22.dp))
+                    Image(painterResource(R.drawable.ic_pencil), contentDescription = "Переименовать", Modifier.size(18.dp))
                 }
             }
         }
@@ -365,7 +361,7 @@ private fun NameCard(state: HomeUiState) {
 
 @Composable
 private fun TaskCard(task: TaskUi, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(20.dp)
     Surface(
         onClick = onClick,
         shape = shape,
@@ -377,28 +373,28 @@ private fun TaskCard(task: TaskUi, onClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .background(Brush.horizontalGradient(listOf(Color(0xFF7D95FF), Color(0xFF5B7BFF))))
-                .padding(horizontal = 14.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 Modifier
-                    .size(56.dp)
+                    .size(40.dp)
                     .background(Color.White.copy(alpha = 0.22f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(painterResource(R.drawable.ic_target), null, Modifier.size(34.dp))
+                Image(painterResource(R.drawable.ic_target), null, Modifier.size(26.dp))
             }
             Column(
                 Modifier
                     .weight(1f)
                     .padding(horizontal = 12.dp)
             ) {
-                Text("Задание", style = MaterialTheme.typography.labelMedium, color = Color.White.copy(alpha = 0.85f))
-                Text(task.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Задание", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
+                Text(task.title, style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Text("+${task.reward}", style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(24.dp))
-            Image(painterResource(R.drawable.ic_chevron), null, Modifier.size(28.dp), colorFilter = ColorFilter.tint(Color.White))
+            Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
+            Image(painterResource(R.drawable.ic_chevron), null, Modifier.size(24.dp), colorFilter = ColorFilter.tint(Color.White))
         }
     }
 }
@@ -409,11 +405,11 @@ private fun FinishWeekButton(onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp)
-            .height(52.dp),
-        shape = RoundedCornerShape(20.dp),
+            .padding(top = 6.dp)
+            .height(44.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(containerColor = FinniColors.Green, contentColor = Color.White)
-    ) { Text("Завершить неделю", fontSize = 18.sp) }
+    ) { Text("Завершить неделю", fontSize = 16.sp) }
 }
 
 // ---------- Нижняя панель ----------
@@ -429,38 +425,38 @@ private val menuItems = listOf(
 
 @Composable
 private fun BottomMenu(selected: HomeSection?, onOpen: (HomeSection) -> Unit) {
-    WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(28.dp)) {
+    WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
         Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             menuItems.forEach { item ->
                 val isSelected = item.section == selected
                 Surface(
                     onClick = { onOpen(item.section) },
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = if (isSelected) FinniColors.BlueLight else Color.Transparent,
                     modifier = Modifier
                         .weight(1f)
-                        .height(78.dp)
+                        .height(60.dp)
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        Image(painterResource(item.icon), null, Modifier.size(32.dp))
-                        Spacer(Modifier.height(4.dp))
+                        Image(painterResource(item.icon), null, Modifier.size(26.dp))
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             item.label,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelSmall,
                             color = if (isSelected) FinniColors.Blue else FinniColors.Navy,
                             maxLines = 1
                         )
                         Box(
                             Modifier
-                                .padding(top = 3.dp)
-                                .size(width = 26.dp, height = 5.dp)
+                                .padding(top = 2.dp)
+                                .size(width = 22.dp, height = 4.dp)
                                 .background(if (isSelected) FinniColors.Blue else Color.Transparent, RoundedCornerShape(3.dp))
                         )
                     }

@@ -152,6 +152,7 @@ private fun HomeRoute(pet: Pet) {
 
     val homeState = HomeUiState.sample(pet).copy(
         balance = game.balance,
+        stage = game.stage,
         activeTask = game.availableTasks.firstOrNull()?.let { TaskUi(title = it.title, reward = it.reward) },
         stats = PetStats(satiety = game.satiety, mood = game.mood),
         needs = listOf(NeedUi("Еда", covered = game.foodCovered)),
