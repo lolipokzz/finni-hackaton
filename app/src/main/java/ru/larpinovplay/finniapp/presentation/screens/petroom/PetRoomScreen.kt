@@ -27,6 +27,8 @@ import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
 import ru.larpinovplay.finniapp.presentation.screens.home.GoalUi
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeUiState
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsScreen
+import ru.larpinovplay.finniapp.presentation.screens.settings.AppSettings
+import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsUiState
 import ru.larpinovplay.finniapp.presentation.screens.home.NeedUi
 import ru.larpinovplay.finniapp.presentation.screens.home.PetStats
@@ -148,6 +150,7 @@ private fun HomeRoute(pet: Pet) {
     val game = remember { SampleGame(mood = pet.mood.value) }
     var section by remember { mutableStateOf<HomeSection?>(null) }
     var weekSummary by remember { mutableStateOf<SampleGame.WeekSummary?>(null) }
+    var settings by remember { mutableStateOf(AppSettings()) }   // TODO: хранить в DataStore вместе с GameState
     val current = section
 
     val homeState = HomeUiState.sample(pet).copy(
@@ -158,7 +161,12 @@ private fun HomeRoute(pet: Pet) {
         needs = listOf(NeedUi("Еда", covered = game.foodCovered)),
         savings = game.savings,
         goal = game.goal?.let { GoalUi(name = it.name, cost = it.cost) },
-        tip = if (game.goal == null) "Выбери цель в копилке!" else "Отложи немного на «${game.goal!!.name}»",
+        tip = when {
+            !settings.tipsEnabled -> null
+            game.goal == null -> "Выбери цель в копилке!"
+            else -> "Отложи немного на «${game.goal!!.name}»"
+        },
+        animationsEnabled = settings.animationsEnabled,
         week = game.week,
         moodExplanation = when {
             game.satiety < 30 -> "Голоден: купи еду в магазине"
@@ -189,6 +197,11 @@ private fun HomeRoute(pet: Pet) {
                 }
             },
             onGoToTasks = { section = HomeSection.TASKS },
+            onBack = { section = null }
+        )
+        HomeSection.SETTINGS -> SettingsScreen(
+            settings = settings,
+            onSettingsChange = { settings = it },
             onBack = { section = null }
         )
         HomeSection.TASKS -> TasksScreen(

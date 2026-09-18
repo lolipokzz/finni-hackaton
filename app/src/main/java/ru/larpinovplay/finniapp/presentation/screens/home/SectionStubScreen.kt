@@ -76,6 +76,6 @@ private fun sectionHint(section: HomeSection): String = when (section) {
     HomeSection.SHOP -> "Магазин реализован в ShopScreen"
     HomeSection.SAVINGS -> "Копилка реализована в SavingsScreen"
     HomeSection.PROGRESS -> "Прогресс реализован в ProgressScreen"
-    HomeSection.HELP -> "Три карточки знакомства и глоссарий. Доступно в любой момент. (ТЗ 2.5.1)"
+    HomeSection.SETTINGS -> "Настройки реализованы в SettingsScreen"
     HomeSection.ADULT -> "Арифметический барьер, цели приложения, прогресс без оценок, сброс и удаление профиля, демо-режим. (ТЗ 2.5.12, П11)"
 }

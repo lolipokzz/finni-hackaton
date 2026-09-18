@@ -26,6 +26,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +72,7 @@ fun HomeScreen(
     onAction: (HomeAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var info by remember { mutableStateOf<HomeInfo?>(null) }
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(
@@ -76,9 +81,9 @@ fun HomeScreen(
                 .padding(horizontal = 12.dp)
         ) {
             Spacer(Modifier.height(6.dp))
-            TopResourcesRow(state, onAction)
+            TopResourcesRow(state, onAction, onInfo = { info = it })
             Spacer(Modifier.height(8.dp))
-            StatsRow(state.stats)
+            StatsRow(state.stats, onInfo = { info = it })
 
             // Питомец занимает всё место между шапкой и действиями; плашка недели и подсказка лежат поверх
             Box(
@@ -106,6 +111,14 @@ fun HomeScreen(
             BottomMenu(selected = state.suggestedSection, onOpen = { onAction(HomeAction.OpenSection(it)) })
             Spacer(Modifier.height(6.dp))
         }
+    }
+    info?.let {
+        HomeInfoDialog(
+            info = it,
+            state = state,
+            onOpenSection = { section -> onAction(HomeAction.OpenSection(section)) },
+            onDismiss = { info = null }
+        )
     }
 }
 
@@ -148,21 +161,21 @@ private fun RoundIconButton(@DrawableRes icon: Int, contentDescription: String, 
 // ---------- Шапка: настройки, монеты, копилка и цель, раздел взрослого ----------
 
 @Composable
-private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
+private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit, onInfo: (HomeInfo) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RoundIconButton(R.drawable.ic_gear, "Подсказка и настройки") {
-            onAction(HomeAction.OpenSection(HomeSection.HELP))
+        RoundIconButton(R.drawable.ic_gear, "Настройки") {
+            onAction(HomeAction.OpenSection(HomeSection.SETTINGS))
         }
         ResourceCard(
             icon = R.drawable.ic_coin,
             label = "Монеты",
             value = "${state.balance}",
             modifier = Modifier.weight(1f),
-            onClick = { onAction(HomeAction.OpenSection(HomeSection.TASKS)) }
+            onClick = { onInfo(HomeInfo.COINS) }
         )
         RoundIconButton(R.drawable.ic_lock, "Для взрослых") {
             onAction(HomeAction.OpenSection(HomeSection.ADULT))
@@ -196,13 +209,13 @@ private fun ResourceCard(
 // ---------- Показатели состояния ----------
 
 @Composable
-private fun StatsRow(stats: PetStats) {
+private fun StatsRow(stats: PetStats, onInfo: (HomeInfo) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        StatCard(R.drawable.ic_apple, "Сытость", stats.satiety, FinniColors.Satiety, FinniColors.CardPeach, Modifier.weight(1f))
-        StatCard(R.drawable.ic_smile, "Настроение", stats.mood, FinniColors.Mood, FinniColors.CardMint, Modifier.weight(1f))
+        StatCard(R.drawable.ic_apple, "Сытость", stats.satiety, FinniColors.Satiety, FinniColors.CardPeach, Modifier.weight(1f)) { onInfo(HomeInfo.SATIETY) }
+        StatCard(R.drawable.ic_smile, "Настроение", stats.mood, FinniColors.Mood, FinniColors.CardMint, Modifier.weight(1f)) { onInfo(HomeInfo.MOOD) }
     }
 }
 
@@ -215,9 +228,10 @@ private fun StatCard(
     barColor: Color,
     cardColor: Color,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit,
 ) {
     val low = value < 30
-    WhiteCard(modifier = modifier, color = cardColor, shape = RoundedCornerShape(16.dp)) {
+    WhiteCard(modifier = modifier, color = cardColor, shape = RoundedCornerShape(16.dp), onClick = onClick) {
         Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Image(painterResource(icon), null, Modifier.size(20.dp))
@@ -277,6 +291,7 @@ private fun PetArea(state: HomeUiState, modifier: Modifier = Modifier) {
             assetName = asset,
             tintArgb = state.petLook.color.argb,
             cameraDistance = 3.1f,
+            animationsEnabled = state.animationsEnabled,
             modifier = modifier
                 .fillMaxWidth(0.9f)
                 .fillMaxHeight(),

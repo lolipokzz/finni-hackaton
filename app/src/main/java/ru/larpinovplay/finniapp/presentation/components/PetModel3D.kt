@@ -40,6 +40,7 @@ fun PetModel3D(
     idleAnimation: String = "Idle",
     tapAnimation: String = "Wave",
     cameraDistance: Float = 3.5f,
+    animationsEnabled: Boolean = true,
     contentDescription: String = "Питомец. Нажми, и он помашет",
 ) {
     // key: при смене файла (другая стадия роста) SurfaceView и движок создаются заново,
@@ -48,6 +49,7 @@ fun PetModel3D(
         val controller = remember {
             PetModelController(assetName, tintArgb, tintMaterial, idleAnimation, tapAnimation, cameraDistance)
         }
+        controller.animationsEnabled = animationsEnabled
         AndroidView(
             modifier = modifier,
             factory = { context ->
@@ -70,6 +72,10 @@ private class PetModelController(
     private val cameraDistance: Float,
 ) {
     private var modelViewer: ModelViewer? = null
+
+    /** false — питомец стоит в позе покоя без движения (настройка «Анимации», ТЗ 3.6). */
+    @Volatile
+    var animationsEnabled: Boolean = true
     private val choreographer = Choreographer.getInstance()
 
     private var idleIndex = -1
@@ -108,7 +114,7 @@ private class PetModelController(
     }
 
     fun playTapAnimation() {
-        if (tapIndex < 0) return
+        if (tapIndex < 0 || !animationsEnabled) return
         switchTo(tapIndex, System.nanoTime())
     }
 
@@ -172,6 +178,13 @@ private class PetModelController(
 
     private fun advance(animator: Animator, frameTimeNanos: Long) {
         if (animator.animationCount == 0 || currentIndex < 0) return
+        if (!animationsEnabled) {
+            // Замираем в первом кадре покоя; время не копится, чтобы после включения не было рывка
+            animator.applyAnimation(idleIndex, 0f)
+            animator.updateBoneMatrices()
+            animationStartNanos = frameTimeNanos
+            return
+        }
         var elapsed = (frameTimeNanos - animationStartNanos) / 1_000_000_000.0f
         val duration = animator.getAnimationDuration(currentIndex)
         if (currentIndex != idleIndex && elapsed >= duration) {

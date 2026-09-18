@@ -22,7 +22,8 @@ data class HomeUiState(
     val week: Int,                     // номер игрового периода
     val activeTask: TaskUi?,           // первое доступное задание
     val needs: List<NeedUi>,           // чек-лист обязательного на неделю
-    val tip: String? = null,           // подсказка в облачке рядом с питомцем
+    val tip: String? = null,           // подсказка в облачке рядом с питомцем; null — не показывать
+    val animationsEnabled: Boolean = true,
     val suggestedSection: HomeSection? = null, // раздел, куда стоит пойти сейчас; подсвечен в меню
     val demoMode: Boolean = false,
 ) {
@@ -61,7 +62,7 @@ enum class HomeSection(val title: String) {
     SHOP("Магазин"),
     SAVINGS("Копилка"),
     PROGRESS("Прогресс"),
-    HELP("Подсказка"),
+    SETTINGS("Настройки"),
     ADULT("Для взрослых"),
 }
 
