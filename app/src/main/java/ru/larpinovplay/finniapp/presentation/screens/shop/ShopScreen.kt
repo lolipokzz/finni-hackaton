@@ -25,9 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -36,15 +33,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
-
-/** Что показать после нажатия «Купить». */
-sealed interface PurchaseFeedback {
-    data class Bought(val item: ShopItem, val balanceAfter: Int) : PurchaseFeedback
-    data class NotEnough(val item: ShopItem, val missing: Int) : PurchaseFeedback
-}
 
 /**
  * Магазин, ТЗ 2.5.6: товары двух типов; до покупки видны цена, категория и влияние на питомца;
@@ -52,17 +47,29 @@ sealed interface PurchaseFeedback {
  */
 @Composable
 fun ShopScreen(
-    balance: Int,
-    foodCovered: Boolean,
-    onBuy: (ShopItem) -> PurchaseFeedback,
+    onGoToTasks: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ShopViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    ShopScreenContent(
+        state = state,
+        onAction = viewModel::onAction,
+        onGoToTasks = onGoToTasks,
+        onBack = onBack,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun ShopScreenContent(
+    state: ShopUiState,
+    onAction: (ShopAction) -> Unit,
     onGoToTasks: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var tab by remember { mutableStateOf(ShopCategory.MANDATORY) }
-    var pending by remember { mutableStateOf<ShopItem?>(null) }        // ждёт подтверждения
-    var feedback by remember { mutableStateOf<PurchaseFeedback?>(null) }
-
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(
@@ -71,46 +78,42 @@ fun ShopScreen(
                 .padding(horizontal = 12.dp)
         ) {
             Spacer(Modifier.height(8.dp))
-            ShopHeader(balance = balance, onBack = onBack)
+            ShopHeader(balance = state.balance, onBack = onBack)
             Spacer(Modifier.height(12.dp))
-            CategoryTabs(selected = tab, onSelect = { tab = it })
+            CategoryTabs(selected = state.tab, onSelect = { onAction(ShopAction.TabSelected(it)) })
             Spacer(Modifier.height(10.dp))
-            if (tab == ShopCategory.MANDATORY) {
-                NeedsChecklist(foodCovered)
+            if (state.tab == ShopCategory.MANDATORY) {
+                NeedsChecklist(state.foodCovered)
                 Spacer(Modifier.height(10.dp))
             }
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(shopItems.filter { it.category == tab }, key = { it.id }) { item ->
-                    ShopItemCard(item = item, affordable = item.price <= balance, onBuy = { pending = item })
+                items(state.items, key = { it.id }) { item ->
+                    ShopItemCard(item = item, affordable = item.price <= state.balance, onBuy = { onAction(ShopAction.BuyClicked(item)) })
                 }
                 item { Spacer(Modifier.height(12.dp)) }
             }
         }
     }
 
-    pending?.let { item ->
+    state.pending?.let { item ->
         PurchaseConfirmDialog(
             item = item,
-            balance = balance,
-            onConfirm = {
-                pending = null
-                feedback = onBuy(item)
-            },
-            onDismiss = { pending = null }
+            balance = state.balance,
+            onConfirm = { onAction(ShopAction.ConfirmPurchase) },
+            onDismiss = { onAction(ShopAction.DismissPending) }
         )
     }
-    feedback?.let { fb ->
+    state.feedback?.let { fb ->
         when (fb) {
-            is PurchaseFeedback.Bought -> BoughtDialog(fb, onDismiss = { feedback = null })
+            is PurchaseFeedback.Bought -> BoughtDialog(fb, onDismiss = { onAction(ShopAction.DismissFeedback) })
             is PurchaseFeedback.NotEnough -> NotEnoughDialog(
                 fb,
-                cheaper = shopItems.filter { it.category == fb.item.category && it.price <= balance && it.id != fb.item.id },
-                onGoToTasks = { feedback = null; onGoToTasks() },
-                onPick = { feedback = null; pending = it },
-                onDismiss = { feedback = null }
+                onGoToTasks = { onAction(ShopAction.DismissFeedback); onGoToTasks() },
+                onPick = { onAction(ShopAction.PickCheaper(it)) },
+                onDismiss = { onAction(ShopAction.DismissFeedback) }
             )
         }
     }
@@ -304,7 +307,6 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onDismiss: () -> Unit) {
 @Composable
 private fun NotEnoughDialog(
     fb: PurchaseFeedback.NotEnough,
-    cheaper: List<ShopItem>,
     onGoToTasks: () -> Unit,
     onPick: (ShopItem) -> Unit,
     onDismiss: () -> Unit,
@@ -318,7 +320,7 @@ private fun NotEnoughDialog(
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${fb.item.name} стоит ${fb.item.price}. Вот что можно сделать:", style = MaterialTheme.typography.bodyLarge)
                 OptionButton("Выполнить задание и заработать", onGoToTasks)
-                cheaper.forEach { OptionButton("Выбрать дешевле: ${it.name} за ${it.price}") { onPick(it) } }
+                fb.cheaper.forEach { OptionButton("Выбрать дешевле: ${it.name} за ${it.price}") { onPick(it) } }
                 OptionButton("Подождать следующую неделю", onDismiss)
             }
         },

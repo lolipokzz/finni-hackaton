@@ -24,10 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.pet.model.MoodLevel
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
-
-/** Что объясняем по нажатию на главном экране. */
-enum class HomeInfo { COINS, SATIETY, MOOD }
 
 private data class InfoContent(
     @DrawableRes val icon: Int,
@@ -40,7 +38,7 @@ private data class InfoContent(
 /**
  * Пояснение показателя простыми словами (ТЗ 2.2 «объяснимость», 2.5.4, 2.5.9):
  * что это, сколько сейчас, от чего растёт и падает, что можно сделать.
- * Числа совпадают с правилами SampleGame и docs/04-rules-and-formulas.md.
+ * Числа совпадают с правилами GameEngine и docs/04-rules-and-formulas.md.
  */
 private fun content(info: HomeInfo, state: HomeUiState): InfoContent = when (info) {
     HomeInfo.COINS -> InfoContent(
@@ -58,7 +56,7 @@ private fun content(info: HomeInfo, state: HomeUiState): InfoContent = when (inf
     HomeInfo.SATIETY -> InfoContent(
         icon = R.drawable.ic_apple,
         title = "Сытость",
-        current = "Сейчас ${state.stats.satiety} из 100" + if (state.stats.satiety < 30) " — Финни голоден" else "",
+        current = "Сейчас ${state.pet.satiety.value} из 100" + if (state.pet.isHungry) " — Финни голоден" else "",
         lines = listOf(
             "Показывает, поел ли Финни.",
             "Растёт от еды из магазина: овощи +25, фрукты +30, мясо +45.",
@@ -70,10 +68,10 @@ private fun content(info: HomeInfo, state: HomeUiState): InfoContent = when (inf
     HomeInfo.MOOD -> InfoContent(
         icon = R.drawable.ic_smile,
         title = "Настроение",
-        current = "Сейчас ${state.stats.mood} из 100 — " + when {
-            state.stats.mood >= 70 -> "радостный"
-            state.stats.mood >= 40 -> "спокойный"
-            else -> "грустный"
+        current = "Сейчас ${state.pet.mood.value} из 100 — " + when (state.pet.mood.level) {
+            MoodLevel.HAPPY -> "радостный"
+            MoodLevel.NEUTRAL -> "спокойный"
+            MoodLevel.SAD -> "грустный"
         },
         lines = listOf(
             "Показывает, как Финни себя чувствует.",

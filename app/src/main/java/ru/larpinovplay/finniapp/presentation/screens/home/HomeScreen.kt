@@ -4,7 +4,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,10 +25,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,21 +36,25 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.content.Feedback
+import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
-import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetMood
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
-import ru.larpinovplay.finniapp.presentation.components.PetModel3D
+import ru.larpinovplay.finniapp.presentation.components.PetHostState
+import ru.larpinovplay.finniapp.presentation.components.PetSpec
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.pet.modelAsset
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
@@ -68,11 +70,31 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
  */
 @Composable
 fun HomeScreen(
+    onOpenSection: (HomeSection) -> Unit,
+    petHost: PetHostState,
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    state?.let {
+        HomeScreenContent(
+            state = it,
+            onAction = { action ->
+                if (action is HomeAction.OpenSection) onOpenSection(action.section) else viewModel.onAction(action)
+            },
+            petHost = petHost,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+fun HomeScreenContent(
     state: HomeUiState,
     onAction: (HomeAction) -> Unit,
     modifier: Modifier = Modifier,
+    petHost: PetHostState? = null,   // null — превью и тесты: 3D-питомец не рисуется
 ) {
-    var info by remember { mutableStateOf<HomeInfo?>(null) }
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(
@@ -81,9 +103,9 @@ fun HomeScreen(
                 .padding(horizontal = 12.dp)
         ) {
             Spacer(Modifier.height(6.dp))
-            TopResourcesRow(state, onAction, onInfo = { info = it })
+            TopResourcesRow(state, onAction, onInfo = { onAction(HomeAction.ShowInfo(it)) })
             Spacer(Modifier.height(8.dp))
-            StatsRow(state.stats, onInfo = { info = it })
+            StatsRow(state.pet, onInfo = { onAction(HomeAction.ShowInfo(it)) })
 
             // Питомец занимает всё место между шапкой и действиями; плашка недели и подсказка лежат поверх
             Box(
@@ -91,11 +113,11 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .weight(1f)
             ) {
-                PetArea(state, modifier = Modifier.align(Alignment.BottomCenter))
+                PetArea(state, petHost, modifier = Modifier.align(Alignment.BottomCenter))
                 WeekLine(state, modifier = Modifier.align(Alignment.TopStart).padding(top = 8.dp))
                 state.tip?.let {
                     TipBubble(
-                        text = it,
+                        text = it.text(),
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(top = 8.dp)
@@ -112,14 +134,15 @@ fun HomeScreen(
             Spacer(Modifier.height(6.dp))
         }
     }
-    info?.let {
+    state.info?.let {
         HomeInfoDialog(
             info = it,
             state = state,
             onOpenSection = { section -> onAction(HomeAction.OpenSection(section)) },
-            onDismiss = { info = null }
+            onDismiss = { onAction(HomeAction.DismissInfo) }
         )
     }
+    state.weekSummary?.let { WeekSummaryDialog(it, onDismiss = { onAction(HomeAction.DismissWeekSummary) }) }
 }
 
 // ---------- Общие элементы ----------
@@ -209,13 +232,13 @@ private fun ResourceCard(
 // ---------- Показатели состояния ----------
 
 @Composable
-private fun StatsRow(stats: PetStats, onInfo: (HomeInfo) -> Unit) {
+private fun StatsRow(pet: Pet, onInfo: (HomeInfo) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        StatCard(R.drawable.ic_apple, "Сытость", stats.satiety, FinniColors.Satiety, FinniColors.CardPeach, Modifier.weight(1f)) { onInfo(HomeInfo.SATIETY) }
-        StatCard(R.drawable.ic_smile, "Настроение", stats.mood, FinniColors.Mood, FinniColors.CardMint, Modifier.weight(1f)) { onInfo(HomeInfo.MOOD) }
+        StatCard(R.drawable.ic_apple, "Сытость", pet.satiety.value, FinniColors.Satiety, FinniColors.CardPeach, Modifier.weight(1f)) { onInfo(HomeInfo.SATIETY) }
+        StatCard(R.drawable.ic_smile, "Настроение", pet.mood.value, FinniColors.Mood, FinniColors.CardMint, Modifier.weight(1f)) { onInfo(HomeInfo.MOOD) }
     }
 }
 
@@ -283,18 +306,31 @@ private fun WeekLine(state: HomeUiState, modifier: Modifier = Modifier) {
 
 // ---------- Питомец и подсказка ----------
 
+/**
+ * Место питомца. Сама 3D-модель рисуется не здесь, а в PetHost поверх графа навигации:
+ * экран только резервирует под неё слот и сообщает хосту, какую модель показать.
+ * Если модели для вида нет, рисуется кружок-заглушка.
+ */
 @Composable
-private fun PetArea(state: HomeUiState, modifier: Modifier = Modifier) {
-    val asset = state.petLook.modelAsset(state.stage)
-    if (asset != null) {
-        PetModel3D(
-            assetName = asset,
-            tintArgb = state.petLook.color.argb,
+private fun PetArea(state: HomeUiState, petHost: PetHostState?, modifier: Modifier = Modifier) {
+    val pet = state.pet
+    val asset = pet.look.modelAsset(pet.growthStage)
+    val spec = asset?.let {
+        PetSpec(
+            assetName = it,
+            tintArgb = pet.look.color.argb,
             cameraDistance = 3.1f,
             animationsEnabled = state.animationsEnabled,
+        )
+    }
+    SideEffect { petHost?.spec = spec }
+
+    if (spec != null) {
+        Box(
             modifier = modifier
                 .fillMaxWidth(0.9f)
-                .fillMaxHeight(),
+                .fillMaxHeight()
+                .onGloballyPositioned { petHost?.slot = it }
         )
     } else {
         Box(
@@ -302,10 +338,10 @@ private fun PetArea(state: HomeUiState, modifier: Modifier = Modifier) {
                 .padding(bottom = 16.dp)
                 .size(180.dp)
                 .clip(CircleShape)
-                .background(Color(state.petLook.color.argb)),
+                .background(Color(pet.look.color.argb)),
             contentAlignment = Alignment.Center
         ) {
-            Text(state.petName, style = MaterialTheme.typography.headlineSmall, color = Color.White)
+            Text(pet.name, style = MaterialTheme.typography.headlineSmall, color = Color.White)
         }
     }
 }
@@ -354,9 +390,9 @@ private fun NameCard(state: HomeUiState) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text(state.petName, style = MaterialTheme.typography.titleMedium)
+                Text(state.pet.name, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    state.moodExplanation,
+                    state.moodExplanation.text(),
                     style = MaterialTheme.typography.labelMedium,
                     color = FinniColors.NavyMuted,
                     maxLines = 1,
@@ -375,7 +411,7 @@ private fun NameCard(state: HomeUiState) {
 // ---------- Задание ----------
 
 @Composable
-private fun TaskCard(task: TaskUi, onClick: () -> Unit) {
+private fun TaskCard(task: HomeUiState.ActiveTask, onClick: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
     Surface(
         onClick = onClick,
@@ -486,14 +522,21 @@ private fun BottomMenu(selected: HomeSection?, onOpen: (HomeSection) -> Unit) {
 @Preview(showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun HomeScreenPreview() {
-    val pet = Pet(
-        name = "Финни",
-        look = PetLook(PetSpecies.CAT, PetColor.MINT),   // без 3D-модели, чтобы превью рисовалось
-        mood = PetMood(75),
-        growthStage = PetGrowthStage.BABY,
-        growthProgress = 0
+    val state = HomeUiState(
+        pet = Pet.newborn("Финни", PetLook(PetSpecies.CAT, PetColor.MINT)),   // без 3D-модели, чтобы превью рисовалось
+        moodExplanation = HomeUiState.MoodExplanation.Waiting,
+        balance = 100,
+        savings = 15,
+        goal = HomeUiState.Goal(name = "Поход в парк", cost = 60),
+        week = 1,
+        activeTask = HomeUiState.ActiveTask(title = "Раздели 60 монет", reward = 20),
+        tip = HomeUiState.Tip.ChooseGoal,
+        suggestedSection = HomeSection.TASKS,
     )
     FinniAppTheme {
-        HomeScreen(state = HomeUiState.sample(pet), onAction = {})
+        // В превью нет контента: показываем сами ключи вместо текстов
+        CompositionLocalProvider(LocalFeedback provides Feedback(FeedbackKey.entries.associateWith { it.id })) {
+            HomeScreenContent(state = state, onAction = {})
+        }
     }
 }

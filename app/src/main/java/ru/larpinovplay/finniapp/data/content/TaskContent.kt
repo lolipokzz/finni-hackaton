@@ -1,88 +1,14 @@
-package ru.larpinovplay.finniapp.presentation.screens.tasks
+package ru.larpinovplay.finniapp.data.content
+
+import ru.larpinovplay.finniapp.domain.task.model.Task
+import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
+import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 
 /**
- * Финансовые задания, ТЗ 2.5.8: игровая ситуация с выбором и последствиями по трём темам.
- * Три типа механик (docs/05-content-model.md): выбор действия, раскладка суммы, список покупок.
- * Пока список в коде; по документации переедет в assets/content/tasks.json.
+ * Финансовые задания, ТЗ 2.5.8. Пока список в коде; по документации (docs/05-content-model.md)
+ * переедет в assets/content/tasks.json.
  */
-enum class TaskTopic(val title: String) {
-    BUDGET("Планирую"),
-    SAVINGS("Коплю"),
-    PAYMENTS("Покупаю"),
-}
-
-sealed interface TaskPayload {
-    data class Choice(val options: List<Option>) : TaskPayload {
-        data class Option(val id: String, val text: String, val correct: Boolean, val consequence: String)
-    }
-
-    data class Allocate(
-        val total: Int,
-        val step: Int,
-        val buckets: List<Bucket>,
-        val mandatoryMin: Int,
-        val savingsMin: Int,
-    ) : TaskPayload {
-        data class Bucket(val id: String, val label: String)
-    }
-
-    data class ShopList(val budget: Int, val items: List<Item>) : TaskPayload {
-        data class Item(val id: String, val name: String, val price: Int, val mandatory: Boolean)
-    }
-}
-
-sealed interface TaskAnswer {
-    data class Choice(val optionId: String) : TaskAnswer
-    data class Allocation(val amounts: Map<String, Int>) : TaskAnswer
-    data class Selection(val itemIds: Set<String>) : TaskAnswer
-}
-
-data class Task(
-    val id: String,
-    val topic: TaskTopic,
-    val title: String,
-    val intro: String,
-    val reward: Int,
-    val rewardOnMistake: Int,
-    val explanationSuccess: String,
-    val explanationMistake: String,
-    val hint: String,
-    val payload: TaskPayload,
-)
-
-/** Итог ответа: верно ли, сколько монет, что сказать ребёнку. */
-data class TaskOutcome(val success: Boolean, val reward: Int, val consequence: String?, val explanation: String)
-
-/** Оценка ответа по правилам из docs/04-rules-and-formulas.md. */
-fun Task.evaluate(answer: TaskAnswer): TaskOutcome {
-    val (success, consequence) = when (val p = payload) {
-        is TaskPayload.Choice -> {
-            val option = (answer as? TaskAnswer.Choice)?.let { a -> p.options.firstOrNull { it.id == a.optionId } }
-            (option?.correct == true) to option?.consequence
-        }
-        is TaskPayload.Allocate -> {
-            val a = (answer as? TaskAnswer.Allocation)?.amounts.orEmpty()
-            val ok = a.values.sum() == p.total &&
-                (a["mandatory"] ?: 0) >= p.mandatoryMin &&
-                (a["savings"] ?: 0) >= p.savingsMin
-            ok to null
-        }
-        is TaskPayload.ShopList -> {
-            val ids = (answer as? TaskAnswer.Selection)?.itemIds.orEmpty()
-            val chosen = p.items.filter { it.id in ids }
-            val ok = p.items.filter { it.mandatory }.all { it.id in ids } && chosen.sumOf { it.price } <= p.budget
-            ok to null
-        }
-    }
-    return TaskOutcome(
-        success = success,
-        reward = if (success) reward else rewardOnMistake,
-        consequence = consequence,
-        explanation = if (success) explanationSuccess else explanationMistake,
-    )
-}
-
-val tasks: List<Task> = listOf(
+internal val defaultTasks: List<Task> = listOf(
     Task(
         id = "budget_split_60",
         topic = TaskTopic.BUDGET,

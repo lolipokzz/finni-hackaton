@@ -16,11 +16,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.presentation.game.foodText
+import ru.larpinovplay.finniapp.presentation.game.grewText
+import ru.larpinovplay.finniapp.presentation.game.savedText
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /** Итоги недели после «Завершить неделю» (ТЗ 2.5.9, 2.5.10): что изменилось и почему. */
 @Composable
-fun WeekSummaryDialog(summary: SampleGame.WeekSummary, onDismiss: () -> Unit) {
+fun WeekSummaryDialog(summary: WeekSummary, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
@@ -28,8 +32,12 @@ fun WeekSummaryDialog(summary: SampleGame.WeekSummary, onDismiss: () -> Unit) {
         title = { Text("Неделя ${summary.week} закончена", style = MaterialTheme.typography.headlineSmall) },
         text = {
             Column(Modifier.fillMaxWidth()) {
-                summary.explanation.forEachIndexed { i, line ->
-                    val ok = when (i) { 0 -> summary.foodCovered; 1 -> summary.savedSomething; else -> true }
+                val lines = buildList {
+                    add(summary.foodCovered to summary.foodText())
+                    add(summary.savedSomething to summary.savedText())
+                    if (summary.grew) add(true to summary.grewText())
+                }
+                lines.forEach { (ok, line) ->
                     Row(Modifier.padding(vertical = 3.dp)) {
                         Text(if (ok) "✓" else "○", style = MaterialTheme.typography.titleMedium, color = if (ok) FinniColors.Mood else FinniColors.NavyMuted)
                         Text(line, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp))

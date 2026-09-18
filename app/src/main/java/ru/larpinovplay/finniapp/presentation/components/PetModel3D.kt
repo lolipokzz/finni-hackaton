@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.filament.IndirectLight
-import com.google.android.filament.LightManager
 import com.google.android.filament.Renderer
 import com.google.android.filament.View
 import com.google.android.filament.android.UiHelper
@@ -19,7 +18,7 @@ import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
 import java.nio.ByteBuffer
 
-/**
+    /**
  * Показывает glTF-модель питомца из assets и анимирует её.
  *
  * - По кругу проигрывается [idleAnimation].
@@ -28,6 +27,9 @@ import java.nio.ByteBuffer
  * - [cameraDistance] — расстояние камеры до модели. Модель вписана в куб со стороной 2,
  *   при вертикальном угле обзора 45° она заполняет ~2 / (0.83 * distance) высоты области:
  *   3.5 → примерно 70 % (модель с широкими ушами и взмахом руки помещается по ширине), 5.0 → примерно 48 %.
+ *
+ * - [active] = false ставит модель на паузу: вид скрывается, отрисовка останавливается, а загруженная
+ *   модель и фаза анимации остаются. При возврате в true питомец продолжает с того же места.
  *
  * Фон прозрачный: модель рисуется поверх Compose-содержимого.
  */
@@ -41,6 +43,7 @@ fun PetModel3D(
     tapAnimation: String = "Wave",
     cameraDistance: Float = 3.5f,
     animationsEnabled: Boolean = true,
+    active: Boolean = true,
     contentDescription: String = "Питомец. Нажми, и он помашет",
 ) {
     // key: при смене файла (другая стадия роста) SurfaceView и движок создаются заново,
@@ -57,6 +60,10 @@ fun PetModel3D(
                     this.contentDescription = contentDescription
                     setOnClickListener { controller.playTapAnimation() }
                 }
+            },
+            update = { view ->
+                view.visibility = if (active) android.view.View.VISIBLE else android.view.View.INVISIBLE
+                controller.setActive(active)
             },
             onRelease = { controller.release() },
         )
@@ -82,6 +89,9 @@ private class PetModelController(
     private var tapIndex = -1
     private var currentIndex = -1
     private var animationStartNanos = 0L
+
+    private var active = true
+    private var pausedAtNanos = 0L
 
     fun createView(context: Context): SurfaceView {
         val surfaceView = SurfaceView(context).apply {
@@ -116,6 +126,23 @@ private class PetModelController(
     fun playTapAnimation() {
         if (tapIndex < 0 || !animationsEnabled) return
         switchTo(tapIndex, System.nanoTime())
+    }
+
+    /**
+     * Пауза и продолжение отрисовки. Время паузы вычитается из времени анимации,
+     * чтобы после возврата питомец не «перескочил» вперёд.
+     */
+    fun setActive(value: Boolean) {
+        if (value == active) return
+        active = value
+        if (modelViewer == null) return
+        if (value) {
+            animationStartNanos += System.nanoTime() - pausedAtNanos
+            choreographer.postFrameCallback(frameCallback)
+        } else {
+            pausedAtNanos = System.nanoTime()
+            choreographer.removeFrameCallback(frameCallback)
+        }
     }
 
     fun release() {

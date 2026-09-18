@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -36,72 +35,67 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
+import ru.larpinovplay.finniapp.domain.task.model.Task
+import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
+import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
+import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
-import ru.larpinovplay.finniapp.presentation.screens.home.SampleGame
+import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
- * Список заданий по темам и прохождение выбранного (ТЗ 2.5.8).
- * Статус задания — словом, не только цветом. Объяснение показывается после любого ответа.
+ * Список заданий по темам (ТЗ 2.5.8). Статус задания — словом, не только цветом.
+ * Само прохождение и итог — отдельные маршруты TaskPlay и TaskResult.
  */
 @Composable
 fun TasksScreen(
-    statusOf: (Task) -> SampleGame.TaskStatus,
-    tasksDoneThisWeek: Int,
-    tasksPerWeek: Int,
-    onAnswer: (Task, TaskAnswer) -> TaskOutcome?,
+    onOpenTask: (Task) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: TasksViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    TasksScreenContent(state = state, onOpenTask = onOpenTask, onBack = onBack, modifier = modifier)
+}
+
+@Composable
+fun TasksScreenContent(
+    state: TasksUiState,
+    onOpenTask: (Task) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var playing by remember { mutableStateOf<Task?>(null) }
-    var outcome by remember { mutableStateOf<Pair<Task, TaskOutcome>?>(null) }
-
-    val current = playing
-    if (current != null) {
-        TaskPlayScreen(
-            task = current,
-            onSubmit = { answer ->
-                val result = onAnswer(current, answer)
-                playing = null
-                if (result != null) outcome = current to result
-            },
-            onBack = { playing = null },
-            modifier = modifier
-        )
-    } else {
-        Box(modifier = modifier.fillMaxSize()) {
-            RoomBackground()
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                item { Header(onBack) }
-                item {
-                    Text(
-                        "На этой неделе: $tasksDoneThisWeek из $tasksPerWeek заданий",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = FinniColors.NavyMuted,
-                        modifier = Modifier.padding(start = 6.dp)
-                    )
-                }
-                TaskTopic.entries.forEach { topic ->
-                    item {
-                        Text(topic.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
-                    }
-                    items(tasks.filter { it.topic == topic }, key = { it.id }) { task ->
-                        TaskCard(task, statusOf(task)) { playing = task }
-                    }
-                }
-                item { Spacer(Modifier.height(12.dp)) }
+    Box(modifier = modifier.fillMaxSize()) {
+        RoomBackground()
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item { Header(onBack) }
+            item {
+                Text(
+                    "На этой неделе: ${state.doneThisWeek} из ${state.perWeek} заданий",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = FinniColors.NavyMuted,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
             }
+            TaskTopic.entries.forEach { topic ->
+                item {
+                    Text(topic.title(), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
+                }
+                items(state.items.filter { it.task.topic == topic }, key = { it.task.id }) { item ->
+                    TaskCard(item.task, item.status) { onOpenTask(item.task) }
+                }
+            }
+            item { Spacer(Modifier.height(12.dp)) }
         }
-    }
-
-    outcome?.let { (task, result) ->
-        TaskResultDialog(task, result) { outcome = null }
     }
 }
 
@@ -126,13 +120,13 @@ private fun Header(onBack: () -> Unit) {
 }
 
 @Composable
-private fun TaskCard(task: Task, status: SampleGame.TaskStatus, onOpen: () -> Unit) {
-    val enabled = status == SampleGame.TaskStatus.AVAILABLE
+private fun TaskCard(task: Task, status: TaskStatus, onOpen: () -> Unit) {
+    val enabled = status == TaskStatus.AVAILABLE
     val (statusText, statusColor) = when (status) {
-        SampleGame.TaskStatus.AVAILABLE -> "Доступно" to FinniColors.Blue
-        SampleGame.TaskStatus.DONE -> "Выполнено ✓" to FinniColors.Mood
-        SampleGame.TaskStatus.RETRY_NEXT_WEEK -> "Попробуй на следующей неделе" to FinniColors.NavyMuted
-        SampleGame.TaskStatus.LIMIT_REACHED -> "На этой неделе хватит" to FinniColors.NavyMuted
+        TaskStatus.AVAILABLE -> "Доступно" to FinniColors.Blue
+        TaskStatus.DONE -> "Выполнено ✓" to FinniColors.Mood
+        TaskStatus.RETRY_NEXT_WEEK -> "Попробуй на следующей неделе" to FinniColors.NavyMuted
+        TaskStatus.LIMIT_REACHED -> "На этой неделе хватит" to FinniColors.NavyMuted
     }
     val shape = RoundedCornerShape(24.dp)
     Surface(
@@ -169,40 +163,41 @@ private fun TaskCard(task: Task, status: SampleGame.TaskStatus, onOpen: () -> Un
 
 // ---------- Результат ----------
 
+/**
+ * Содержимое диалога итога. Само окно (Dialog) создаёт навигация: маршрут TaskResult
+ * помечен как диалог, поэтому здесь только карточка, без AlertDialog.
+ */
 @Composable
-private fun TaskResultDialog(task: Task, result: TaskOutcome, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = Color.White,
-        title = {
+fun TaskResultCard(result: TaskOutcome, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(shape = RoundedCornerShape(28.dp), color = Color.White, modifier = modifier) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 if (result.success) "Верно!" else "Почти получилось",
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
-        },
-        text = {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                result.consequence?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
-                Text(result.explanation, style = MaterialTheme.typography.bodyLarge, color = FinniColors.Navy)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Монеты", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted, modifier = Modifier.weight(1f))
-                    Text("+${result.reward}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
-                }
-                if (!result.success) {
-                    Text("Это задание можно попробовать снова на следующей неделе", style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)
-                }
+            result.consequence?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+            Text(result.explanation, style = MaterialTheme.typography.bodyLarge, color = FinniColors.Navy)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Монеты", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted, modifier = Modifier.weight(1f))
+                Text("+${result.reward}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
             }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
+            if (!result.success) {
+                Text("Это задание можно попробовать снова на следующей неделе", style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)
+            }
+            Button(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .height(48.dp)
+            ) {
                 Text("Понятно", style = MaterialTheme.typography.labelLarge)
             }
         }
-    )
+    }
 }
 
 /** Нужен для превью и тестов виджета списка покупок. */

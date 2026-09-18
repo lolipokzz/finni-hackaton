@@ -3,7 +3,6 @@ package ru.larpinovplay.finniapp.presentation.screens.settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -34,16 +34,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
-
-/** Настройки, которые может менять ребёнок (ТЗ 3.6). Сброс и удаление профиля — в разделе взрослого. */
-data class AppSettings(
-    val soundEnabled: Boolean = true,
-    val animationsEnabled: Boolean = true,
-    val tipsEnabled: Boolean = true,
-)
 
 /** Три карточки знакомства с игрой (ТЗ 2.5.1): показываются при первом запуске и здесь по запросу. */
 private data class IntroCard(val icon: Int, val title: String, val text: String)
@@ -68,11 +64,27 @@ private val glossary = listOf(
 
 @Composable
 fun SettingsScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = koinViewModel(),
+) {
+    val settings by viewModel.state.collectAsStateWithLifecycle()
+    SettingsScreenContent(
+        settings = settings,
+        onSettingsChange = viewModel::onSettingsChange,
+        onBack = onBack,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun SettingsScreenContent(
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Раскрытие карточек «Как играть» и «Словарик» — вид одного экрана, в ViewModel ему делать нечего
     var introOpen by remember { mutableStateOf(false) }
     var glossaryOpen by remember { mutableStateOf(false) }
 

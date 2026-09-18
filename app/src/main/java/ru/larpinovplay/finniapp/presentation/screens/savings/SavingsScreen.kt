@@ -28,7 +28,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,18 +39,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
-
-/** Данные для экрана копилки; собираются из состояния игры. */
-data class SavingsUiState(
-    val balance: Int,
-    val savings: Int,
-    val goal: SavingsGoal?,
-    val weeksToGoal: Int?,          // null — срок ещё нельзя посчитать
-    val completedGoalIds: Set<String>,
-)
 
 /**
  * Копилка, ТЗ 2.5.7: цели с понятной стоимостью, выбранная цель выделена; видны накоплено,
@@ -59,16 +52,21 @@ data class SavingsUiState(
  */
 @Composable
 fun SavingsScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SavingsViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    SavingsScreenContent(state = state, onAction = viewModel::onAction, onBack = onBack, modifier = modifier)
+}
+
+@Composable
+fun SavingsScreenContent(
     state: SavingsUiState,
-    onChooseGoal: (SavingsGoal) -> Unit,
-    onDeposit: (Int) -> Boolean,
-    onReachGoal: () -> SavingsGoal?,
+    onAction: (SavingsAction) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var switchTo by remember { mutableStateOf<SavingsGoal?>(null) }   // смена цели ждёт подтверждения
-    var reached by remember { mutableStateOf<SavingsGoal?>(null) }
-
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         LazyColumn(
@@ -83,8 +81,8 @@ fun SavingsScreen(
                 if (goal == null) NoGoalCard() else CurrentGoalCard(
                     goal = goal,
                     state = state,
-                    onDeposit = onDeposit,
-                    onReach = { reached = onReachGoal() }
+                    onDeposit = { onAction(SavingsAction.Deposit(it)) },
+                    onReach = { onAction(SavingsAction.ReachGoalClicked) }
                 )
             }
             item {
@@ -94,27 +92,21 @@ fun SavingsScreen(
                     modifier = Modifier.padding(start = 6.dp, top = 6.dp)
                 )
             }
-            items(savingsGoals, key = { it.id }) { goal ->
+            items(state.goals, key = { it.id }) { goal ->
                 GoalCard(
                     goal = goal,
                     selected = goal.id == state.goal?.id,
                     completed = goal.id in state.completedGoalIds,
-                    onClick = {
-                        when {
-                            goal.id == state.goal?.id -> Unit
-                            state.goal != null && state.savings > 0 -> switchTo = goal
-                            else -> onChooseGoal(goal)
-                        }
-                    }
+                    onClick = { onAction(SavingsAction.GoalClicked(goal)) }
                 )
             }
             item { Spacer(Modifier.height(12.dp)) }
         }
     }
 
-    switchTo?.let { goal ->
+    state.switchTo?.let { goal ->
         AlertDialog(
-            onDismissRequest = { switchTo = null },
+            onDismissRequest = { onAction(SavingsAction.DismissSwitch) },
             shape = RoundedCornerShape(28.dp),
             containerColor = Color.White,
             title = { Text("Поменять цель?", style = MaterialTheme.typography.headlineSmall) },
@@ -125,18 +117,18 @@ fun SavingsScreen(
                 )
             },
             confirmButton = {
-                Button(onClick = { onChooseGoal(goal); switchTo = null }, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
+                Button(onClick = { onAction(SavingsAction.ConfirmSwitch) }, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
                     Text("Да, поменять", style = MaterialTheme.typography.labelLarge)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { switchTo = null }, modifier = Modifier.height(48.dp)) { Text("Оставить", style = MaterialTheme.typography.labelLarge) }
+                TextButton(onClick = { onAction(SavingsAction.DismissSwitch) }, modifier = Modifier.height(48.dp)) { Text("Оставить", style = MaterialTheme.typography.labelLarge) }
             }
         )
     }
-    reached?.let { goal ->
+    state.reached?.let { goal ->
         AlertDialog(
-            onDismissRequest = { reached = null },
+            onDismissRequest = { onAction(SavingsAction.DismissReached) },
             shape = RoundedCornerShape(28.dp),
             containerColor = Color.White,
             icon = { Image(painterResource(goal.icon), null, Modifier.size(64.dp)) },
@@ -149,7 +141,7 @@ fun SavingsScreen(
                 )
             },
             confirmButton = {
-                Button(onClick = { reached = null }, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
+                Button(onClick = { onAction(SavingsAction.DismissReached) }, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
                     Text("Здорово", style = MaterialTheme.typography.labelLarge)
                 }
             }
@@ -205,13 +197,12 @@ private fun NoGoalCard() {
 private fun CurrentGoalCard(
     goal: SavingsGoal,
     state: SavingsUiState,
-    onDeposit: (Int) -> Boolean,
+    onDeposit: (Int) -> Unit,
     onReach: () -> Unit,
 ) {
     val remaining = (goal.cost - state.savings).coerceAtLeast(0)
     val reachedGoal = state.savings >= goal.cost
-    var amount by remember { mutableIntStateOf(10) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var amount by remember { mutableIntStateOf(10) }   // ввод суммы: пока не нажата «Отложить», это не состояние экрана
 
     WhiteCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
@@ -269,17 +260,15 @@ private fun CurrentGoalCard(
                     )
                     StepButton("+") { amount = (amount + 5).coerceAtMost(state.balance.coerceAtLeast(5)) }
                     Button(
-                        onClick = {
-                            error = if (onDeposit(amount)) null else "Не хватает монет: на балансе ${state.balance}"
-                        },
+                        onClick = { onDeposit(amount) },
                         shape = RoundedCornerShape(18.dp),
                         modifier = Modifier
                             .weight(1f)
                             .height(52.dp)
                     ) { Text("Отложить", style = MaterialTheme.typography.titleMedium) }
                 }
-                error?.let {
-                    Text(it, style = MaterialTheme.typography.labelMedium, color = FinniColors.Warning, modifier = Modifier.padding(top = 6.dp))
+                state.depositError?.let {
+                    Text(it.text(), style = MaterialTheme.typography.labelMedium, color = FinniColors.Warning, modifier = Modifier.padding(top = 6.dp))
                 }
             }
         }

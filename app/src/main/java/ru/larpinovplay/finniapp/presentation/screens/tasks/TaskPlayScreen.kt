@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,12 +33,48 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.task.model.Task
+import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
+import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
+import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
-/** Прохождение одного задания: интро, виджет по типу, подсказка, кнопка «Готово». */
+/**
+ * Прохождение одного задания. [onCompleted] вызывается после ответа с итогом
+ * (null — задание уже недоступно); куда идти дальше, решает навигация.
+ */
 @Composable
-fun TaskPlayScreen(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun TaskPlayScreen(
+    viewModel: TaskPlayViewModel,   // без значения по умолчанию: ему нужен id задания из ключа маршрута
+    onCompleted: (TaskOutcome?) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is TaskPlayEffect.Completed -> onCompleted(effect.outcome)
+            }
+        }
+    }
+    val task = viewModel.task
+    if (task == null) {
+        LaunchedEffect(Unit) { onBack() }
+    } else {
+        TaskPlayScreenContent(
+            task = task,
+            onSubmit = { answer -> viewModel.onAction(TaskPlayAction.Submit(answer)) },
+            onBack = onBack,
+            modifier = modifier,
+        )
+    }
+}
+
+/** Интро, виджет по типу, подсказка, кнопка «Готово». */
+@Composable
+fun TaskPlayScreenContent(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(
@@ -63,7 +100,7 @@ fun TaskPlayScreen(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: () -> Uni
             }
             Card {
                 Column(Modifier.padding(16.dp)) {
-                    Text(task.topic.title, style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)
+                    Text(task.topic.title(), style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)
                     Text(task.intro, style = MaterialTheme.typography.bodyLarge)
                     HintButton(task.hint)
                 }

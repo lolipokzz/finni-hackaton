@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,32 +30,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
+import ru.larpinovplay.finniapp.domain.game.model.TopicProgress
+import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
-import ru.larpinovplay.finniapp.presentation.screens.home.SampleGame
-import ru.larpinovplay.finniapp.presentation.screens.home.title
-import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsGoal
+import ru.larpinovplay.finniapp.presentation.game.foodText
+import ru.larpinovplay.finniapp.presentation.game.grewText
+import ru.larpinovplay.finniapp.presentation.game.savedText
+import ru.larpinovplay.finniapp.presentation.game.text
+import ru.larpinovplay.finniapp.presentation.pet.title
+import ru.larpinovplay.finniapp.presentation.screens.savings.icon
+import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
-/** Всё, что показывает раздел «Прогресс» (ТЗ 2.5.11). Собирается из состояния игры. */
-data class ProgressUiState(
-    val petName: String,
-    val week: Int,
-    val stage: PetGrowthStage,
-    val growthPoints: Int,
-    val pointsToNextStage: Int?,
-    val goal: SavingsGoal?,
-    val savings: Int,
-    val completedGoals: List<SavingsGoal>,
-    val taskTopics: List<SampleGame.TaskTopic>,
-    val lastWeek: SampleGame.WeekSummary?,
-    val weeksCompleted: Int,
-    val ledgerThisWeek: List<SampleGame.LedgerEntry>,
-)
+@Composable
+fun ProgressScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ProgressViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    state?.let { ProgressScreenContent(state = it, onBack = onBack, modifier = modifier) }
+}
 
 @Composable
-fun ProgressScreen(state: ProgressUiState, onBack: () -> Unit, modifier: Modifier = Modifier) {
+fun ProgressScreenContent(state: ProgressUiState, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         LazyColumn(
@@ -103,20 +108,21 @@ private fun PetStageCard(state: ProgressUiState) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconBox(R.drawable.ic_star)
                 Column(Modifier.padding(start = 12.dp)) {
-                    Text("${state.petName}: ${state.stage.title()}", style = MaterialTheme.typography.titleLarge)
+                    Text("${state.pet.name}: ${state.pet.growthStage.title()}", style = MaterialTheme.typography.titleLarge)
                     Text("Неделя ${state.week} · пройдено недель: ${state.weeksCompleted}", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
                 }
             }
             Spacer(Modifier.height(12.dp))
-            val next = state.pointsToNextStage
+            val pet = state.pet
+            val next = pet.pointsToNextStage
             if (next == null) {
                 Text("Финни вырос до последней стадии. Так держать!", style = MaterialTheme.typography.bodyLarge)
             } else {
-                val target = state.growthPoints + next
-                Bar(state.growthPoints, target, FinniColors.Mood)
+                val target = pet.growthPoints + next
+                Bar(pet.growthPoints, target, FinniColors.Mood)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Очки роста: ${state.growthPoints} из $target. Ещё $next — и Финни станет ${nextStageTitle(state.stage)}",
+                    "Очки роста: ${pet.growthPoints} из $target. Ещё $next — и Финни станет ${nextStageTitle(pet.growthStage)}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -163,7 +169,7 @@ private fun GoalCard(state: ProgressUiState) {
 
 /** Итоги последней недели: два критерия словами и значками, траты, настроение. */
 @Composable
-private fun LastWeekCard(summary: SampleGame.WeekSummary?, weeksCompleted: Int) {
+private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
     WhiteCard {
         Column(Modifier.padding(16.dp)) {
             Text(
@@ -179,8 +185,8 @@ private fun LastWeekCard(summary: SampleGame.WeekSummary?, weeksCompleted: Int) 
                 )
                 return@Column
             }
-            CriterionLine(summary.foodCovered, summary.explanation[0])
-            CriterionLine(summary.savedSomething, summary.explanation[1])
+            CriterionLine(summary.foodCovered, summary.foodText())
+            CriterionLine(summary.savedSomething, summary.savedText())
             Spacer(Modifier.height(8.dp))
             StatLine("Потрачено на нужное", "${summary.spentMandatory}")
             StatLine("Потрачено на желаемое", "${summary.spentOptional}")
@@ -189,7 +195,7 @@ private fun LastWeekCard(summary: SampleGame.WeekSummary?, weeksCompleted: Int) 
             StatLine("Оценка недели", "${summary.score} из 2")
             if (summary.stageAfter != summary.stageBefore) {
                 Spacer(Modifier.height(6.dp))
-                Text("★ ${summary.explanation.last()}", style = MaterialTheme.typography.bodyLarge, color = FinniColors.Blue)
+                Text("★ ${summary.grewText()}", style = MaterialTheme.typography.bodyLarge, color = FinniColors.Blue)
             }
             if (weeksCompleted > 1) {
                 Spacer(Modifier.height(6.dp))
@@ -201,7 +207,7 @@ private fun LastWeekCard(summary: SampleGame.WeekSummary?, weeksCompleted: Int) 
 
 /** Выполненные задания по темам (ТЗ 2.5.8, 2.5.11). */
 @Composable
-private fun TasksCard(topics: List<SampleGame.TaskTopic>) {
+private fun TasksCard(topics: List<TopicProgress>) {
     WhiteCard {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -214,7 +220,7 @@ private fun TasksCard(topics: List<SampleGame.TaskTopic>) {
             Spacer(Modifier.height(10.dp))
             topics.forEach { topic ->
                 Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(topic.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    Text(topic.topic.title(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                     Text("${topic.done} из ${topic.total}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                 }
                 Bar(topic.done, topic.total, FinniColors.Blue)
@@ -243,7 +249,7 @@ private fun CompletedGoalsCard(goals: List<SavingsGoal>) {
 
 /** Журнал монет: у каждого движения есть название и сумма (ТЗ 2.5.4). */
 @Composable
-private fun LedgerCard(week: Int, entries: List<SampleGame.LedgerEntry>) {
+private fun LedgerCard(week: Int, entries: List<LedgerEntry>) {
     WhiteCard {
         Column(Modifier.padding(16.dp)) {
             Text("Откуда и куда монеты · неделя $week", style = MaterialTheme.typography.titleLarge)
@@ -254,7 +260,7 @@ private fun LedgerCard(week: Int, entries: List<SampleGame.LedgerEntry>) {
             entries.asReversed().forEach { e ->
                 Row(Modifier.padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
                     Image(painterResource(ledgerIcon(e)), null, Modifier.size(26.dp))
-                    Text(e.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 10.dp).weight(1f))
+                    Text(e.reason.text(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 10.dp).weight(1f))
                     val (text, color) = when {
                         e.balanceDelta > 0 -> "+${e.balanceDelta}" to FinniColors.Mood
                         e.balanceDelta < 0 && e.savingsDelta > 0 -> "${e.balanceDelta} → копилка" to FinniColors.Blue
@@ -269,7 +275,7 @@ private fun LedgerCard(week: Int, entries: List<SampleGame.LedgerEntry>) {
 }
 
 @DrawableRes
-private fun ledgerIcon(e: SampleGame.LedgerEntry): Int = when {
+private fun ledgerIcon(e: LedgerEntry): Int = when {
     e.savingsDelta != 0 -> R.drawable.ic_pig
     e.balanceDelta > 0 -> R.drawable.ic_coin
     else -> R.drawable.ic_cart
