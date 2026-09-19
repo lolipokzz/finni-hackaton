@@ -19,7 +19,7 @@ import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
  *
  * Каждый маршрут — ключ back stack'а: сериализуемый, поэтому стек переживает поворот экрана
  * и смерть процесса. «Назад» (кнопка на экране и системная) снимает верхний ключ.
- * Точка входа — [Home]: выбор вида/цвета/имени питомца пока идёт до графа, см. PetRoomScreen.
+ * Точка входа — [Home]: выбор вида/цвета/имени питомца пока идёт до графа, см. PetCreationScreen.
  */
 @Serializable
 data object Home : NavKey
