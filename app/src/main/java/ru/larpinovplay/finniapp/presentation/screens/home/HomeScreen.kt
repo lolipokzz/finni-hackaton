@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -319,17 +320,17 @@ private fun PetArea(state: HomeUiState, petHost: PetHostState?, modifier: Modifi
         PetSpec(
             assetName = it,
             tintArgb = pet.look.color.argb,
-            cameraDistance = 3.1f,
             animationsEnabled = state.animationsEnabled,
         )
     }
     SideEffect { petHost?.spec = spec }
 
     if (spec != null) {
+        // Квадрат по высоте свободного места: 3D-питомец рисуется в квадратный буфер (см. PetModel3D)
         Box(
             modifier = modifier
-                .fillMaxWidth(0.9f)
                 .fillMaxHeight()
+                .aspectRatio(1f, matchHeightConstraintsFirst = true)
                 .onGloballyPositioned { petHost?.slot = it }
         )
     } else {
