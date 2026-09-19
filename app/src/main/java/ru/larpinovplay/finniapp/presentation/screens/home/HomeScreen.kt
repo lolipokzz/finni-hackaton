@@ -30,11 +30,13 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
@@ -60,10 +62,10 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
- * Главный экран, ТЗ 2.5.3, в стиле референса: комната, белые карточки, крупный питомец.
+ * Главный экран: комната, крупный питомец и компактные игровые значки ресурсов.
  *
  * Правила UX (docs/07-screens.md): тапаемые элементы ≥ 48 dp, текст ≥ 16 sp,
- * каждый показатель — иконка + подпись + число, цвет не единственный носитель смысла.
+ * каждый показатель — иконка + число + описание для TalkBack; подробности по нажатию.
  *
  * Питомец рисуется в SurfaceView поверх Compose с прозрачным фоном: всё, что лежит под
  * прозрачными пикселями, видно, поэтому облачко-подсказку можно класть рядом с ним.
@@ -104,8 +106,7 @@ fun HomeScreenContent(
         ) {
             Spacer(Modifier.height(6.dp))
             TopResourcesRow(state, onAction, onInfo = { onAction(HomeAction.ShowInfo(it)) })
-            Spacer(Modifier.height(8.dp))
-            StatsRow(state.pet, onInfo = { onAction(HomeAction.ShowInfo(it)) })
+
 
             // Питомец занимает всё место между шапкой и действиями; плашка недели и подсказка лежат поверх
             Box(
@@ -125,12 +126,10 @@ fun HomeScreenContent(
                 }
             }
 
-            NameCard(state)
             Spacer(Modifier.height(6.dp))
-            state.activeTask?.let { TaskCard(it) { onAction(HomeAction.OpenSection(HomeSection.TASKS)) } }
             FinishWeekButton { onAction(HomeAction.FinishWeek) }
             Spacer(Modifier.height(6.dp))
-            BottomMenu(selected = state.suggestedSection, onOpen = { onAction(HomeAction.OpenSection(it)) })
+            BottomMenu(petName = state.pet.name, selected = state.suggestedSection, onOpen = { onAction(HomeAction.OpenSection(it)) })
             Spacer(Modifier.height(6.dp))
         }
     }
@@ -172,7 +171,7 @@ private fun RoundIconButton(@DrawableRes icon: Int, contentDescription: String, 
         shape = CircleShape,
         color = FinniColors.Lavender,
         modifier = Modifier
-            .size(44.dp)
+            .size(48.dp)
             .shadow(6.dp, CircleShape, ambientColor = FinniColors.Navy.copy(alpha = 0.12f), spotColor = FinniColors.Navy.copy(alpha = 0.12f))
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -181,22 +180,37 @@ private fun RoundIconButton(@DrawableRes icon: Int, contentDescription: String, 
     }
 }
 
-// ---------- Шапка: настройки, монеты, копилка и цель, раздел взрослого ----------
+// ---------- Игровые показатели: заполнение внутри картинки, число поверх ----------
 
 @Composable
 private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit, onInfo: (HomeInfo) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         RoundIconButton(R.drawable.ic_gear, "Настройки") {
             onAction(HomeAction.OpenSection(HomeSection.SETTINGS))
         }
-        ResourceCard(
+        StatusIcon(
+            icon = R.drawable.ic_apple,
+            label = "Сытость",
+            value = state.pet.satiety.value,
+            modifier = Modifier.weight(1f),
+            onClick = { onInfo(HomeInfo.SATIETY) }
+        )
+        StatusIcon(
+            icon = R.drawable.ic_smile,
+            label = "Настроение",
+            value = state.pet.mood.value,
+            modifier = Modifier.weight(1f),
+            onClick = { onInfo(HomeInfo.MOOD) }
+        )
+        StatusIcon(
             icon = R.drawable.ic_coin,
             label = "Монеты",
-            value = "${state.balance}",
+            value = state.balance,
+            isMeter = false,
             modifier = Modifier.weight(1f),
             onClick = { onInfo(HomeInfo.COINS) }
         )
@@ -206,75 +220,69 @@ private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit, 
     }
 }
 
-/** Карточка ресурса: иконка слева, подпись и значение. Ширина на 360 dp около 110 dp, поэтому всё компактно. */
+/** Цвет заполняет сам значок снизу вверх; точное значение остаётся читаемым на плашке. */
 @Composable
-private fun ResourceCard(
-    @DrawableRes icon: Int,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    WhiteCard(modifier = modifier.height(44.dp), shape = RoundedCornerShape(22.dp), onClick = onClick) {
-        Row(
-            modifier = Modifier.padding(start = 8.dp, end = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(painterResource(icon), null, Modifier.size(26.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 8.dp))
-            Spacer(Modifier.weight(1f))
-            Text(value, style = MaterialTheme.typography.titleMedium, maxLines = 1, softWrap = false)
-            Image(painterResource(R.drawable.ic_chevron), null, Modifier.size(18.dp))
-        }
-    }
-}
-
-// ---------- Показатели состояния ----------
-
-@Composable
-private fun StatsRow(pet: Pet, onInfo: (HomeInfo) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        StatCard(R.drawable.ic_apple, "Сытость", pet.satiety.value, FinniColors.Satiety, FinniColors.CardPeach, Modifier.weight(1f)) { onInfo(HomeInfo.SATIETY) }
-        StatCard(R.drawable.ic_smile, "Настроение", pet.mood.value, FinniColors.Mood, FinniColors.CardMint, Modifier.weight(1f)) { onInfo(HomeInfo.MOOD) }
-    }
-}
-
-/** Иконка + подпись + число + полоса. Низкое значение помечается словом «мало», не только цветом. */
-@Composable
-private fun StatCard(
+private fun StatusIcon(
     @DrawableRes icon: Int,
     label: String,
     value: Int,
-    barColor: Color,
-    cardColor: Color,
     modifier: Modifier = Modifier,
+    isMeter: Boolean = true,
     onClick: () -> Unit,
 ) {
-    val low = value < 30
-    WhiteCard(modifier = modifier, color = cardColor, shape = RoundedCornerShape(16.dp), onClick = onClick) {
-        Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(icon), null, Modifier.size(20.dp))
-                Text(label, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp))
-                Spacer(Modifier.weight(1f))
-                Text(if (low) "$value · мало" else "$value", style = MaterialTheme.typography.labelLarge, color = if (low) FinniColors.Warning else FinniColors.Navy)
+    val amount = if (isMeter) value.coerceIn(0, 100) else value
+    val low = isMeter && amount < 30
+    // Границы рисунка внутри viewport 48 × 48: прозрачные поля не входят в шкалу.
+    val iconTop = if (icon == R.drawable.ic_apple) 7f else 4f
+    val iconBottom = if (icon == R.drawable.ic_apple) 41f else 44f
+    val emptyIcon = when (icon) {
+        R.drawable.ic_apple -> R.drawable.ic_apple_empty
+        R.drawable.ic_smile -> R.drawable.ic_smile_empty
+        else -> icon
+    }
+    val description = if (isMeter) "$label: $amount из 100" else "$label: $amount"
+    Surface(
+        onClick = onClick,
+        modifier = modifier.padding(top = 12.dp).semantics {
+            contentDescription = if (low) "$description, мало" else description
+        },
+        shape = RoundedCornerShape(18.dp),
+        color = Color.Transparent,
+    ) {
+        Box(
+            modifier = Modifier.padding(vertical = 4.dp).height(76.dp),
+            contentAlignment = Alignment.TopCenter,
+        ) {
+            // Контуры и детали видны даже при нулевом значении.
+            Image(
+                painter = painterResource(if (isMeter) emptyIcon else icon),
+                contentDescription = null,
+                modifier = Modifier.size(60.dp),
+            )
+            if (isMeter) {
+                Image(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(60.dp).drawWithContent {
+                        val fillTop = (iconBottom - (iconBottom - iconTop) * amount / 100f) / 48f
+                        clipRect(top = size.height * fillTop) {
+                            this@drawWithContent.drawContent()
+                        }
+                    },
+                )
             }
-            Spacer(Modifier.height(4.dp))
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(7.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(FinniColors.Track)
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                shape = RoundedCornerShape(12.dp),
+                color = if (low) FinniColors.Warning else FinniColors.Card,
+                shadowElevation = 2.dp,
             ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(value.coerceIn(0, 100) / 100f)
-                        .fillMaxHeight()
-                        .background(if (low) FinniColors.Warning else barColor, RoundedCornerShape(5.dp))
+                Text(
+                    text = if (isMeter) "$amount%" else "$amount",
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontSize = 16.sp,
+                    color = if (low) Color.White else FinniColors.Navy,
                 )
             }
         }
@@ -375,81 +383,6 @@ private fun TipBubble(text: String, modifier: Modifier = Modifier) {
     }
 }
 
-// ---------- Имя и настроение ----------
-
-@Composable
-private fun NameCard(state: HomeUiState) {
-    WhiteCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(state.pet.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    state.moodExplanation.text(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = FinniColors.NavyMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Surface(shape = CircleShape, color = FinniColors.BlueLight, modifier = Modifier.size(36.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Image(painterResource(R.drawable.ic_pencil), contentDescription = "Переименовать", Modifier.size(18.dp))
-                }
-            }
-        }
-    }
-}
-
-// ---------- Задание ----------
-
-@Composable
-private fun TaskCard(task: HomeUiState.ActiveTask, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(20.dp)
-    Surface(
-        onClick = onClick,
-        shape = shape,
-        color = Color.Transparent,
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(8.dp, shape, ambientColor = FinniColors.Blue.copy(alpha = 0.35f), spotColor = FinniColors.Blue.copy(alpha = 0.35f))
-    ) {
-        Row(
-            modifier = Modifier
-                .background(Brush.horizontalGradient(listOf(Color(0xFF7D95FF), Color(0xFF5B7BFF))))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .background(Color.White.copy(alpha = 0.22f), CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(painterResource(R.drawable.ic_target), null, Modifier.size(26.dp))
-            }
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp)
-            ) {
-                Text("Задание", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.85f))
-                Text(task.title, style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Text("+${task.reward}", style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
-            Image(painterResource(R.drawable.ic_chevron), null, Modifier.size(24.dp), colorFilter = ColorFilter.tint(Color.White))
-        }
-    }
-}
-
 @Composable
 private fun FinishWeekButton(onClick: () -> Unit) {
     Button(
@@ -475,42 +408,37 @@ private val menuItems = listOf(
 )
 
 @Composable
-private fun BottomMenu(selected: HomeSection?, onOpen: (HomeSection) -> Unit) {
-    WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
-        Row(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            menuItems.forEach { item ->
-                val isSelected = item.section == selected
-                Surface(
-                    onClick = { onOpen(item.section) },
-                    shape = RoundedCornerShape(16.dp),
-                    color = if (isSelected) FinniColors.BlueLight else Color.Transparent,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(60.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Image(painterResource(item.icon), null, Modifier.size(26.dp))
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            item.label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSelected) FinniColors.Blue else FinniColors.Navy,
-                            maxLines = 1
-                        )
-                        Box(
-                            Modifier
-                                .padding(top = 2.dp)
-                                .size(width = 22.dp, height = 4.dp)
-                                .background(if (isSelected) FinniColors.Blue else Color.Transparent, RoundedCornerShape(3.dp))
-                        )
+private fun BottomMenu(petName: String, selected: HomeSection?, onOpen: (HomeSection) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        menuItems.forEach { item ->
+            val isSelected = item.section == selected
+            Surface(
+                onClick = { onOpen(item.section) },
+                shape = RoundedCornerShape(18.dp),
+                color = Color.Transparent,
+                modifier = Modifier.weight(1f).height(88.dp).semantics {
+                    if (item.section == HomeSection.PROGRESS) {
+                        contentDescription = "$petName, открыть прогресс питомца"
                     }
+                }
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Image(painterResource(item.icon), null, Modifier.size(42.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        if (item.section == HomeSection.PROGRESS) petName else item.label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (isSelected) FinniColors.Blue else FinniColors.Navy,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 1
+                    )
                 }
             }
         }
