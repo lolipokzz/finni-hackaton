@@ -34,7 +34,10 @@ class PetRoomScreenViewModel(
     private fun loadPet() {
         viewModelScope.launch {
             _state.value = PetRoomState.Loading
-            _state.value = if (game.snapshot.value != null) PetRoomState.Loaded else PetRoomState.Creation()
+            game.snapshot.collect { snapshot ->
+                if (snapshot != null) _state.value = PetRoomState.Loaded
+                else if (_state.value !is PetRoomState.Creation) _state.value = PetRoomState.Creation()
+            }
         }
     }
 

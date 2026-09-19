@@ -67,6 +67,7 @@ class HomeViewModel(
                 game.purchases.isNotEmpty() -> HomeUiState.MoodExplanation.Purchased(game.purchases.last().name)
                 else -> HomeUiState.MoodExplanation.Waiting
             },
+            demoMode = game.demoMode,
             balance = game.balance,
             savings = game.savings,
             goal = game.goal?.let { HomeUiState.Goal(name = it.name, cost = it.cost) },

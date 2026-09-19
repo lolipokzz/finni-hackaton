@@ -15,6 +15,9 @@ import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
+import ru.larpinovplay.finniapp.domain.pet.model.PetLook
+import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
+import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
@@ -51,6 +54,17 @@ class InMemoryGameRepository(
         execute { GameEngine.answerTask(it, task, answer) }
 
     override suspend fun finishWeek(): WeekSummary = execute { GameEngine.finishWeek(it) }
+
+    override suspend fun resetProfile() = mutex.withLock {
+        _snapshot.value = null
+    }
+
+    override suspend fun resetToDemo() = mutex.withLock {
+        _snapshot.value = GameSnapshot(
+            GameEngine.newGame(startBalance).copy(demoMode = true),
+            Pet.newborn("Финни Демо", PetLook(PetSpecies.BUNNY, PetColor.MINT)),
+        )
+    }
 
     private suspend fun <R> execute(command: (GameSnapshot) -> Transition<R>): R = mutex.withLock {
         val current = checkNotNull(_snapshot.value) { "Питомец ещё не создан" }

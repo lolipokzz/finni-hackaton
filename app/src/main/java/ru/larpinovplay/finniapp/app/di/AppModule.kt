@@ -1,6 +1,7 @@
 package ru.larpinovplay.finniapp.app.di
 
 import org.koin.core.module.dsl.viewModel
+import ru.larpinovplay.finniapp.presentation.screens.adult.AdultViewModel
 import org.koin.dsl.module
 import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.InMemoryGameRepository
@@ -31,4 +32,5 @@ val appModule = module {
     viewModel { SavingsViewModel(get(), get()) }
     viewModel { ProgressViewModel(get(), get()) }
     viewModel { SettingsViewModel(get()) }
+    viewModel { AdultViewModel(get(), get(), get()) }
 }

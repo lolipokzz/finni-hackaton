@@ -67,6 +67,7 @@ fun PetModel3D(
             }
         },
         update = {
+            controller.setAnimations(idleAnimation, tapAnimation)
             controller.setModel(assetName, tintArgb)
             controller.setActive(active)
         },
@@ -76,8 +77,8 @@ fun PetModel3D(
 
 private class PetModelController(
     private val tintMaterial: String,
-    private val idleAnimation: String,
-    private val tapAnimation: String,
+    private var idleAnimation: String,
+    private var tapAnimation: String,
     private val cameraDistance: Float,
 ) {
     private var modelViewer: ModelViewer? = null
@@ -163,6 +164,15 @@ private class PetModelController(
         if (!active) pausedAtNanos = System.nanoTime()
         warmFrames = WARM_FRAMES
         requestFrame()
+    }
+
+    /** Контроллер переиспользуется, в том числе при переходе от прогрева к настоящему питомцу. */
+    fun setAnimations(idle: String, tap: String) {
+        if (idleAnimation == idle && tapAnimation == tap) return
+        idleAnimation = idle
+        tapAnimation = tap
+        resolveAnimations(modelViewer?.animator)
+        if (!active) pausedAtNanos = System.nanoTime()
     }
 
     fun playTapAnimation() {

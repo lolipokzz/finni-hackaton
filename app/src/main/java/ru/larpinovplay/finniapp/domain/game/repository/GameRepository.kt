@@ -41,6 +41,12 @@ interface GameRepository {
     /** Итог ответа или null, если задание сейчас недоступно. */
     suspend fun answerTask(task: Task, answer: TaskAnswer): TaskOutcome?
 
+    /** Удаляет игру целиком; настройки управляются отдельно. */
+    suspend fun resetProfile()
+
+    /** Заменяет текущую игру чистым тестовым профилем. */
+    suspend fun resetToDemo()
+
     suspend fun finishWeek(): WeekSummary
 }
 
