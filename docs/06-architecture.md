@@ -190,9 +190,53 @@ class HomeViewModel(private val repo: GameRepository, private val content: Conte
 
 ## Навигация
 
-Jetpack Navigation Compose, один `NavHost`, маршруты — `sealed class Route` (или type-safe
-routes с `@Serializable`). Стартовый маршрут выбирается по наличию состояния: `null` → `onboarding`,
-иначе `home`. Полный граф в [07-screens.md](07-screens.md#граф-навигации).
+Jetpack Navigation 3: один `NavDisplay` (`presentation/navigation/MainNavigation.kt`), маршруты —
+`@Serializable`-объекты, реализующие `NavKey` (`presentation/navigation/Routes.kt`). Back stack
+сохраняется при повороте и смерти процесса. Экраны получают данные и колбэки, а переходы
+между ними описаны только в `MainNavigation`. Итог задания и другие модальные окна — маршруты
+с `DialogSceneStrategy.dialog()`.
+
+У каждого экрана свой ViewModel (`koinViewModel()` внутри записи стека, живёт пока экран в стеке):
+`private val _state = MutableStateFlow(...)` + `val state = _state.asStateFlow()`, действия через
+`onAction`, разовые события (например, «задание принято») через `Channel` → `Flow`. Экран делится на
+`XScreen` (берёт ViewModel, знает про навигацию только колбэки) и stateless `XScreenContent(state, onAction)`.
+Общее состояние лежит не в ViewModel экрана, а в репозиториях (синглтоны Koin): `GameRepository`
+и `SettingsRepository`. Их интерфейсы и модели живут в `domain`, реализации (пока в памяти,
+позже DataStore/Room) — в `data`; ViewModel'ы подписываются на их `Flow`. В композиции остаётся только
+эфемерный ввод (текст в поле, шаг степпера, раскрытие карточки).
+
+Питомец — доменная модель `Pet` (`domain/pet`): имя, вид, `satiety`, `mood`, `growthPoints`; стадия и
+«очков до следующей» выводятся из очков роста и не хранятся. Правила изменения (`changeSatiety`,
+`changeMood`, `grow`) живут в самой модели. Питомец — часть игры и лежит в `GameSnapshot(state, pet)`
+вместе с `GameState`: один агрегат, одна запись, поэтому экран не увидит новые монеты со старой сытостью (два
+отдельных `Flow` через `combine` такое пропускали бы, даже с транзакцией в Room). В `UiState` кладём `pet: Pet`,
+а не копии его полей. У каждого экрана `UiState` и `Action` — отдельные файлы, не внутри `XScreen.kt`.
+
+Игра — чистые функции `GameEngine` в `domain/game/engine` (`(GameSnapshot, команда) → Transition`), без корутин
+и Android. `GameRepository` (интерфейс в `domain`, `InMemoryGameRepository` в `data`) отдаёт `snapshot: StateFlow<GameSnapshot?>` (null, пока нет питомца:
+игра начинается с `createPet`) и принимает команды `buy`, `deposit`, `chooseGoal`, `reachGoal`, `answerTask`, `finishWeek`; они идут по одной
+(`Mutex`), результат пишется снимком целиком. Экраны, что открываются после создания питомца, берут игру через
+`requireSnapshot()`. Справочники (`Content`: товары, цели, задания) — модели в `domain`
+без картинок, данные в `data/content`; иконки и подписи UI подбирает `presentation` по `id`
+(`ShopItem.icon`, `SavingsGoal.icon`). `AppSettings` и `SettingsRepository` (`observeSettings()`, `updateSettings { }`)
+тоже в `domain`; хранение в Room — позже, интерфейс не изменится.
+
+Текстов для ребёнка нет ни в `domain`, ни во ViewModel: они называют, что произошло, а слова берутся из контента.
+Домен отдаёт типизированные причины (`LedgerReason` в записи журнала, факты `WeekSummary` с `grew`), ViewModel —
+`HomeUiState.MoodExplanation` и `Tip`. Слой представления превращает их в текст функциями вроде `LedgerReason.text()`:
+шаблон берётся по `FeedbackKey` из `Feedback` (`assets/content/feedback.json`, разбор — `data/content/FeedbackContent.kt`),
+доступ из composable — через `LocalFeedback`, который задаёт `MainActivity`. Полноту ключей проверяют `Feedback`
+при создании и `FeedbackContentTest`. Всё, что читает assets и потому требует `Context`, вынесено в `assetsModule`, чтобы
+`appModule` поднимался в JVM-тесте (`AppModuleTest` достаёт все репозитории и ViewModel).
+
+3D-питомец (SurfaceView) живёт в `PetHost` над `NavDisplay`, а не внутри `Home`: он создаётся один раз,
+при уходе с главного экрана скрывается и ставится на паузу, при возврате продолжает с того же места.
+Главный экран лишь резервирует под него слот (`PetHostState`).
+
+Пока граф начинается с `Home`; выбор питомца идёт до него (`PetRoomScreen`: нет питомца →
+создание, есть → граф). Когда появятся `Onboarding`/`CreateProfile`, они станут маршрутами и
+стартовый ключ будет выбираться по наличию `GameState`. Полный граф в
+[07-screens.md](07-screens.md#граф-навигации).
 
 ## DI
 
@@ -205,7 +249,8 @@ routes с `@Serializable`). Стартовый маршрут выбираетс
 |---|---|
 | `kotlinx-serialization-json` | JSON контента и состояния |
 | `androidx.datastore:datastore` (не preferences) | хранение `GameState` |
-| `androidx.navigation:navigation-compose` | навигация |
+| `androidx.navigation3:navigation3-runtime`, `navigation3-ui` | навигация |
+| `androidx.lifecycle:lifecycle-viewmodel-navigation3` | ViewModel, привязанная к записи стека |
 | `androidx.lifecycle:lifecycle-viewmodel-compose` | `viewModel()` в Compose |
 | `kotlinx-coroutines-test`, `turbine` (тесты) | тесты Flow |
 

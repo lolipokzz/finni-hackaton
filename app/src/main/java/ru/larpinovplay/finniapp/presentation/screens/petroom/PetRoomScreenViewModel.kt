@@ -5,16 +5,14 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
-import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetMood
-import ru.larpinovplay.finniapp.domain.pet.repository.PetRepository
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 
 class PetRoomScreenViewModel(
-    private val repository: PetRepository
+    private val game: GameRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<PetRoomState>(PetRoomState.Loading)
@@ -36,8 +34,7 @@ class PetRoomScreenViewModel(
     private fun loadPet() {
         viewModelScope.launch {
             _state.value = PetRoomState.Loading
-            val pet = repository.getPet()
-            _state.value = if (pet != null) PetRoomState.Loaded(pet) else PetRoomState.Creation()
+            _state.value = if (game.snapshot.value != null) PetRoomState.Loaded else PetRoomState.Creation()
         }
     }
 
@@ -54,16 +51,8 @@ class PetRoomScreenViewModel(
 
         viewModelScope.launch {
             _state.value = creation.copy(isCreating = true)
-            val pet = repository.createPet(
-                Pet(
-                    name = creation.name,
-                    look = PetLook(species, color),
-                    mood = PetMood(value = 50),
-                    growthStage = PetGrowthStage.BABY,
-                    growthProgress = 0
-                )
-            )
-            _state.value = PetRoomState.Loaded(pet)
+            game.createPet(Pet.newborn(name = creation.name, look = PetLook(species, color)))
+            _state.value = PetRoomState.Loaded
         }
     }
 }
@@ -72,9 +61,8 @@ sealed interface PetRoomState {
 
     data object Loading : PetRoomState
 
-    data class Loaded(
-        val pet: Pet
-    ) : PetRoomState
+    /** Питомец уже есть; сам он живёт в репозитории, а не здесь. */
+    data object Loaded : PetRoomState
 
     data class Creation(
         val name: String = "",

@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -65,11 +66,13 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    // Compose Navigation
-    implementation(libs.androidx.navigation.compose)
+    // Navigation 3: граф описывается back stack'ом из @Serializable-ключей
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
 
     // Compose Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Room
@@ -80,6 +83,11 @@ dependencies {
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)
 
+    // Filament: 3D-модель питомца (glTF) и анимации
+    implementation(libs.filament.android)
+    implementation(libs.filament.gltfio)
+    implementation(libs.filament.utils)
+
     // Koin
     // Подключение BOM-платформы (управляет версиями всех модулей Koin)
     implementation(platform(libs.koin.bom))
@@ -89,7 +97,6 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
-    implementation(libs.koin.navigation)
 
     // Зависимости для тестирования
     testImplementation(platform(libs.koin.bom)) // BOM для тестовой конфигурации
