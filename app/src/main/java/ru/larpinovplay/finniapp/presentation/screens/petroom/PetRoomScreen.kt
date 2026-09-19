@@ -17,10 +17,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
+import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.navigation.MainNavigation
 
 @Composable
 fun PetRoomScreen(
+    petHost: PetHostState,
     modifier: Modifier = Modifier,
     viewModel: PetRoomScreenViewModel = koinViewModel()
 ) {
@@ -30,6 +32,7 @@ fun PetRoomScreen(
     PetRoomScreenContent(
         state = state,
         onAction = viewModel::onAction,
+        petHost = petHost,
         modifier = modifier
     )
 }
@@ -38,6 +41,7 @@ fun PetRoomScreen(
 fun PetRoomScreenContent(
     state: PetRoomState,
     onAction: (PetRoomScreenAction) -> Unit,
+    petHost: PetHostState,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -47,7 +51,7 @@ fun PetRoomScreenContent(
         when (state) {
             PetRoomState.Loading -> CircularProgressIndicator()
             is PetRoomState.Creation -> PetCreationContent(state, onAction)
-            is PetRoomState.Loaded -> MainNavigation()
+            is PetRoomState.Loaded -> MainNavigation(petHost)
         }
     }
 }

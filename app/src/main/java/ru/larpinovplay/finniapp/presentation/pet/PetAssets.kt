@@ -1,8 +1,10 @@
 package ru.larpinovplay.finniapp.presentation.pet
 
+import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
+import ru.larpinovplay.finniapp.presentation.components.PetSpec
 
 /**
  * Сопоставление вида питомца и стадии роста с 3D-моделью в assets.
@@ -22,3 +24,13 @@ fun PetLook.modelAsset(stage: PetGrowthStage): String? {
     }
     return "$folder/$file.glb"
 }
+
+/**
+ * Модель, которой прогревают отрисовку ещё до создания питомца (см. PetHostState.warmUp): вид питомца и стадия
+ * не важны, лишь бы материалы были теми же, что у настоящих моделей.
+ */
+val PetWarmUpSpec: PetSpec = PetSpec(
+    assetName = checkNotNull(PetLook(PetSpecies.BUNNY, PetColor.CORAL).modelAsset(PetGrowthStage.BABY)),
+    tintArgb = null,
+    animationsEnabled = false,
+)
