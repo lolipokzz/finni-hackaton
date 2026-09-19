@@ -16,6 +16,9 @@ import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
+import ru.larpinovplay.finniapp.domain.pet.model.PetColor
+import ru.larpinovplay.finniapp.domain.pet.model.PetLook
+import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.task.model.Task
@@ -71,6 +74,18 @@ class GameRepositoryImpl(
 
     override suspend fun finishWeek(): Result<WeekSummary, StorageError> =
         execute { GameEngine.finishWeek(it) }
+
+    override suspend fun resetProfile(): EmptyResult<StorageError> = mutex.withLock {
+        store.clear().onSuccess { _snapshot.value = null }
+    }
+
+    override suspend fun resetToDemo(): EmptyResult<StorageError> = mutex.withLock {
+        val demo = GameSnapshot(
+            GameEngine.newGame(startBalance).copy(demoMode = true),
+            Pet.newborn("Финни Демо", PetLook(PetSpecies.BUNNY, PetColor.MINT)),
+        )
+        persist(demo)
+    }
 
     private suspend fun <R> execute(command: (GameSnapshot) -> Transition<R>): Result<R, StorageError> =
         mutex.withLock {

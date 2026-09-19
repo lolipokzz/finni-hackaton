@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp
 
+import ru.larpinovplay.finniapp.presentation.screens.adult.AdultViewModel
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -96,6 +97,7 @@ class AppModuleTest {
         koin.get<SavingsViewModel>()
         koin.get<ProgressViewModel>()
         koin.get<SettingsViewModel>()
+        koin.get<AdultViewModel>()
         Unit
     }
 }

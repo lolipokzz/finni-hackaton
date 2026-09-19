@@ -2,9 +2,19 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="48" android:viewportHeight="48">
-    <path android:fillColor="#F2A900" android:pathData="M2,24 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0Z"/>
-    <path android:fillColor="#FFD447" android:pathData="M7,24 a17,17 0 1,0 34,0 a17,17 0 1,0 -34,0Z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M24.00,14.00 L26.65,20.36 L33.51,20.91 L28.28,25.39 L29.88,32.09 L24.00,28.50 L18.12,32.09 L19.72,25.39 L14.49,20.91 L21.35,20.36Z"/>
-    <path android:fillColor="#00000000" android:pathData="M13,13 a11,11 0 0 1 8,-4"/>
-    <path android:strokeColor="#FFF1A8" android:strokeWidth="3" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M13,15 a12,12 0 0 1 9,-6"/>
+    <!-- Стопка золотых монет с видимыми рёбрами. -->
+    <path android:fillColor="#DEA023" android:strokeColor="#A96B12" android:strokeWidth="1.5"
+        android:pathData="M4,30 L4,38 C4,46 34,46 34,38 L34,30Z"/>
+    <path android:fillColor="#FFDA62" android:strokeColor="#A96B12" android:strokeWidth="1.5"
+        android:pathData="M4,30 C4,22 34,22 34,30 C34,38 4,38 4,30Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#A96B12" android:strokeWidth="1.5"
+        android:pathData="M4,35 C4,43 34,43 34,35"/>
+    <!-- Монета анфас с отчётливым ободком и номиналом. -->
+    <path android:fillColor="#F2AE25" android:strokeColor="#A96B12" android:strokeWidth="1.5"
+        android:pathData="M27,2 A18,18 0,1 1,27,38 A18,18 0,1 1,27,2Z"/>
+    <path android:fillColor="#FFDB63" android:strokeColor="#FFECA9" android:strokeWidth="2"
+        android:pathData="M27,6 A14,14 0,1 1,27,34 A14,14 0,1 1,27,6Z"/>
+    <path android:fillColor="#00000000" android:strokeColor="#995A0B" android:strokeWidth="3.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M23,16 L27,12 L27,28 M23,28 L31,28"/>
 </vector>

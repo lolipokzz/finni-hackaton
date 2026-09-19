@@ -25,7 +25,7 @@ import org.koin.core.parameter.parametersOf
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeScreen
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
-import ru.larpinovplay.finniapp.presentation.screens.home.SectionStubScreen
+import ru.larpinovplay.finniapp.presentation.screens.adult.AdultScreen
 import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressScreen
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsScreen
@@ -106,7 +106,7 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                 entry<Settings> { SettingsScreen(onBack = backStack::goBack) }
 
                 entry<Adult> {
-                    SectionStubScreen(section = HomeSection.ADULT, onBack = backStack::goBack)
+                    AdultScreen(onBack = backStack::goBack)
                 }
             },
         )

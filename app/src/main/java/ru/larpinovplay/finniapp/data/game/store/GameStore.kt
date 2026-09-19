@@ -22,4 +22,7 @@ interface GameStore {
 
     /** Записывает [snapshot] вместо прежнего сохранения целиком. При ошибке прежнее сохранение остаётся. */
     suspend fun save(snapshot: GameSnapshot): EmptyResult<StorageError>
+
+    /** Стирает сохранение: следующая [load] вернёт Success(null). При ошибке прежнее сохранение остаётся. */
+    suspend fun clear(): EmptyResult<StorageError>
 }

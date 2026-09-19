@@ -59,6 +59,12 @@ interface GameRepository {
     suspend fun answerTask(task: Task, answer: TaskAnswer): Result<TaskOutcome?, StorageError>
 
     suspend fun finishWeek(): Result<WeekSummary, StorageError>
+
+    /** Удаляет игру целиком; настройки управляются отдельно. */
+    suspend fun resetProfile(): EmptyResult<StorageError>
+
+    /** Заменяет текущую игру чистым тестовым профилем. */
+    suspend fun resetToDemo(): EmptyResult<StorageError>
 }
 
 /** Игра для экранов, которые открываются только после создания питомца. */

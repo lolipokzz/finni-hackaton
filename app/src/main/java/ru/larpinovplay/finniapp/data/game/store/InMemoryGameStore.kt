@@ -15,4 +15,9 @@ class InMemoryGameStore(@Volatile private var saved: GameSnapshot? = null) : Gam
         saved = snapshot
         return EmptyDataSuccess
     }
+
+    override suspend fun clear(): EmptyResult<StorageError> {
+        saved = null
+        return EmptyDataSuccess
+    }
 }

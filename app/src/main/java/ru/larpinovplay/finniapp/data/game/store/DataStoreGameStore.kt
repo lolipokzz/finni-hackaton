@@ -50,6 +50,14 @@ class DataStoreGameStore private constructor(
         Result.Error(StorageError.WRITE_FAILED)
     }
 
+    override suspend fun clear(): EmptyResult<StorageError> = try {
+        dataStore.updateData { GameSaveFile() }
+        recovery.set(null)
+        EmptyDataSuccess
+    } catch (e: IOException) {
+        Result.Error(StorageError.WRITE_FAILED)
+    }
+
     companion object {
 
         /**

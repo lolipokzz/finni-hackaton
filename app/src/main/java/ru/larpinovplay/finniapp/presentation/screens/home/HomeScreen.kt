@@ -58,6 +58,8 @@ import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.components.PetSpec
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
+import ru.larpinovplay.finniapp.presentation.pet.idleAnimation
+import ru.larpinovplay.finniapp.presentation.pet.tapAnimation
 import ru.larpinovplay.finniapp.presentation.pet.modelAsset
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
@@ -109,22 +111,28 @@ fun HomeScreenContent(
             TopResourcesRow(state, onAction, onInfo = { onAction(HomeAction.ShowInfo(it)) })
 
 
-            // Питомец занимает всё место между шапкой и действиями; плашка недели и подсказка лежат поверх
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
+            // Боковой баланс находится вне SurfaceView: 3D-слой не перекрывает его и не перехватывает нажатия.
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-                PetArea(state, petHost, modifier = Modifier.align(Alignment.BottomCenter))
-                WeekLine(state, modifier = Modifier.align(Alignment.TopStart).padding(top = 8.dp))
-                state.tip?.let {
-                    TipBubble(
-                        text = it.text(),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = 8.dp)
+                Column(horizontalAlignment = Alignment.Start) {
+                    WeekLine(state)
+                    Spacer(Modifier.height(8.dp))
+                    StatusIcon(
+                        icon = R.drawable.ic_coin,
+                        label = "Монеты",
+                        value = state.balance,
+                        isMeter = false,
+                        modifier = Modifier.widthIn(min = 72.dp),
+                        onClick = { onAction(HomeAction.ShowInfo(HomeInfo.COINS)) },
                     )
                 }
+                state.tip?.let { TipBubble(text = it.text()) }
+            }
+            Box(Modifier.fillMaxWidth().weight(1f)) {
+                PetArea(state, petHost, modifier = Modifier.align(Alignment.BottomCenter))
             }
 
             Spacer(Modifier.height(6.dp))
@@ -172,11 +180,11 @@ private fun RoundIconButton(@DrawableRes icon: Int, contentDescription: String, 
         shape = CircleShape,
         color = FinniColors.Lavender,
         modifier = Modifier
-            .size(48.dp)
+            .size(60.dp)
             .shadow(6.dp, CircleShape, ambientColor = FinniColors.Navy.copy(alpha = 0.12f), spotColor = FinniColors.Navy.copy(alpha = 0.12f))
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Image(painterResource(icon), contentDescription = contentDescription, modifier = Modifier.size(22.dp))
+            Image(painterResource(icon), contentDescription = contentDescription, modifier = Modifier.size(42.dp))
         }
     }
 }
@@ -186,12 +194,14 @@ private fun RoundIconButton(@DrawableRes icon: Int, contentDescription: String, 
 @Composable
 private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit, onInfo: (HomeInfo) -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        RoundIconButton(R.drawable.ic_gear, "Настройки") {
-            onAction(HomeAction.OpenSection(HomeSection.SETTINGS))
+        Box(Modifier.weight(1f).height(84.dp).padding(bottom = 16.dp), contentAlignment = Alignment.Center) {
+            RoundIconButton(R.drawable.ic_gear, "Настройки") {
+                onAction(HomeAction.OpenSection(HomeSection.SETTINGS))
+            }
         }
         StatusIcon(
             icon = R.drawable.ic_apple,
@@ -207,16 +217,10 @@ private fun TopResourcesRow(state: HomeUiState, onAction: (HomeAction) -> Unit, 
             modifier = Modifier.weight(1f),
             onClick = { onInfo(HomeInfo.MOOD) }
         )
-        StatusIcon(
-            icon = R.drawable.ic_coin,
-            label = "Монеты",
-            value = state.balance,
-            isMeter = false,
-            modifier = Modifier.weight(1f),
-            onClick = { onInfo(HomeInfo.COINS) }
-        )
-        RoundIconButton(R.drawable.ic_lock, "Для взрослых") {
-            onAction(HomeAction.OpenSection(HomeSection.ADULT))
+        Box(Modifier.weight(1f).height(84.dp).padding(bottom = 16.dp), contentAlignment = Alignment.Center) {
+            RoundIconButton(R.drawable.ic_lock, "Для взрослых") {
+                onAction(HomeAction.OpenSection(HomeSection.ADULT))
+            }
         }
     }
 }
@@ -244,7 +248,7 @@ private fun StatusIcon(
     val description = if (isMeter) "$label: $amount из 100" else "$label: $amount"
     Surface(
         onClick = onClick,
-        modifier = modifier.padding(top = 12.dp).semantics {
+        modifier = modifier.semantics {
             contentDescription = if (low) "$description, мало" else description
         },
         shape = RoundedCornerShape(18.dp),
@@ -329,6 +333,8 @@ private fun PetArea(state: HomeUiState, petHost: PetHostState?, modifier: Modifi
             assetName = it,
             tintArgb = pet.look.color.argb,
             animationsEnabled = state.animationsEnabled,
+            idleAnimation = pet.look.idleAnimation,
+            tapAnimation = pet.look.tapAnimation,
         )
     }
     SideEffect { petHost?.spec = spec }

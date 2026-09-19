@@ -32,20 +32,30 @@ class PetCreationViewModel(
         }
     }
 
-    /** Ищет сохранённую игру: есть — сразу главный экран, нет — создание питомца, не открылось — повтор. */
+    /**
+     * Ищет сохранённую игру, а затем следит за ней: есть игра — главный экран, нет (в том числе после
+     * сброса профиля из родительского раздела, см. AdultViewModel) — создание питомца.
+     */
     private fun loadPet() {
         viewModelScope.launch {
             _state.value = PetCreationUiState.Loading
-            if (game.snapshot.value != null) {   // ViewModel создан заново, а игра в памяти уже загружена
-                _state.value = PetCreationUiState.Loaded
-                return@launch
-            }
-            _state.value = when (val loaded = game.load()) {
-                is Result.Success -> if (loaded.data != null) PetCreationUiState.Loaded else PetCreationUiState.Creation()
+            val notice = when (val loaded = game.load()) {
+                is Result.Success -> null
                 is Result.Error -> when (loaded.error) {
                     // Сохранение уже сброшено: игру не вернуть, начинаем заново, но говорим об этом
-                    StorageError.CORRUPTED, StorageError.INCOMPATIBLE_VERSION -> PetCreationUiState.Creation(notice = loaded.error)
-                    StorageError.READ_FAILED, StorageError.WRITE_FAILED -> PetCreationUiState.LoadFailed(loaded.error)
+                    StorageError.CORRUPTED, StorageError.INCOMPATIBLE_VERSION -> loaded.error
+                    StorageError.READ_FAILED, StorageError.WRITE_FAILED -> {
+                        _state.value = PetCreationUiState.LoadFailed(loaded.error)
+                        return@launch
+                    }
+                }
+            }
+            game.snapshot.collect { snapshot ->
+                _state.value = when {
+                    snapshot != null -> PetCreationUiState.Loaded
+                    // Игра уже сброшена и форма создания открыта: не затирать то, что человек успел ввести
+                    _state.value is PetCreationUiState.Creation -> _state.value
+                    else -> PetCreationUiState.Creation(notice = notice)
                 }
             }
         }

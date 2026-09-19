@@ -65,6 +65,7 @@ internal class FakeGameStore(var saved: GameSnapshot? = null) : GameStore {
 
     var loadFailure: StorageError? = null
     var saveFailure: StorageError? = null
+    var clearFailure: StorageError? = null
     val saves = mutableListOf<GameSnapshot>()
 
     override suspend fun load(): Result<GameSnapshot?, StorageError> =
@@ -74,6 +75,12 @@ internal class FakeGameStore(var saved: GameSnapshot? = null) : GameStore {
         saveFailure?.let { return Result.Error(it) }
         saved = snapshot
         saves += snapshot
+        return EmptyDataSuccess
+    }
+
+    override suspend fun clear(): EmptyResult<StorageError> {
+        clearFailure?.let { return Result.Error(it) }
+        saved = null
         return EmptyDataSuccess
     }
 }
