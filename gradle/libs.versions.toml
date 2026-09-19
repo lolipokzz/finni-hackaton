@@ -23,7 +23,7 @@ koin = "4.2.2"
 ksp = "2.3.10"
 room = "2.8.5"
 
-filament = "1.76.1"
+filament = "1.71.5"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
