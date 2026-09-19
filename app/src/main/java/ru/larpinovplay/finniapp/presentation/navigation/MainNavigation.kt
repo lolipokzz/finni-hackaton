@@ -1,6 +1,10 @@
 package ru.larpinovplay.finniapp.presentation.navigation
 
 import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -18,7 +22,6 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.larpinovplay.finniapp.presentation.components.PetHost
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeScreen
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
@@ -33,14 +36,12 @@ import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksScreen
 
 /**
  * Единственный NavDisplay приложения: здесь описан весь граф (см. [Routes.kt][Home]).
+ * Питомца рисует [PetHost] уровнем выше: сюда приходит только [petHost] с его состоянием.
  * Экран сам берёт свой ViewModel и ничего не знает о соседях; куда идти дальше, решается здесь.
  */
 @Composable
-fun MainNavigation(modifier: Modifier = Modifier) {
+fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
     val backStack = rememberNavBackStack(Home)
-    // Питомец живёт над графом, а не внутри Home: экран уходит из композиции, а модель должна остаться
-    val petHost = remember { PetHostState() }
-
     Box(modifier) {
         NavDisplay(
             backStack = backStack,
@@ -50,13 +51,17 @@ fun MainNavigation(modifier: Modifier = Modifier) {
                 rememberViewModelStoreNavEntryDecorator(),   // ViewModel экрана живёт, пока экран в стеке
             ),
             sceneStrategies = listOf(remember { DialogSceneStrategy<NavKey>() }),
+            // Только затухание, без сдвига: SurfaceView питомца не следует за анимацией Compose, а стандартные
+            // 0.7 с перехода держат кнопки неактивными и заставляют ждать питомца
+            transitionSpec = { FadeTransition },
+            popTransitionSpec = { FadeTransition },
+            predictivePopTransitionSpec = { FadeTransition },
             entryProvider = entryProvider {
                 entry<Home> {
-                    // Питомца показываем, только когда Home стоит на месте: SurfaceView не следует за анимацией перехода
+                    // Питомец виден, пока Home наверху или становится верхним; уход с Home скрывает его сразу
                     val transition = LocalNavAnimatedContentScope.current.transition
-                    val settled = transition.currentState == EnterExitState.Visible &&
-                        transition.targetState == EnterExitState.Visible
-                    SideEffect { petHost.shown = settled }
+                    val visible = transition.targetState == EnterExitState.Visible
+                    SideEffect { petHost.shown = visible }
                     DisposableEffect(Unit) { onDispose { petHost.shown = false } }
 
                     HomeScreen(
@@ -105,9 +110,12 @@ fun MainNavigation(modifier: Modifier = Modifier) {
                 }
             },
         )
-        PetHost(petHost)
     }
 }
+
+private const val FADE_MILLIS = 150
+
+private val FadeTransition = fadeIn(tween(FADE_MILLIS)) togetherWith fadeOut(tween(FADE_MILLIS))
 
 /** Открыть [route]; повторный тап по той же кнопке не кладёт в стек второй такой же экран. */
 private fun NavBackStack<NavKey>.goTo(route: NavKey) {
