@@ -21,7 +21,7 @@ internal object GameSaveSerializer : Serializer<GameSaveFile> {
     override val defaultValue: GameSaveFile = GameSaveFile()
 
     override suspend fun readFrom(input: InputStream): GameSaveFile {
-        val text = input.readBytes().decodeToString()
+        val text = withContext(Dispatchers.IO) { input.readBytes().decodeToString() }
         // Версия читается отдельно и первой: иначе смена формата выглядела бы как повреждение файла
         val version = decode<GameSaveVersion>(text).version
         if (version != GAME_SAVE_VERSION) {
