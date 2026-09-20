@@ -13,6 +13,7 @@ import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 class ShopViewModel(
     private val game: GameRepository,
@@ -54,7 +55,9 @@ class ShopViewModel(
         val item = _state.value.pending ?: return
         _state.update { it.copy(pending = null) }   // диалог закрываем сразу: повторный тап не купит дважды
         viewModelScope.launch {
-            val feedback = when (val result = game.buy(item)) {
+            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+            val result = game.buy(item).dataOrNull() ?: return@launch
+            val feedback = when (result) {
                 is PurchaseResult.Success -> PurchaseFeedback.Bought(item, result.balanceAfter)
                 is PurchaseResult.NotEnough -> PurchaseFeedback.NotEnough(
                     item = item,

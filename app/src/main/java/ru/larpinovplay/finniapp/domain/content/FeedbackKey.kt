@@ -29,6 +29,12 @@ enum class FeedbackKey(val id: String) {
 
     DEPOSIT_REJECTED("deposit.rejected"),
 
+    // Сбои сохранения (StorageError)
+    STORAGE_READ_FAILED("storage.read_failed"),
+    STORAGE_WRITE_FAILED("storage.write_failed"),
+    STORAGE_CORRUPTED("storage.corrupted"),
+    STORAGE_INCOMPATIBLE("storage.incompatible"),
+
     // Темы заданий
     TOPIC_BUDGET("topic.budget"),
     TOPIC_SAVINGS("topic.savings"),

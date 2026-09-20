@@ -14,6 +14,7 @@ import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
+import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 class SavingsViewModel(
     private val game: GameRepository,
@@ -39,7 +40,8 @@ class SavingsViewModel(
             SavingsAction.DismissSwitch -> _state.update { it.copy(switchTo = null) }
             is SavingsAction.Deposit -> deposit(action.amount)
             SavingsAction.ReachGoalClicked -> viewModelScope.launch {
-                val reached = game.reachGoal()
+                // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+                val reached = game.reachGoal().dataOrNull()
                 _state.update { it.copy(reached = reached) }
             }
             SavingsAction.DismissReached -> _state.update { it.copy(reached = null) }
@@ -64,7 +66,8 @@ class SavingsViewModel(
 
     private fun deposit(amount: Int) {
         viewModelScope.launch {
-            val rejected = game.deposit(amount) as? DepositResult.Rejected
+            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+            val rejected = game.deposit(amount).dataOrNull() as? DepositResult.Rejected
             _state.update { it.copy(depositError = rejected) }
         }
     }

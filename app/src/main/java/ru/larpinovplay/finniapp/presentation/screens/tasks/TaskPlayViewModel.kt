@@ -10,6 +10,7 @@ import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
+import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 /** Прохождение одного задания. Само задание не меняется, поэтому состояния нет, есть только разовое событие. */
 class TaskPlayViewModel(
@@ -37,7 +38,8 @@ class TaskPlayViewModel(
         if (submitted) return   // двойной тап по «Готово» не должен засчитать ответ дважды
         submitted = true
         viewModelScope.launch {
-            _effects.send(TaskPlayEffect.Completed(task.id, game.answerTask(task, answer)))
+            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+            _effects.send(TaskPlayEffect.Completed(task.id, game.answerTask(task, answer).dataOrNull()))
         }
     }
 }

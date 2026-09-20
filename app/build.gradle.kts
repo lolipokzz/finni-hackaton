@@ -75,6 +75,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    // DataStore: типизированный, с JSON-сериализатором на kotlinx.serialization (см. docs/06-architecture.md)
+    implementation(libs.androidx.datastore)
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
