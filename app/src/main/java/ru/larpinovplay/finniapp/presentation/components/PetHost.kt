@@ -29,7 +29,7 @@ data class PetSpec(
     val assetName: String,
     val tintArgb: Long?,
     val animationsEnabled: Boolean,
-    val idleAnimation: String = "Idle",
+    val idleAnimation: String? = "Idle",
     val tapAnimation: String = "Wave",
 )
 
@@ -113,7 +113,7 @@ fun PetHost(
             tintArgb = spec?.tintArgb,
             cameraDistance = cameraDistance,
             animationsEnabled = spec?.animationsEnabled ?: true,
-            idleAnimation = spec?.idleAnimation ?: "Idle",
+            idleAnimation = spec?.idleAnimation,
             tapAnimation = spec?.tapAnimation ?: "Wave",
             active = state.shown,
             modifier = Modifier
