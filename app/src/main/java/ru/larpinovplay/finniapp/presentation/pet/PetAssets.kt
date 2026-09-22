@@ -9,13 +9,15 @@ import ru.larpinovplay.finniapp.presentation.components.PetSpec
 /**
  * Сопоставление вида питомца и стадии роста с 3D-моделью в assets.
  * Модели лежат в папке по виду: assets/<species>/{baby,teen,adult}.glb.
+ * Кот временно использует cat.glb на всех стадиях роста.
  * Цвет питомца в файл не входит: материал "Main" перекрашивается программно в PetColor.
  * Возвращает null, если для вида модели пока нет — тогда UI рисует запасной вариант.
  */
 fun PetLook.modelAsset(stage: PetGrowthStage): String? {
     val folder = when (species) {
         PetSpecies.BUNNY -> "bunny"
-        PetSpecies.CAT, PetSpecies.DRAGON -> return null
+        PetSpecies.CAT -> return "cat/cat.glb"
+        PetSpecies.DRAGON -> return null
     }
     val file = when (stage) {
         PetGrowthStage.BABY -> "baby"
@@ -24,6 +26,13 @@ fun PetLook.modelAsset(stage: PetGrowthStage): String? {
     }
     return "$folder/$file.glb"
 }
+
+/** Имена клипов из GLB: ожидание зациклено, приветствие запускается по нажатию. */
+val PetLook.idleAnimation: String?
+    get() = "Idle"
+
+val PetLook.tapAnimation: String
+    get() = if (species == PetSpecies.CAT) "Greeting" else "Wave"
 
 /**
  * Модель, которой прогревают отрисовку ещё до создания питомца (см. PetHostState.warmUp): вид питомца и стадия

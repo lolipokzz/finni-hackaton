@@ -12,6 +12,7 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
  * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine][ru.larpinovplay.finniapp.domain.game.engine.GameEngine].
  */
 data class GameState(
+    val demoMode: Boolean = false,
     val balance: Int = 0,
     val savings: Int = 0,
     val week: Int = 1,

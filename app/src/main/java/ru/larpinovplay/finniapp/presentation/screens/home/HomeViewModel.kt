@@ -15,6 +15,7 @@ import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
+import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 /**
  * Состояние главного экрана: собирает [HomeUiState] из питомца, игры и настроек.
@@ -46,7 +47,8 @@ class HomeViewModel(
     fun onAction(action: HomeAction) {
         when (action) {
             HomeAction.FinishWeek -> viewModelScope.launch {
-                val summary = game.finishWeek()
+                // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+                val summary = game.finishWeek().dataOrNull()
                 _state.update { it?.copy(weekSummary = summary) }
             }
             HomeAction.DismissWeekSummary -> _state.update { it?.copy(weekSummary = null) }
@@ -67,6 +69,7 @@ class HomeViewModel(
                 game.purchases.isNotEmpty() -> HomeUiState.MoodExplanation.Purchased(game.purchases.last().name)
                 else -> HomeUiState.MoodExplanation.Waiting
             },
+            demoMode = game.demoMode,
             balance = game.balance,
             savings = game.savings,
             goal = game.goal?.let { HomeUiState.Goal(name = it.name, cost = it.cost) },

@@ -17,7 +17,7 @@ import ru.larpinovplay.finniapp.presentation.components.PetHost
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.pet.PetWarmUpSpec
-import ru.larpinovplay.finniapp.presentation.screens.petroom.PetRoomScreen
+import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationScreen
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
                     val petHost = remember { PetHostState(warmUp = PetWarmUpSpec) }
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         Box(Modifier.fillMaxSize().padding(innerPadding)) {
-                            PetRoomScreen(petHost = petHost)
+                            PetCreationScreen(petHost = petHost)
                             PetHost(petHost)
                         }
                     }

@@ -20,7 +20,7 @@ import java.nio.ByteBuffer
 /**
  * Показывает glTF-модель питомца из assets и анимирует её.
  *
- * - По кругу проигрывается [idleAnimation].
+ * - По кругу проигрывается [idleAnimation]; если его нет, показывается первый кадр приветствия.
  * - По нажатию один раз проигрывается [tapAnimation], затем снова [idleAnimation].
  * - [tintArgb] перекрашивает материал [tintMaterial] модели в цвет питомца; null — оставить как в файле.
  * - [cameraDistance] — расстояние камеры до модели. Модель вписана в куб со стороной 2,
@@ -47,7 +47,7 @@ fun PetModel3D(
     modifier: Modifier = Modifier,
     tintArgb: Long? = null,
     tintMaterial: String = "Main",
-    idleAnimation: String = "Idle",
+    idleAnimation: String? = "Idle",
     tapAnimation: String = "Wave",
     cameraDistance: Float = 3.5f,
     animationsEnabled: Boolean = true,
@@ -67,6 +67,7 @@ fun PetModel3D(
             }
         },
         update = {
+            controller.setAnimations(idleAnimation, tapAnimation)
             controller.setModel(assetName, tintArgb)
             controller.setActive(active)
         },
@@ -76,8 +77,8 @@ fun PetModel3D(
 
 private class PetModelController(
     private val tintMaterial: String,
-    private val idleAnimation: String,
-    private val tapAnimation: String,
+    private var idleAnimation: String?,
+    private var tapAnimation: String,
     private val cameraDistance: Float,
 ) {
     private var modelViewer: ModelViewer? = null
@@ -165,6 +166,15 @@ private class PetModelController(
         requestFrame()
     }
 
+    /** Контроллер переиспользуется, в том числе при переходе от прогрева к настоящему питомцу. */
+    fun setAnimations(idle: String?, tap: String) {
+        if (idleAnimation == idle && tapAnimation == tap) return
+        idleAnimation = idle
+        tapAnimation = tap
+        resolveAnimations(modelViewer?.animator)
+        if (!active) pausedAtNanos = System.nanoTime()
+    }
+
     fun playTapAnimation() {
         if (tapIndex < 0 || !animationsEnabled) return
         switchTo(tapIndex, System.nanoTime())
@@ -227,7 +237,7 @@ private class PetModelController(
     private fun resolveAnimations(animator: Animator?) {
         if (animator == null) return
         val names = (0 until animator.animationCount).map { animator.getAnimationName(it) }
-        idleIndex = names.indexOf(idleAnimation).takeIf { it >= 0 } ?: 0
+        idleIndex = names.indexOf(idleAnimation)
         tapIndex = names.indexOf(tapAnimation)
         switchTo(idleIndex, System.nanoTime())
     }
@@ -259,12 +269,11 @@ private class PetModelController(
     }
 
     private fun advance(animator: Animator, frameTimeNanos: Long) {
-        if (animator.animationCount == 0 || currentIndex < 0) return
-        if (!animationsEnabled) {
+        if (animator.animationCount == 0) return
+        if (!animationsEnabled || currentIndex < 0) {
             // Замираем в первом кадре покоя; время не копится, чтобы после включения не было рывка
-            animator.applyAnimation(idleIndex, 0f)
-            animator.updateBoneMatrices()
-            animationStartNanos = frameTimeNanos
+            applyRestPose(animator)
+            switchTo(idleIndex, frameTimeNanos)
             return
         }
         // Метка кадра бывает чуть раньше момента запуска анимации: отрицательного времени не бывает
@@ -273,10 +282,21 @@ private class PetModelController(
         if (currentIndex != idleIndex && elapsed >= duration) {
             // Разовая анимация закончилась — возвращаемся в покой
             switchTo(idleIndex, frameTimeNanos)
+            if (idleIndex < 0) {
+                applyRestPose(animator)
+                return
+            }
             elapsed = 0f
         }
         val time = if (currentIndex == idleIndex && duration > 0f) elapsed % duration else elapsed
         animator.applyAnimation(currentIndex, time)
+        animator.updateBoneMatrices()
+    }
+
+    /** Если отдельного idle нет, приветствие не зацикливаем, а оставляем его первый кадр. */
+    private fun applyRestPose(animator: Animator) {
+        val poseIndex = idleIndex.takeIf { it >= 0 } ?: tapIndex.takeIf { it >= 0 } ?: 0
+        animator.applyAnimation(poseIndex, 0f)
         animator.updateBoneMatrices()
     }
 

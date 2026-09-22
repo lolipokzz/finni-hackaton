@@ -2,9 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.androidx.room)
-
     alias(libs.plugins.kotlin.serialization)
 }
 
@@ -44,10 +41,6 @@ android {
     }
 }
 
-room {
-    schemaDirectory("$projectDir/schemas")
-}
-
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -75,10 +68,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // Room
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
+    // DataStore: типизированный, с JSON-сериализатором на kotlinx.serialization (см. docs/06-architecture.md)
+    implementation(libs.androidx.datastore)
 
     // Kotlinx Serialization
     implementation(libs.kotlinx.serialization.json)

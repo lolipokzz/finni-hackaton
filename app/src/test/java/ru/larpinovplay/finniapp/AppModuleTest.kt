@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp
 
+import ru.larpinovplay.finniapp.presentation.screens.adult.AdultViewModel
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,6 +19,9 @@ import org.koin.dsl.module
 import ru.larpinovplay.finniapp.app.di.appModule
 import ru.larpinovplay.finniapp.data.content.FEEDBACK_ASSET
 import ru.larpinovplay.finniapp.data.content.parseFeedback
+import ru.larpinovplay.finniapp.data.game.store.GameStore
+import ru.larpinovplay.finniapp.data.game.store.InMemoryGameStore
+import ru.larpinovplay.finniapp.data.settings.InMemorySettingsRepository
 import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.content.Feedback
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
@@ -27,7 +31,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeViewModel
-import ru.larpinovplay.finniapp.presentation.screens.petroom.PetRoomScreenViewModel
+import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationViewModel
 import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressViewModel
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsViewModel
@@ -47,7 +51,13 @@ class AppModuleTest {
         single { parseFeedback(File("src/main/assets/$FEEDBACK_ASSET").readText()) }
     }
 
-    private val koin: Koin = koinApplication { modules(appModule, testAssetsModule) }.koin
+    // storageModule (файлы на диске, нужен Context) подменён хранилищами в памяти
+    private val testStorageModule = module {
+        single<GameStore> { InMemoryGameStore() }
+        single<SettingsRepository> { InMemorySettingsRepository() }
+    }
+
+    private val koin: Koin = koinApplication { modules(appModule, testAssetsModule, testStorageModule) }.koin
 
     /** ViewModel запускает корутины в init на Dispatchers.Main, а его в JVM-тесте нет. */
     @Before
@@ -71,8 +81,8 @@ class AppModuleTest {
     }
 
     @Test
-    fun petRoomResolvesBeforeGameStarts() {
-        koin.get<PetRoomScreenViewModel>()
+    fun petCreationResolvesBeforeGameStarts() {
+        koin.get<PetCreationViewModel>()
     }
 
     /** Остальные экраны открываются только после создания питомца, поэтому и в тесте игра сначала начата. */
@@ -87,6 +97,7 @@ class AppModuleTest {
         koin.get<SavingsViewModel>()
         koin.get<ProgressViewModel>()
         koin.get<SettingsViewModel>()
+        koin.get<AdultViewModel>()
         Unit
     }
 }
