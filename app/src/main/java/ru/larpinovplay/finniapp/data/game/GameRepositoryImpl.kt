@@ -8,6 +8,8 @@ import kotlinx.coroutines.sync.withLock
 import ru.larpinovplay.finniapp.data.game.store.GameStore
 import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
 import ru.larpinovplay.finniapp.domain.game.engine.GameRules
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
+import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.ConfirmPlanResult
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
@@ -44,12 +46,14 @@ import java.time.LocalDate
  * строго по одной, чтобы два быстрых нажатия не породили гонку чтения и записи; ожидание записи (единицы
  * миллисекунд) на них тоже лежит.
  *
- * Сегодняшнюю дату для правил недели берёт из [clock]; в тестах его подменяют.
+ * Сегодняшнюю дату для правил недели берёт из [clock]; в тестах его подменяют. [adventures] — приключения из
+ * контента: от них зависит, можно ли закончить неделю.
  */
 class GameRepositoryImpl(
     private val store: GameStore,
     private val startBalance: Int = GameRules.START_BALANCE,
     private val clock: Clock = Clock.systemDefaultZone(),
+    private val adventures: List<Adventure> = emptyList(),
 ) : GameRepository {
 
     private val _snapshot = MutableStateFlow<GameSnapshot?>(null)
@@ -87,10 +91,13 @@ class GameRepositoryImpl(
     override suspend fun confirmPlan(plan: BudgetPlan): Result<ConfirmPlanResult, StorageError> =
         execute { GameEngine.confirmPlan(it, plan) }
 
-    override fun finishBlock(): FinishBlock? = _snapshot.value?.state?.finishBlock(today())
+    override suspend fun completeAdventure(adventure: Adventure, mistakes: Int): Result<AdventureResult?, StorageError> =
+        execute { GameEngine.completeAdventure(it, adventure, mistakes, adventures) }
+
+    override fun finishBlock(): FinishBlock? = _snapshot.value?.state?.finishBlock(today(), adventures)
 
     override suspend fun finishWeek(): Result<FinishWeekResult, StorageError> =
-        execute { GameEngine.finishWeek(it, today()) }
+        execute { GameEngine.finishWeek(it, today(), adventures) }
 
     override suspend fun resetProfile(): EmptyResult<StorageError> = mutex.withLock {
         store.clear().onSuccess { _snapshot.value = null }

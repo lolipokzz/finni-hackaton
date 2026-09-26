@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
@@ -54,18 +55,20 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 @Composable
 fun TasksScreen(
     onOpenTask: (Task) -> Unit,
+    onOpenAdventure: (Adventure) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TasksViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    TasksScreenContent(state = state, onOpenTask = onOpenTask, onBack = onBack, modifier = modifier)
+    TasksScreenContent(state = state, onOpenTask = onOpenTask, onOpenAdventure = onOpenAdventure, onBack = onBack, modifier = modifier)
 }
 
 @Composable
 fun TasksScreenContent(
     state: TasksUiState,
     onOpenTask: (Task) -> Unit,
+    onOpenAdventure: (Adventure) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -78,6 +81,8 @@ fun TasksScreenContent(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             item { Header(onBack) }
+            state.adventure?.let { adventure -> item { AdventureCard(adventure) { onOpenAdventure(adventure) } } }
+            if (state.adventure == null && state.adventureDone) item { AdventureDoneCard() }
             item {
                 Text(
                     "На этой неделе: ${state.doneThisWeek} из ${state.perWeek} заданий",
@@ -97,6 +102,40 @@ fun TasksScreenContent(
             item { Spacer(Modifier.height(12.dp)) }
         }
     }
+}
+
+// ---------- Приключение недели ----------
+
+@Composable
+private fun AdventureCard(adventure: Adventure, onOpen: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
+    Surface(
+        onClick = onOpen,
+        shape = shape,
+        color = FinniColors.CardPeach,
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(6.dp, shape, ambientColor = FinniColors.Navy.copy(alpha = 0.15f), spotColor = FinniColors.Navy.copy(alpha = 0.15f)),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Text("Приключение недели", style = MaterialTheme.typography.labelLarge, color = FinniColors.NavyMuted)
+            Text(adventure.title, style = MaterialTheme.typography.titleLarge)
+            Text(adventure.intro, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+            Button(onClick = onOpen, shape = RoundedCornerShape(16.dp), modifier = Modifier.padding(top = 10.dp).height(48.dp)) {
+                Text("Начать", style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdventureDoneCard() {
+    Text(
+        "✓ Приключение недели пройдено. Следующее — на новой неделе",
+        style = MaterialTheme.typography.bodyLarge,
+        color = FinniColors.NavyMuted,
+        modifier = Modifier.padding(start = 6.dp),
+    )
 }
 
 // ---------- Список ----------

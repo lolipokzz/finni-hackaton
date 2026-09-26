@@ -5,6 +5,7 @@
   "ledger.withdraw": "Из копилки",
   "ledger.goal": "Цель: {goal}",
   "ledger.task": "Задание: {task}",
+  "ledger.adventure": "Приключение: {adventure}",
   "ledger.week_income": "Карманные деньги",
 
   "period.a_ok": "Ты купил еду — Финни сыт",
@@ -17,6 +18,7 @@
   "stage.up": "Финни подрос! Это потому, что ты хорошо решаешь",
 
   "finish.no_plan": "Сначала разложи монеты на неделю",
+  "finish.no_adventure": "На этой неделе тебя ждёт приключение. Оно в разделе «Задания»",
   "finish.same_day": "Эта неделя уже прожита. Приходи завтра — начнётся новая, с карманными деньгами",
 
   "plan.need": "Финни на еду нужно хотя бы {n}",
@@ -43,6 +45,20 @@
   "storage.write_failed": "Не получилось сохранить игру. Проверь, есть ли на устройстве свободное место",
   "storage.corrupted": "Сохранение испортилось, поэтому начнём заново",
   "storage.incompatible": "Сохранение от другой версии игры, поэтому начнём заново",
+
+  "adventure.pay_exact": "Ровно без сдачи — продавцу ничего не нужно возвращать!",
+  "adventure.pay_change": "Хватает, и лишнего нет. Ты дал {paid}, продавец вернёт сдачу",
+  "adventure.pay_not_enough": "Не хватает {n}. Добавь ещё",
+  "adventure.pay_extra": "Хватит и без {coin}: лишнее можно оставить себе",
+  "adventure.change_ok": "Верно! {paid} − {price} = {change}",
+  "adventure.change_wrong": "Посчитаем вместе: {paid} − {price} = {change}. Можно считать от {price} до {paid}",
+  "adventure.change_none": "Ты заплатил ровно {price}, поэтому сдачи нет — считать нечего",
+  "adventure.basket_fits": "Хватает! Потратишь {total}, и ещё {left} останется",
+  "adventure.basket_over": "Не хватает {n}: выбрано больше, чем есть. Убери что-нибудь",
+  "adventure.basket_missing": "Не забудь главное: {item}",
+  "adventure.done_perfect": "Всё без ошибок!",
+  "adventure.done_mistakes": "Были ошибки, но ты разобрался — это главное",
+  "adventure.replay": "Это приключение уже пройдено, поэтому монет за него нет",
 
   "topic.budget": "Планирую",
   "topic.savings": "Коплю",

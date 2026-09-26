@@ -144,7 +144,7 @@ class HomeViewModel(
                 else -> HomeUiState.Tip.SaveFor(game.goal.name)
             },
             animationsEnabled = settings.animationsEnabled,
-            suggestedSection = HomeSection.TASKS.takeIf { activeTask != null },
+            suggestedSection = HomeSection.TASKS.takeIf { activeTask != null || finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED },
             info = current?.info,
             weekSummary = current?.weekSummary,
             finishBlock = finishBlock,

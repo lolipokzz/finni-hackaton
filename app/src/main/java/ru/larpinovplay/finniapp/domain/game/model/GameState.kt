@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.domain.game.model
 
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
@@ -29,6 +30,7 @@ data class GameState(
     val withdrawalsThisWeek: List<Int> = emptyList(),
     val taskResults: List<TaskResult> = emptyList(),
     val tasksDoneThisWeek: Int = 0,
+    val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),
 ) {
     val foodCovered: Boolean get() = purchases.any { it.category == ShopCategory.MANDATORY }
@@ -49,9 +51,26 @@ data class GameState(
         get() = ledger.filter { it.week == week && (it.reason == LedgerReason.WeekIncome || it.reason == LedgerReason.StartCoins) }
             .sumOf { it.balanceDelta }
 
-    /** Почему неделю сейчас нельзя закончить, или null, если можно. [today] — сегодняшняя дата устройства. */
-    fun finishBlock(today: LocalDate): FinishBlock? = when {
+    /** Приключение этой недели уже пройдено. */
+    val adventureDoneThisWeek: Boolean get() = adventureResults.any { it.week == week }
+
+    /**
+     * Приключение, которое ждёт на этой неделе: первое непройденное из [adventures] по порядку.
+     * null — на этой неделе приключение уже пройдено или все пройдены. Непройденное не сгорает и ждёт дальше.
+     */
+    fun adventureOfWeek(adventures: List<Adventure>): Adventure? {
+        if (adventureDoneThisWeek) return null
+        val done = adventureResults.map { it.adventureId }.toSet()
+        return adventures.firstOrNull { it.id !in done }
+    }
+
+    /**
+     * Почему неделю сейчас нельзя закончить, или null, если можно. [today] — сегодняшняя дата устройства,
+     * [adventures] — приключения из контента.
+     */
+    fun finishBlock(today: LocalDate, adventures: List<Adventure> = emptyList()): FinishBlock? = when {
         phase != PeriodPhase.ACTIVE -> FinishBlock.PLAN_NOT_CONFIRMED
+        adventureOfWeek(adventures) != null -> FinishBlock.ADVENTURE_NOT_PLAYED
         // Не больше недели в день. Если часы перевели назад, не запираем игру: блокирует только тот же день
         !demoMode && today == periodStartedOn -> FinishBlock.SAME_DAY
         else -> null

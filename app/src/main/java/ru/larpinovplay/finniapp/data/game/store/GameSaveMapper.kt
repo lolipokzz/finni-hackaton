@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.data.game.store
 
+import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
@@ -36,6 +37,7 @@ private fun GameState.toDto() = GameStateDto(
     withdrawalsThisWeek = withdrawalsThisWeek,
     taskResults = taskResults.map { it.toDto() },
     tasksDoneThisWeek = tasksDoneThisWeek,
+    adventureResults = adventureResults.map { it.toDto() },
     history = history.map { it.toDto() },
 )
 
@@ -56,6 +58,7 @@ private fun GameStateDto.toDomain() = GameState(
     withdrawalsThisWeek = withdrawalsThisWeek,
     taskResults = taskResults.map { it.toDomain() },
     tasksDoneThisWeek = tasksDoneThisWeek,
+    adventureResults = adventureResults.map { it.toDomain() },
     history = history.map { it.toDomain() },
 )
 
@@ -98,6 +101,7 @@ private fun LedgerReason.toDto(): LedgerReasonDto = when (this) {
     LedgerReason.Withdraw -> LedgerReasonDto.Withdraw
     is LedgerReason.GoalReached -> LedgerReasonDto.GoalReached(goalName)
     is LedgerReason.TaskReward -> LedgerReasonDto.TaskReward(taskTitle)
+    is LedgerReason.AdventureReward -> LedgerReasonDto.AdventureReward(adventureTitle)
     LedgerReason.WeekIncome -> LedgerReasonDto.WeekIncome
 }
 
@@ -109,6 +113,7 @@ private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
     LedgerReasonDto.Withdraw -> LedgerReason.Withdraw
     is LedgerReasonDto.GoalReached -> LedgerReason.GoalReached(goalName)
     is LedgerReasonDto.TaskReward -> LedgerReason.TaskReward(taskTitle)
+    is LedgerReasonDto.AdventureReward -> LedgerReason.AdventureReward(adventureTitle)
     LedgerReasonDto.WeekIncome -> LedgerReason.WeekIncome
 }
 
@@ -161,3 +166,7 @@ private fun WeekSummaryDto.toDomain() = WeekSummary(
 private fun BudgetPlan.toDto() = BudgetPlanDto(mandatory, optional, savings)
 
 private fun BudgetPlanDto.toDomain() = BudgetPlan(mandatory, optional, savings)
+
+private fun AdventureResult.toDto() = AdventureResultDto(adventureId, week, perfect, reward)
+
+private fun AdventureResultDto.toDomain() = AdventureResult(adventureId, week, perfect, reward)

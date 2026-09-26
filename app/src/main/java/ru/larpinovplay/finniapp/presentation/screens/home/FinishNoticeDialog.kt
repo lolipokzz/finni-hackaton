@@ -19,6 +19,7 @@ import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 fun FinishNoticeDialog(reason: FinishBlock, onDismiss: () -> Unit) {
     val key = when (reason) {
         FinishBlock.PLAN_NOT_CONFIRMED -> FeedbackKey.FINISH_NO_PLAN
+        FinishBlock.ADVENTURE_NOT_PLAYED -> FeedbackKey.FINISH_NO_ADVENTURE
         FinishBlock.SAME_DAY -> FeedbackKey.FINISH_SAME_DAY
     }
     AlertDialog(

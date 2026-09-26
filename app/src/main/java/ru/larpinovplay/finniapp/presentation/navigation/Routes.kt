@@ -9,7 +9,8 @@ import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
  * Граф навигации (docs/07-screens.md#граф-навигации), после того как питомец создан:
  *
  * ```
- * Home ─┬─ Tasks ── TaskPlay ── TaskResult (диалог) ── назад на Tasks
+ * Home ─┬─ Tasks ─┬─ TaskPlay ── TaskResult (диалог) ── назад на Tasks
+ *       │         └─ AdventurePlay ── назад на Tasks
  *       ├─ Shop ── (нехватка монет) ── Tasks
  *       ├─ Savings
  *       ├─ Progress
@@ -33,6 +34,10 @@ data class TaskPlay(val taskId: String) : NavKey
 /** Итог задания. Показывается диалогом поверх [Tasks], поэтому несёт результат в самом ключе. */
 @Serializable
 data class TaskResult(val taskId: String, val outcome: TaskOutcome) : NavKey
+
+/** Приключение недели: сюжет по шагам, итог показывается на том же экране. */
+@Serializable
+data class AdventurePlay(val adventureId: String) : NavKey
 
 @Serializable
 data object Shop : NavKey

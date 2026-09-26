@@ -16,5 +16,6 @@ sealed interface LedgerReason {
     data object Withdraw : LedgerReason
     data class GoalReached(val goalName: String) : LedgerReason
     data class TaskReward(val taskTitle: String) : LedgerReason
+    data class AdventureReward(val adventureTitle: String) : LedgerReason
     data object WeekIncome : LedgerReason
 }

@@ -30,5 +30,7 @@ class TasksViewModel(
         items = content.tasks.map { TaskItem(it, game.taskStatus(it)) },
         doneThisWeek = game.tasksDoneThisWeek,
         perWeek = game.tasksPerWeek,
+        adventure = game.adventureOfWeek(content.adventures),
+        adventureDone = game.adventureDoneThisWeek,
     )
 }

@@ -23,9 +23,9 @@ import androidx.navigation3.ui.NavDisplay
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
-import ru.larpinovplay.finniapp.presentation.screens.home.HomeScreen
-import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
 import ru.larpinovplay.finniapp.presentation.screens.adult.AdultScreen
+import ru.larpinovplay.finniapp.presentation.screens.adventure.AdventureScreen
+import ru.larpinovplay.finniapp.presentation.screens.home.HomeScreen
 import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressScreen
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsScreen
@@ -73,6 +73,14 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                 entry<Tasks> {
                     TasksScreen(
                         onOpenTask = { task -> backStack.goTo(TaskPlay(task.id)) },
+                        onOpenAdventure = { adventure -> backStack.goTo(AdventurePlay(adventure.id)) },
+                        onBack = backStack::goBack,
+                    )
+                }
+
+                entry<AdventurePlay> { route ->
+                    AdventureScreen(
+                        viewModel = koinViewModel { parametersOf(route.adventureId) },
                         onBack = backStack::goBack,
                     )
                 }

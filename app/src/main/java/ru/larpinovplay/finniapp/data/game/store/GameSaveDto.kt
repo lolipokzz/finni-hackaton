@@ -53,6 +53,7 @@ internal data class GameStateDto(
     val withdrawalsThisWeek: List<Int> = emptyList(),
     val taskResults: List<TaskResultDto> = emptyList(),
     val tasksDoneThisWeek: Int = 0,
+    val adventureResults: List<AdventureResultDto> = emptyList(),
     val history: List<WeekSummaryDto> = emptyList(),
 )
 
@@ -98,6 +99,9 @@ internal sealed interface LedgerReasonDto {
     @Serializable @SerialName("task_reward")
     data class TaskReward(val taskTitle: String) : LedgerReasonDto
 
+    @Serializable @SerialName("adventure_reward")
+    data class AdventureReward(val adventureTitle: String) : LedgerReasonDto
+
     @Serializable @SerialName("week_income")
     data object WeekIncome : LedgerReasonDto
 }
@@ -126,6 +130,14 @@ internal data class TaskResultDto(
     val taskId: String,
     val week: Int,
     val success: Boolean,
+    val reward: Int,
+)
+
+@Serializable
+internal data class AdventureResultDto(
+    val adventureId: String,
+    val week: Int,
+    val perfect: Boolean,
     val reward: Int,
 )
 
