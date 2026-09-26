@@ -18,6 +18,8 @@ data class HomeUiState(
     val activeTask: ActiveTask?,       // первое доступное задание
     val tip: Tip? = null,              // подсказка в облачке рядом с питомцем; null — не показывать
     val animationsEnabled: Boolean = true,
+    val soundEnabled: Boolean = true,
+    val voiceRepeatEnabled: Boolean = true,
     val suggestedSection: HomeSection? = null, // раздел, куда стоит пойти сейчас; подсвечен в меню
     val demoMode: Boolean = false,
     val info: HomeInfo? = null,                          // открытое окно «что это значит» у монет/сытости/настроения

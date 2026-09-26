@@ -22,6 +22,7 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import ru.larpinovplay.finniapp.presentation.components.PetHostOwner
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeScreen
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
@@ -30,6 +31,7 @@ import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressScreen
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.shop.ShopScreen
+import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeScreen
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskPlayScreen
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskResultCard
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksScreen
@@ -61,8 +63,8 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                     // Питомец виден, пока Home наверху или становится верхним; уход с Home скрывает его сразу
                     val transition = LocalNavAnimatedContentScope.current.transition
                     val visible = transition.targetState == EnterExitState.Visible
-                    SideEffect { petHost.shown = visible }
-                    DisposableEffect(Unit) { onDispose { petHost.shown = false } }
+                    SideEffect { petHost.show(PetHostOwner.HOME, visible) }
+                    DisposableEffect(Unit) { onDispose { petHost.show(PetHostOwner.HOME, false) } }
 
                     HomeScreen(
                         onOpenSection = { section -> backStack.goTo(section.toRoute()) },
@@ -95,6 +97,21 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                 entry<Shop> {
                     ShopScreen(
                         onGoToTasks = { backStack.goTo(Tasks) },
+                        onGoToWardrobe = { backStack.goTo(Wardrobe) },
+                        onBack = backStack::goBack,
+                    )
+                }
+
+                entry<Wardrobe> {
+                    // Гардероб показывает того же питомца, что и Home: вещь видна на нём сразу
+                    val transition = LocalNavAnimatedContentScope.current.transition
+                    val visible = transition.targetState == EnterExitState.Visible
+                    SideEffect { petHost.show(PetHostOwner.WARDROBE, visible) }
+                    DisposableEffect(Unit) { onDispose { petHost.show(PetHostOwner.WARDROBE, false) } }
+
+                    WardrobeScreen(
+                        petHost = petHost,
+                        onGoToShop = { backStack.goTo(Shop) },
                         onBack = backStack::goBack,
                     )
                 }

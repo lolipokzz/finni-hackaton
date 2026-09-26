@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Питомец повторяет услышанное (PetVoice): звук обрабатывается в памяти, не сохраняется и не отправляется -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
     <application
         android:name=".app.FinniApp"
         android:allowBackup="true"

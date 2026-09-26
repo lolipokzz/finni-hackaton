@@ -13,6 +13,8 @@ import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.presentation.pet.supportsWardrobe
 import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 class ShopViewModel(
@@ -26,6 +28,7 @@ class ShopViewModel(
             foodCovered = game.requireSnapshot().state.foodCovered,
             tab = ShopCategory.MANDATORY,
             items = itemsOf(ShopCategory.MANDATORY),
+            owned = ownedIds(),
         )
     )
     val state: StateFlow<ShopUiState> = _state.asStateFlow()
@@ -35,7 +38,7 @@ class ShopViewModel(
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { snapshot ->
                 val g = snapshot.state
-                _state.update { it.copy(balance = g.balance, foodCovered = g.foodCovered) }
+                _state.update { it.copy(balance = g.balance, foodCovered = g.foodCovered, owned = ownedIds()) }
             }
         }
     }
@@ -62,14 +65,22 @@ class ShopViewModel(
                 is PurchaseResult.NotEnough -> PurchaseFeedback.NotEnough(
                     item = item,
                     missing = result.missing,
-                    cheaper = content.shopItems.filter {
-                        it.category == item.category && it.price <= game.requireSnapshot().state.balance && it.id != item.id
+                    cheaper = itemsOf(item.category).filter {
+                        it.price <= game.requireSnapshot().state.balance && it.id != item.id && it.id !in ownedIds()
                     },
                 )
+                // Кнопка у купленной одежды выключена; сюда попадём только при двойном нажатии
+                PurchaseResult.AlreadyOwned -> return@launch
             }
             _state.update { it.copy(feedback = feedback) }
         }
     }
 
-    private fun itemsOf(category: ShopCategory) = content.shopItems.filter { it.category == category }
+    /** Одежду показываем, только если её видно на модели питомца. */
+    private fun itemsOf(category: ShopCategory): List<ShopItem> {
+        val wardrobe = game.requireSnapshot().pet.look.supportsWardrobe
+        return content.shopItems.filter { it.category == category && (wardrobe || !it.isWearable) }
+    }
+
+    private fun ownedIds(): Set<String> = game.requireSnapshot().state.wardrobe.mapTo(mutableSetOf()) { it.id }
 }

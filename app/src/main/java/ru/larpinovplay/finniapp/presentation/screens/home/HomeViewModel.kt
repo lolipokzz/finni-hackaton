@@ -81,6 +81,8 @@ class HomeViewModel(
                 else -> HomeUiState.Tip.SaveFor(game.goal.name)
             },
             animationsEnabled = settings.animationsEnabled,
+            soundEnabled = settings.soundEnabled,
+            voiceRepeatEnabled = settings.voiceRepeatEnabled,
             suggestedSection = HomeSection.TASKS.takeIf { activeTask != null },
         )
     }

@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.domain.pet.model
 
+import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
+
 /**
  * Питомец: единственный источник правды о его состоянии. Экраны показывают его как есть и
  * не копируют поля в свои состояния, а игра меняет его вместе со своим состоянием ([GameSnapshot][ru.larpinovplay.finniapp.domain.game.model.GameSnapshot]).
@@ -13,6 +16,7 @@ data class Pet(
     val satiety: PetSatiety,           // обратимо: падает каждую неделю, растёт от еды
     val mood: PetMood,                 // обратимо, меняется после каждого решения
     val growthPoints: Int,             // необратимо, только растёт: копится за недели
+    val outfit: Map<WearableSlot, String> = emptyMap(),   // что надето: место → id вещи из гардероба
 ) {
     val growthStage: PetGrowthStage get() = PetGrowthStage.forPoints(growthPoints)
 
@@ -24,6 +28,14 @@ data class Pet(
     fun changeSatiety(delta: Int): Pet = copy(satiety = satiety + delta)
 
     fun changeMood(delta: Int): Pet = copy(mood = mood + delta)
+
+    /** Надевает вещь на её место; то, что там было, снимается. */
+    fun wear(item: ShopItem): Pet {
+        val slot = requireNotNull(item.slot) { "Это не одежда: ${item.id}" }
+        return copy(outfit = outfit + (slot to item.id))
+    }
+
+    fun takeOff(slot: WearableSlot): Pet = copy(outfit = outfit - slot)
 
     fun grow(points: Int): Pet {
         require(points >= 0) { "Очки роста только растут: $points" }

@@ -20,6 +20,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
@@ -59,6 +60,12 @@ class GameRepositoryImpl(
 
     override suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError> =
         execute { GameEngine.buy(it, item) }
+
+    override suspend fun wear(item: ShopItem): Result<Boolean, StorageError> =
+        execute { GameEngine.wear(it, item) }
+
+    override suspend fun takeOff(slot: WearableSlot): EmptyResult<StorageError> =
+        execute { GameEngine.takeOff(it, slot) }
 
     override suspend fun chooseGoal(goal: SavingsGoal): EmptyResult<StorageError> =
         execute { GameEngine.chooseGoal(it, goal) }

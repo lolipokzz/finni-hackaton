@@ -8,6 +8,7 @@ import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
@@ -47,6 +48,11 @@ interface GameRepository {
     suspend fun createPet(pet: Pet): EmptyResult<StorageError>
 
     suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError>
+
+    /** Надеть вещь из гардероба; false — такой вещи в гардеробе нет. */
+    suspend fun wear(item: ShopItem): Result<Boolean, StorageError>
+
+    suspend fun takeOff(slot: WearableSlot): EmptyResult<StorageError>
 
     suspend fun chooseGoal(goal: SavingsGoal): EmptyResult<StorageError>
 

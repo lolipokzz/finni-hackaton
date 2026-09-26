@@ -8,7 +8,8 @@ import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 
 /**
- * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель.
+ * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб.
+ * [purchases] — покупки текущей недели (обнуляются в конце недели), [wardrobe] — купленная одежда, она остаётся.
  * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine][ru.larpinovplay.finniapp.domain.game.engine.GameEngine].
  */
 data class GameState(
@@ -18,6 +19,7 @@ data class GameState(
     val week: Int = 1,
     val ledger: List<LedgerEntry> = emptyList(),
     val purchases: List<ShopItem> = emptyList(),
+    val wardrobe: List<ShopItem> = emptyList(),
     val goal: SavingsGoal? = null,
     val completedGoals: List<SavingsGoal> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
@@ -27,6 +29,8 @@ data class GameState(
     val history: List<WeekSummary> = emptyList(),
 ) {
     val foodCovered: Boolean get() = purchases.any { it.category == ShopCategory.MANDATORY }
+
+    fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id }
 
     val tasksPerWeek: Int get() = GameRules.TASKS_PER_WEEK
 

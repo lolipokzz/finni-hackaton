@@ -74,6 +74,7 @@ fun SectionStubScreen(section: HomeSection, onBack: () -> Unit, modifier: Modifi
 private fun sectionHint(section: HomeSection): String = when (section) {
     HomeSection.TASKS -> "Задания реализованы в TasksScreen"
     HomeSection.SHOP -> "Магазин реализован в ShopScreen"
+    HomeSection.WARDROBE -> "Гардероб реализован в WardrobeScreen"
     HomeSection.SAVINGS -> "Копилка реализована в SavingsScreen"
     HomeSection.PROGRESS -> "Прогресс реализован в ProgressScreen"
     HomeSection.SETTINGS -> "Настройки реализованы в SettingsScreen"

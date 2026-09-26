@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.components
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -15,6 +16,10 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -29,13 +34,27 @@ data class PetSpec(
     val assetName: String,
     val tintArgb: Long?,
     val animationsEnabled: Boolean,
+    val soundEnabled: Boolean = true,
+    /** Слушать микрофон и повторять (настройка, звук и выданное разрешение вместе). */
+    val voiceEnabled: Boolean = false,
     val idleAnimation: String? = "Idle",
     val tapAnimation: String = "Wave",
+    val hitAnimations: PetHitAnimations = PetHitAnimations(),
+    val pettingAnimation: String? = null,
+    /** Узлы надетых вещей в модели (Acc_*); остальные вещи модели скрыты. */
+    val accessories: Set<String> = emptySet(),
 )
 
+/** Экраны, на которых виден питомец. Показывает тот, кто последним стал верхним экраном. */
+enum class PetHostOwner { HOME, WARDROBE }
+
 /**
- * Мост между главным экраном и [PetHost]. Экран пишет сюда, что показать ([spec]) и где ([slot]),
- * и говорит, когда питомца можно показывать ([shown]); хост читает.
+ * Мост между экранами с питомцем и [PetHost]. Экран пишет сюда, что показать ([spec]) и где ([setSlot]),
+ * и говорит, когда питомца можно показывать ([show]); хост читает.
+ *
+ * Экранов с питомцем несколько (главный и гардероб), а вид один: слот и видимость принимаются только от
+ * [owner] — экрана, который последним стал верхним. Поэтому уходящий экран, который ещё дорисовывает переход
+ * или уходит из композиции, не спрячет питомца и не утащит его в свой слот.
  *
  * Питомец живёт вне записи back stack'а: экран Home уходит из композиции, когда сверху другой экран,
  * а модель (движок Filament, загруженный glTF, фаза анимации) должна пережить это.
@@ -48,11 +67,32 @@ class PetHostState(
     /** Модель, которую нужно показать; null — модели для этого питомца нет (или экран ещё не сообщил). */
     var spec by mutableStateOf<PetSpec?>(null)
 
-    /** Место под питомца на главном экране. */
+    /** Место под питомца на экране [owner]. */
     var slot by mutableStateOf<LayoutCoordinates?>(null)
+        private set
 
-    /** true, когда Home наверху; иначе питомец скрыт и стоит на паузе. */
+    /** true, когда экран с питомцем наверху; иначе питомец скрыт и стоит на паузе. */
     var shown by mutableStateOf(false)
+        private set
+
+    /** Экран, который сейчас показывает питомца. */
+    var owner by mutableStateOf<PetHostOwner?>(null)
+        private set
+
+    /** [visible] = true — [owner] стал верхним экраном; false — перестал (чужой false ничего не делает). */
+    fun show(owner: PetHostOwner, visible: Boolean) {
+        if (visible) {
+            if (this.owner != owner) slot = null   // слот прошлого экрана здесь не годится
+            this.owner = owner
+            shown = true
+        } else if (this.owner == owner) {
+            shown = false
+        }
+    }
+
+    fun setSlot(owner: PetHostOwner, coordinates: LayoutCoordinates) {
+        if (this.owner == owner || this.owner == null) slot = coordinates
+    }
 }
 
 /**
@@ -75,7 +115,7 @@ class PetHostState(
 fun PetHost(
     state: PetHostState,
     modifier: Modifier = Modifier,
-    cameraDistance: Float = 3.1f,
+    cameraDistance: Float = PET_CAMERA_DISTANCE,
 ) {
     var ready by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -108,26 +148,74 @@ fun PetHost(
         val bounds = live ?: lastBounds.value
 
         val density = LocalDensity.current
+        val place = Modifier
+            .offset {
+                if (live != null) IntOffset((live.left - origin.x).roundToInt(), (live.top - origin.y).roundToInt())
+                else IntOffset(OFFSCREEN, OFFSCREEN)
+            }
+            .size(
+                width = bounds?.let { with(density) { it.width.toDp() } } ?: FALLBACK_SIZE,
+                height = bounds?.let { with(density) { it.height.toDp() } } ?: FALLBACK_SIZE,
+            )
+
+        // Тень под лапами — под видом питомца (он лежит поверх окна), в тех же координатах. Читается при
+        // отрисовке, поэтому каждый кадр перерисовывается только этот холст, без перекомпоновки
+        val shadow = remember { mutableStateOf<PetShadow?>(null) }
+        Canvas(place) { shadow.value?.let { drawPetShadow(it) } }
+
         PetModel3D(
             assetName = spec?.assetName,
             tintArgb = spec?.tintArgb,
             cameraDistance = cameraDistance,
             animationsEnabled = spec?.animationsEnabled ?: true,
+            soundEnabled = spec?.soundEnabled ?: false,
+            voiceEnabled = spec?.voiceEnabled ?: false,
             idleAnimation = spec?.idleAnimation,
             tapAnimation = spec?.tapAnimation ?: "Wave",
+            hitAnimations = spec?.hitAnimations ?: PetHitAnimations(),
+            pettingAnimation = spec?.pettingAnimation,
+            accessories = spec?.accessories.orEmpty(),
+            onShadow = { shadow.value = it },
             active = state.shown,
-            modifier = Modifier
-                .offset {
-                    if (live != null) IntOffset((live.left - origin.x).roundToInt(), (live.top - origin.y).roundToInt())
-                    else IntOffset(OFFSCREEN, OFFSCREEN)
-                }
-                .size(
-                    width = bounds?.let { with(density) { it.width.toDp() } } ?: FALLBACK_SIZE,
-                    height = bounds?.let { with(density) { it.height.toDp() } } ?: FALLBACK_SIZE,
-                ),
+            modifier = place,
         )
     }
 }
+
+/** Мягкая тень: размытый эллипс под питомцем и более плотные пятна контакта под лапами. */
+private fun DrawScope.drawPetShadow(shadow: PetShadow) {
+    softEllipse(shadow.x, shadow.y, shadow.radiusX, shadow.radiusY, SHADOW_ALPHA * shadow.strength)
+    shadow.feet.forEach { softEllipse(it.x, it.y, it.radiusX, it.radiusY, FOOT_ALPHA * it.strength) }
+}
+
+private fun DrawScope.softEllipse(x: Float, y: Float, radiusX: Float, radiusY: Float, alpha: Float) {
+    if (radiusX <= 0f || radiusY <= 0f || alpha <= 0f) return
+    val center = Offset(x, y)
+    withTransform({ scale(1f, radiusY / radiusX, pivot = center) }) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                0f to SHADOW_COLOR.copy(alpha = alpha),
+                0.5f to SHADOW_COLOR.copy(alpha = alpha * 0.8f),
+                1f to Color.Transparent,
+                center = center,
+                radius = radiusX,
+            ),
+            radius = radiusX,
+            center = center,
+        )
+    }
+}
+
+/** Тёплый тёмный, а не чистый чёрный: на цветном полу чёрная тень выглядит дырой. */
+private val SHADOW_COLOR = Color(0xFF2A1430)
+private const val SHADOW_ALPHA = 0.7f
+private const val FOOT_ALPHA = 0.9f
+
+/**
+ * Расстояние камеры до питомца в [PetHost]: одинаковое на всех экранах, поэтому одинаков и масштаб питомца.
+ * Этой же камерой снят фон-комната (room_background.jpg): при смене расстояния фон нужно перерендерить.
+ */
+const val PET_CAMERA_DISTANCE = 3.1f
 
 private const val OFFSCREEN = -100_000
 

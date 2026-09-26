@@ -48,6 +48,7 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 @Composable
 fun ShopScreen(
     onGoToTasks: () -> Unit,
+    onGoToWardrobe: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ShopViewModel = koinViewModel(),
@@ -57,6 +58,7 @@ fun ShopScreen(
         state = state,
         onAction = viewModel::onAction,
         onGoToTasks = onGoToTasks,
+        onGoToWardrobe = onGoToWardrobe,
         onBack = onBack,
         modifier = modifier,
     )
@@ -67,6 +69,7 @@ fun ShopScreenContent(
     state: ShopUiState,
     onAction: (ShopAction) -> Unit,
     onGoToTasks: () -> Unit,
+    onGoToWardrobe: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -91,7 +94,12 @@ fun ShopScreenContent(
                 modifier = Modifier.weight(1f)
             ) {
                 items(state.items, key = { it.id }) { item ->
-                    ShopItemCard(item = item, affordable = item.price <= state.balance, onBuy = { onAction(ShopAction.BuyClicked(item)) })
+                    ShopItemCard(
+                        item = item,
+                        affordable = item.price <= state.balance,
+                        owned = item.id in state.owned,
+                        onBuy = { onAction(ShopAction.BuyClicked(item)) },
+                    )
                 }
                 item { Spacer(Modifier.height(12.dp)) }
             }
@@ -108,7 +116,11 @@ fun ShopScreenContent(
     }
     state.feedback?.let { fb ->
         when (fb) {
-            is PurchaseFeedback.Bought -> BoughtDialog(fb, onDismiss = { onAction(ShopAction.DismissFeedback) })
+            is PurchaseFeedback.Bought -> BoughtDialog(
+                fb,
+                onGoToWardrobe = { onAction(ShopAction.DismissFeedback); onGoToWardrobe() },
+                onDismiss = { onAction(ShopAction.DismissFeedback) },
+            )
             is PurchaseFeedback.NotEnough -> NotEnoughDialog(
                 fb,
                 onGoToTasks = { onAction(ShopAction.DismissFeedback); onGoToTasks() },
@@ -197,7 +209,7 @@ private fun NeedsChecklist(foodCovered: Boolean) {
 // ---------- Карточка товара ----------
 
 @Composable
-private fun ShopItemCard(item: ShopItem, affordable: Boolean, onBuy: () -> Unit) {
+private fun ShopItemCard(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit) {
     WhiteCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -217,7 +229,7 @@ private fun ShopItemCard(item: ShopItem, affordable: Boolean, onBuy: () -> Unit)
                     .padding(horizontal = 12.dp)
             ) {
                 Text(item.name, style = MaterialTheme.typography.titleMedium)
-                Text(item.category.title, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
+                Text(item.categoryText, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
                 Text(item.effectText, style = MaterialTheme.typography.bodyMedium, color = FinniColors.Navy)
                 Text(item.hint, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
             }
@@ -226,16 +238,18 @@ private fun ShopItemCard(item: ShopItem, affordable: Boolean, onBuy: () -> Unit)
                     Text("${item.price}", style = MaterialTheme.typography.titleLarge)
                     Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
                 }
-                // Кнопка активна всегда: попытка купить при нехватке — учебная ситуация (ТЗ 2.5.6)
+                // Кнопка активна всегда: попытка купить при нехватке — учебная ситуация (ТЗ 2.5.6).
+                // Выключена только у одежды, которая уже есть: её покупают один раз
                 Button(
                     onClick = onBuy,
+                    enabled = !owned,
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (affordable) FinniColors.Green else FinniColors.LavenderDeep,
                         contentColor = if (affordable) Color.White else FinniColors.Navy
                     ),
                     modifier = Modifier.height(44.dp)
-                ) { Text("Купить", style = MaterialTheme.typography.labelLarge) }
+                ) { Text(if (owned) "Уже есть" else "Купить", style = MaterialTheme.typography.labelLarge) }
             }
         }
     }
@@ -255,7 +269,7 @@ private fun PurchaseConfirmDialog(item: ShopItem, balance: Int, onConfirm: () ->
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                 InfoLine("Цена", "${item.price} монет")
-                InfoLine("Категория", item.category.title)
+                InfoLine("Категория", item.categoryText)
                 InfoLine("Эффект", item.effectText)
                 InfoLine(
                     if (remaining >= 0) "Останется" else "Не хватает",
@@ -275,12 +289,13 @@ private fun PurchaseConfirmDialog(item: ShopItem, balance: Int, onConfirm: () ->
 }
 
 @Composable
-private fun BoughtDialog(fb: PurchaseFeedback.Bought, onDismiss: () -> Unit) {
+private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit, onDismiss: () -> Unit) {
     val item = fb.item
-    val explanation = if (item.category == ShopCategory.MANDATORY)
-        "${item.name} — это нужное. Финни поел и доволен!"
-    else
-        "${item.name} порадовал Финни. Помни: это желаемое, а не еда"
+    val explanation = when {
+        item.category == ShopCategory.MANDATORY -> "${item.name} — это нужное. Финни поел и доволен!"
+        item.isWearable -> "${item.name} теперь в гардеробе навсегда. Надень это Финни! Помни: это желаемое, а не еда"
+        else -> "${item.name} порадовал Финни. Помни: это желаемое, а не еда"
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(28.dp),
@@ -296,8 +311,19 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            Button(onClick = onDismiss, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
-                Text("Понятно", style = MaterialTheme.typography.labelLarge)
+            if (item.isWearable) {
+                Button(onClick = onGoToWardrobe, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
+                    Text("Надеть", style = MaterialTheme.typography.labelLarge)
+                }
+            } else {
+                Button(onClick = onDismiss, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
+                    Text("Понятно", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        },
+        dismissButton = {
+            if (item.isWearable) {
+                TextButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("Потом", style = MaterialTheme.typography.labelLarge) }
             }
         }
     )

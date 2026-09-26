@@ -68,6 +68,7 @@ class AdultViewModel(
 
     fun setSound(enabled: Boolean) = updateSettings { it.copy(soundEnabled = enabled) }
     fun setAnimations(enabled: Boolean) = updateSettings { it.copy(animationsEnabled = enabled) }
+    fun setVoiceRepeat(enabled: Boolean) = updateSettings { it.copy(voiceRepeatEnabled = enabled) }
 
     private fun updateSettings(transform: (AppSettings) -> AppSettings) {
         if (!_state.value.unlocked || _state.value.busy) return

@@ -23,6 +23,7 @@ private fun GameState.toDto() = GameStateDto(
     week = week,
     ledger = ledger.map { it.toDto() },
     purchases = purchases.map { it.toDto() },
+    wardrobe = wardrobe.map { it.toDto() },
     goal = goal?.toDto(),
     completedGoals = completedGoals.map { it.toDto() },
     depositsThisWeek = depositsThisWeek,
@@ -38,6 +39,7 @@ private fun GameStateDto.toDomain() = GameState(
     week = week,
     ledger = ledger.map { it.toDomain() },
     purchases = purchases.map { it.toDomain() },
+    wardrobe = wardrobe.map { it.toDomain() },
     goal = goal?.toDomain(),
     completedGoals = completedGoals.map { it.toDomain() },
     depositsThisWeek = depositsThisWeek,
@@ -54,6 +56,7 @@ private fun Pet.toDto() = PetDto(
     satiety = satiety.value,
     mood = mood.value,
     growthPoints = growthPoints,
+    outfit = outfit,
 )
 
 private fun PetDto.toDomain() = Pet(
@@ -62,6 +65,7 @@ private fun PetDto.toDomain() = Pet(
     satiety = PetSatiety(satiety),
     mood = PetMood(mood),
     growthPoints = growthPoints,
+    outfit = outfit,
 )
 
 private fun LedgerEntry.toDto() = LedgerEntryDto(
@@ -96,9 +100,9 @@ private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
     LedgerReasonDto.WeekIncome -> LedgerReason.WeekIncome
 }
 
-private fun ShopItem.toDto() = ShopItemDto(id, name, price, category, satiety, mood, hint)
+private fun ShopItem.toDto() = ShopItemDto(id, name, price, category, satiety, mood, hint, slot)
 
-private fun ShopItemDto.toDomain() = ShopItem(id, name, price, category, satiety, mood, hint)
+private fun ShopItemDto.toDomain() = ShopItem(id, name, price, category, satiety, mood, hint, slot)
 
 private fun SavingsGoal.toDto() = SavingsGoalDto(id, name, cost, hint)
 
