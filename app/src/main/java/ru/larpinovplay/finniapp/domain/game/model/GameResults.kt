@@ -16,3 +16,24 @@ sealed interface DepositResult {
     /** Сумма не больше нуля или больше баланса. */
     data class Rejected(val balance: Int) : DepositResult
 }
+
+sealed interface ConfirmPlanResult {
+    data object Success : ConfirmPlanResult
+
+    /** План уже подтверждён, в нём есть минус или он не делит ровно [budget] монет. */
+    data class Rejected(val budget: Int) : ConfirmPlanResult
+}
+
+/** Почему неделю пока нельзя закончить. Это не ошибка ребёнка, а подсказка, что сделать сначала. */
+enum class FinishBlock {
+    /** Сначала нужно составить план. */
+    PLAN_NOT_CONFIRMED,
+
+    /** Неделя началась сегодня; следующая — завтра. В демо-режиме не действует. */
+    SAME_DAY,
+}
+
+sealed interface FinishWeekResult {
+    data class Finished(val summary: WeekSummary) : FinishWeekResult
+    data class Blocked(val reason: FinishBlock) : FinishWeekResult
+}

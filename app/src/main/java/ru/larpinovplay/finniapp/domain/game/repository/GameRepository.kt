@@ -1,10 +1,13 @@
 package ru.larpinovplay.finniapp.domain.game.repository
 
 import kotlinx.coroutines.flow.StateFlow
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.model.ConfirmPlanResult
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
+import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
+import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
-import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
@@ -64,7 +67,12 @@ interface GameRepository {
     /** Итог ответа или null, если задание сейчас недоступно. */
     suspend fun answerTask(task: Task, answer: TaskAnswer): Result<TaskOutcome?, StorageError>
 
-    suspend fun finishWeek(): Result<WeekSummary, StorageError>
+    suspend fun confirmPlan(plan: BudgetPlan): Result<ConfirmPlanResult, StorageError>
+
+    /** Почему неделю сейчас нельзя закончить (по сегодняшней дате), или null, если можно. */
+    fun finishBlock(): FinishBlock?
+
+    suspend fun finishWeek(): Result<FinishWeekResult, StorageError>
 
     /** Удаляет игру целиком; настройки управляются отдельно. */
     suspend fun resetProfile(): EmptyResult<StorageError>

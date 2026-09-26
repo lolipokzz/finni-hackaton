@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.data.game.store
 
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
@@ -12,15 +13,20 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetMood
 import ru.larpinovplay.finniapp.domain.pet.model.PetSatiety
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import java.time.LocalDate
 
 internal fun GameSnapshot.toDto() = GameSnapshotDto(state = state.toDto(), pet = pet.toDto())
 
 internal fun GameSnapshotDto.toDomain() = GameSnapshot(state = state.toDomain(), pet = pet.toDomain())
 
 private fun GameState.toDto() = GameStateDto(
+    demoMode = demoMode,
     balance = balance,
     savings = savings,
     week = week,
+    phase = phase,
+    plan = plan?.toDto(),
+    periodStartedOn = periodStartedOn?.toEpochDay(),
     ledger = ledger.map { it.toDto() },
     purchases = purchases.map { it.toDto() },
     wardrobe = wardrobe.map { it.toDto() },
@@ -34,9 +40,13 @@ private fun GameState.toDto() = GameStateDto(
 )
 
 private fun GameStateDto.toDomain() = GameState(
+    demoMode = demoMode,
     balance = balance,
     savings = savings,
     week = week,
+    phase = phase,
+    plan = plan?.toDomain(),
+    periodStartedOn = periodStartedOn?.let(LocalDate::ofEpochDay),
     ledger = ledger.map { it.toDomain() },
     purchases = purchases.map { it.toDomain() },
     wardrobe = wardrobe.map { it.toDomain() },
@@ -114,8 +124,10 @@ private fun TaskResultDto.toDomain() = TaskResult(taskId, week, success, reward)
 
 private fun WeekSummary.toDto() = WeekSummaryDto(
     week = week,
+    plan = plan.toDto(),
     foodCovered = foodCovered,
     savedSomething = savedSomething,
+    planKept = planKept,
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
@@ -123,12 +135,15 @@ private fun WeekSummary.toDto() = WeekSummaryDto(
     moodDelta = moodDelta,
     stageBefore = stageBefore,
     stageAfter = stageAfter,
+    nextIncome = nextIncome,
 )
 
 private fun WeekSummaryDto.toDomain() = WeekSummary(
     week = week,
+    plan = plan.toDomain(),
     foodCovered = foodCovered,
     savedSomething = savedSomething,
+    planKept = planKept,
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
@@ -136,4 +151,9 @@ private fun WeekSummaryDto.toDomain() = WeekSummary(
     moodDelta = moodDelta,
     stageBefore = stageBefore,
     stageAfter = stageAfter,
+    nextIncome = nextIncome,
 )
+
+private fun BudgetPlan.toDto() = BudgetPlanDto(mandatory, optional, savings)
+
+private fun BudgetPlanDto.toDomain() = BudgetPlan(mandatory, optional, savings)

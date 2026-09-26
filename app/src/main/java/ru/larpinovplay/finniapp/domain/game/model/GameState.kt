@@ -6,6 +6,7 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
+import java.time.LocalDate
 
 /**
  * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб.
@@ -17,6 +18,9 @@ data class GameState(
     val balance: Int = 0,
     val savings: Int = 0,
     val week: Int = 1,
+    val phase: PeriodPhase = PeriodPhase.PLANNING,
+    val plan: BudgetPlan? = null,                   // null, пока план недели не подтверждён
+    val periodStartedOn: LocalDate? = null,         // день начала недели; null — старое сохранение, дня не знаем
     val ledger: List<LedgerEntry> = emptyList(),
     val purchases: List<ShopItem> = emptyList(),
     val wardrobe: List<ShopItem> = emptyList(),
@@ -33,6 +37,19 @@ data class GameState(
     fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id }
 
     val tasksPerWeek: Int get() = GameRules.TASKS_PER_WEEK
+
+    /** Карманные (или стартовые) монеты, пришедшие в начале этой недели. */
+    val weekIncome: Int
+        get() = ledger.filter { it.week == week && (it.reason == LedgerReason.WeekIncome || it.reason == LedgerReason.StartCoins) }
+            .sumOf { it.balanceDelta }
+
+    /** Почему неделю сейчас нельзя закончить, или null, если можно. [today] — сегодняшняя дата устройства. */
+    fun finishBlock(today: LocalDate): FinishBlock? = when {
+        phase != PeriodPhase.ACTIVE -> FinishBlock.PLAN_NOT_CONFIRMED
+        // Не больше недели в день. Если часы перевели назад, не запираем игру: блокирует только тот же день
+        !demoMode && today == periodStartedOn -> FinishBlock.SAME_DAY
+        else -> null
+    }
 
     fun taskStatus(task: Task): TaskStatus {
         val last = taskResults.lastOrNull { it.taskId == task.id }
