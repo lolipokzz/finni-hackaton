@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Флакон шампуня с пеной -->
+    <path android:fillColor="#5B7BFF" android:pathData="M20,4 h8 v7 h-8Z"/>
+    <path android:fillColor="#7FD1FF" android:pathData="M14,18 q0,-7 7,-7 h6 q7,0 7,7 v20 q0,6 -6,6 h-8 q-6,0 -6,-6Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M18,24 h12 v10 h-12Z"/>
+    <path android:fillColor="#5CD69C" android:pathData="M21,27 h6 v4 h-6Z"/>
+    <path android:fillColor="#DCEFFF" android:pathData="M30,8 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0Z"/>
+    <path android:fillColor="#DCEFFF" android:pathData="M36,15 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M16,20 v14" android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeLineCap="round"/>
+</vector>
