@@ -1,10 +1,14 @@
 package ru.larpinovplay.finniapp.domain.game.engine
 
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.model.ConfirmPlanResult
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
+import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
+import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
@@ -17,19 +21,32 @@ import ru.larpinovplay.finniapp.domain.task.evaluate
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
+import java.time.LocalDate
 
 /**
  * Игра как чистые функции (docs/06-architecture.md): `(снимок, команда) → (новый снимок, результат)`.
  * Единственное место, где создаётся запись журнала и меняются кошелёк и питомец. Без корутин и Android,
  * поэтому проверяется обычными юнит-тестами. Хранение и последовательность команд — дело GameRepository.
  *
- * Правила — из docs/04-rules-and-formulas.md, с поправкой на то, что план бюджета убран:
- * неделя оценивается по двум критериям (еда куплена, что-то отложено), максимум 2 очка.
+ * Правила — из docs/04-rules-and-formulas.md. Неделя идёт так: приходят монеты → ребёнок делит их планом
+ * ([confirmPlan]) → покупает и копит → закрывает неделю ([finishWeek]) и получает до трёх звёзд.
+ * Дата приходит параметром, поэтому движок не зависит от часов устройства.
  */
 object GameEngine {
 
-    fun newGame(startBalance: Int = GameRules.START_BALANCE): GameState =
-        GameState().post(LedgerReason.StartCoins, +startBalance)
+    fun newGame(today: LocalDate, startBalance: Int = GameRules.START_BALANCE): GameState =
+        GameState(periodStartedOn = today).post(LedgerReason.StartCoins, +startBalance)
+
+    /** Подтверждает план недели. План должен разложить весь баланс, без минусов, и только один раз за неделю. */
+    fun confirmPlan(game: GameSnapshot, plan: BudgetPlan): Transition<ConfirmPlanResult> {
+        val s = game.state
+        val valid = s.phase == PeriodPhase.PLANNING &&
+            plan.mandatory >= 0 && plan.optional >= 0 && plan.savings >= 0 &&
+            plan.total == s.balance
+        if (!valid) return Transition(game, ConfirmPlanResult.Rejected(budget = s.balance))
+        val state = s.copy(phase = PeriodPhase.ACTIVE, plan = plan)
+        return Transition(game.copy(state = state), ConfirmPlanResult.Success)
+    }
 
     fun buy(game: GameSnapshot, item: ShopItem): Transition<PurchaseResult> {
         val s = game.state
@@ -76,28 +93,42 @@ object GameEngine {
         return Transition(game.copy(state = state), outcome)
     }
 
-    fun finishWeek(game: GameSnapshot): Transition<WeekSummary> {
+    /**
+     * Закрывает неделю, если [GameState.finishBlock] не мешает: считает звёзды, меняет питомца,
+     * начинает новую неделю в фазе плана и зачисляет карманные деньги.
+     */
+    fun finishWeek(game: GameSnapshot, today: LocalDate): Transition<FinishWeekResult> {
         val s = game.state
+        s.finishBlock(today)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
+
+        val plan = s.plan ?: BudgetPlan()
+        val spentMandatory = s.purchases.filter { it.category == ShopCategory.MANDATORY }.sumOf { it.price }
+        val spentOptional = s.purchases.filter { it.category == ShopCategory.OPTIONAL }.sumOf { it.price }
         val saved = s.depositsThisWeek.sum()
         val foodCovered = s.foodCovered
         val savedSomething = saved > 0
-        val score = (if (foodCovered) 1 else 0) + (if (savedSomething) 1 else 0)
-        val moodDelta = -10 + when (score) { 2 -> 20; 1 -> 0; else -> -15 }
+        // Перерасход на нужное не нарушает план: ребёнок не должен бояться накормить питомца
+        val planKept = spentOptional <= plan.optional && saved >= plan.savings
+        val score = listOf(foodCovered, savedSomething, planKept).count { it }
+        val moodDelta = -GameRules.WEEKLY_MOOD_DECAY + GameRules.MOOD_DELTA_BY_SCORE[score]
 
         val before = game.pet
         val pet = before.changeSatiety(-GameRules.WEEKLY_HUNGER).changeMood(moodDelta).grow(score)
 
         val summary = WeekSummary(
             week = s.week,
+            plan = plan,
             foodCovered = foodCovered,
             savedSomething = savedSomething,
-            spentMandatory = s.purchases.filter { it.category == ShopCategory.MANDATORY }.sumOf { it.price },
-            spentOptional = s.purchases.filter { it.category == ShopCategory.OPTIONAL }.sumOf { it.price },
+            planKept = planKept,
+            spentMandatory = spentMandatory,
+            spentOptional = spentOptional,
             saved = saved,
             score = score,
             moodDelta = moodDelta,
             stageBefore = before.growthStage,
             stageAfter = pet.growthStage,
+            nextIncome = GameRules.WEEK_INCOME,
         )
         val state = s.copy(
             history = s.history + summary,
@@ -106,8 +137,11 @@ object GameEngine {
             purchases = emptyList(),
             tasksDoneThisWeek = 0,
             week = s.week + 1,
+            phase = PeriodPhase.PLANNING,
+            plan = null,
+            periodStartedOn = today,
         ).post(LedgerReason.WeekIncome, +GameRules.WEEK_INCOME)
-        return Transition(GameSnapshot(state, pet), summary)
+        return Transition(GameSnapshot(state, pet), FinishWeekResult.Finished(summary))
     }
 
     private fun GameState.post(reason: LedgerReason, balanceDelta: Int, savingsDelta: Int = 0): GameState = copy(

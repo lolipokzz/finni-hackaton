@@ -17,7 +17,20 @@ enum class FeedbackKey(val id: String) {
     PERIOD_FOOD_FAIL("period.a_fail"),
     PERIOD_SAVED_OK("period.c_ok"),
     PERIOD_SAVED_FAIL("period.c_fail"),
+    PERIOD_PLAN_OK("period.b_ok"),
+    PERIOD_PLAN_OPTIONAL_OVER("period.b_optional_over"),
+    PERIOD_PLAN_SAVINGS_UNDER("period.b_savings_under"),
     STAGE_UP("stage.up"),
+
+    // Почему неделю пока нельзя закончить
+    FINISH_NO_PLAN("finish.no_plan"),
+    FINISH_SAME_DAY("finish.same_day"),
+
+    // Окно плана недели
+    PLAN_NEED("plan.need"),
+    PLAN_NEED_LOW("plan.need_low"),
+    PLAN_UNALLOCATED("plan.unallocated"),
+    PLAN_DONE("plan.done"),
 
     // Фраза под питомцем и подсказка в облачке
     MOOD_HUNGRY("mood.hungry"),

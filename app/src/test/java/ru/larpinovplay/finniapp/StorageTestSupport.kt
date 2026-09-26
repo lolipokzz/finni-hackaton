@@ -8,6 +8,7 @@ import ru.larpinovplay.finniapp.data.game.store.GameStore
 import ru.larpinovplay.finniapp.data.settings.SettingsSaveFile
 import ru.larpinovplay.finniapp.data.settings.SettingsSaveSerializer
 import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
@@ -24,6 +25,11 @@ import ru.larpinovplay.finniapp.domain.util.result.Result
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 /** Примеры игр для тестов хранения. */
 internal object SampleGames {
@@ -42,7 +48,8 @@ internal object SampleGames {
         val choice = content.tasks.first { it.payload is TaskPayload.Choice }
         val correct = (choice.payload as TaskPayload.Choice).options.first { it.correct }
 
-        var game = GameSnapshot(GameEngine.newGame(startBalance = 100), newborn)
+        var game = GameSnapshot(GameEngine.newGame(DAY_1, startBalance = 100), newborn)
+        game = GameEngine.confirmPlan(game, BudgetPlan(mandatory = 30, optional = 50, savings = 20)).game
         game = GameEngine.buy(game, food).game
         game = GameEngine.buy(game, treat).game
         game = GameEngine.answerTask(game, choice, TaskAnswer.Choice(correct.id)).game
@@ -51,13 +58,16 @@ internal object SampleGames {
         game = GameEngine.reachGoal(game).game
         game = GameEngine.chooseGoal(game, content.goals.first()).game
         game = GameEngine.deposit(game, 5).game
-        game = GameEngine.finishWeek(game).game
+        game = GameEngine.finishWeek(game, DAY_1.plusDays(1)).game
+        game = GameEngine.confirmPlan(game, BudgetPlan(optional = game.state.balance)).game
         game = GameEngine.buy(game, food).game
         return game
     }
 
     /** Ещё одно, отличное от [rich], состояние: на неделю дальше. */
-    fun richer(): GameSnapshot = GameEngine.finishWeek(rich()).game
+    fun richer(): GameSnapshot = GameEngine.finishWeek(rich(), DAY_1.plusDays(2)).game
+
+    val DAY_1: LocalDate = LocalDate.of(2026, 9, 1)
 }
 
 /** Хранилище для тестов репозитория: помнит записи и умеет по команде отвечать ошибками. */
@@ -118,5 +128,16 @@ internal class FlakySettingsSerializer : Serializer<SettingsSaveFile> {
     override suspend fun writeTo(t: SettingsSaveFile, output: OutputStream) {
         if (failWrites) throw IOException("нет места на диске")
         SettingsSaveSerializer.writeTo(t, output)
+    }
+}
+
+/** Часы для тестов: показывают [date] и переводятся вперёд, как будто прошёл день. */
+internal class TestClock(var date: LocalDate = SampleGames.DAY_1) : Clock() {
+    override fun getZone(): ZoneId = ZoneOffset.UTC
+    override fun withZone(zone: ZoneId?): Clock = this
+    override fun instant(): Instant = date.atStartOfDay().toInstant(ZoneOffset.UTC)
+
+    fun nextDay() {
+        date = date.plusDays(1)
     }
 }

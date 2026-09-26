@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 
@@ -22,7 +24,26 @@ data class HomeUiState(
     val demoMode: Boolean = false,
     val info: HomeInfo? = null,                          // открытое окно «что это значит» у монет/сытости/настроения
     val weekSummary: WeekSummary? = null,     // итог только что закрытой недели; null — окно не показывается
+    val finishBlock: FinishBlock? = null,     // почему неделю пока нельзя закончить; null — можно
+    val finishNotice: FinishBlock? = null,    // открытое окно «почему нельзя закончить»
+    val planDraft: PlanDraft? = null,         // окно плана недели; null — план уже подтверждён
 ) {
+    /**
+     * Черновик плана в окне начала недели: монеты недели ([income] + [carried]) и как ребёнок их раскладывает.
+     * [need] — сколько стоит самая дешёвая еда: подсказка для строки «Обязательное».
+     */
+    data class PlanDraft(
+        val week: Int,
+        val income: Int,
+        val carried: Int,
+        val plan: BudgetPlan,
+        val need: Int,
+    ) {
+        val budget: Int get() = income + carried
+        val unallocated: Int get() = budget - plan.total
+        val mandatoryLow: Boolean get() = plan.mandatory < need
+    }
+
     /** Цель копилки в том виде, в каком её показывает главный экран. */
     data class Goal(val name: String, val cost: Int)
 

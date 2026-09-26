@@ -2,6 +2,7 @@ package ru.larpinovplay.finniapp.data.game.store
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
@@ -34,9 +35,15 @@ internal data class GameSnapshotDto(
 
 @Serializable
 internal data class GameStateDto(
+    val demoMode: Boolean = false,
     val balance: Int = 0,
     val savings: Int = 0,
     val week: Int = 1,
+    /** Сохранение без фазы — из версии без плана: начинаем неделю с плана. */
+    val phase: PeriodPhase = PeriodPhase.PLANNING,
+    val plan: BudgetPlanDto? = null,
+    /** День начала недели как `LocalDate.toEpochDay()`; null — день неизвестен. */
+    val periodStartedOn: Long? = null,
     val ledger: List<LedgerEntryDto> = emptyList(),
     val purchases: List<ShopItemDto> = emptyList(),
     val goal: SavingsGoalDto? = null,
@@ -116,10 +123,19 @@ internal data class TaskResultDto(
 )
 
 @Serializable
+internal data class BudgetPlanDto(
+    val mandatory: Int = 0,
+    val optional: Int = 0,
+    val savings: Int = 0,
+)
+
+@Serializable
 internal data class WeekSummaryDto(
     val week: Int,
+    val plan: BudgetPlanDto = BudgetPlanDto(),
     val foodCovered: Boolean,
     val savedSomething: Boolean,
+    val planKept: Boolean = false,
     val spentMandatory: Int,
     val spentOptional: Int,
     val saved: Int,
@@ -127,4 +143,5 @@ internal data class WeekSummaryDto(
     val moodDelta: Int,
     val stageBefore: PetGrowthStage,
     val stageAfter: PetGrowthStage,
+    val nextIncome: Int = 0,
 )
