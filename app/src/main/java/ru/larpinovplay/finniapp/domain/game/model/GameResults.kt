@@ -14,6 +14,13 @@ sealed interface DepositResult {
     data class Rejected(val balance: Int) : DepositResult
 }
 
+sealed interface WithdrawResult {
+    data object Success : WithdrawResult
+
+    /** Сумма не больше нуля или больше, чем в копилке. */
+    data class Rejected(val savings: Int) : WithdrawResult
+}
+
 sealed interface ConfirmPlanResult {
     data object Success : ConfirmPlanResult
 

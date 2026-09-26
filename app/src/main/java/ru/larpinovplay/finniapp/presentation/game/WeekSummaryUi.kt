@@ -30,6 +30,6 @@ fun WeekSummary.planText(): String {
     return when {
         planKept -> feedback.text(FeedbackKey.PERIOD_PLAN_OK)
         optionalOverPlan -> feedback.text(FeedbackKey.PERIOD_PLAN_OPTIONAL_OVER, "spent" to spentOptional, "plan" to plan.optional)
-        else -> feedback.text(FeedbackKey.PERIOD_PLAN_SAVINGS_UNDER, "saved" to saved, "plan" to plan.savings)
+        else -> feedback.text(FeedbackKey.PERIOD_PLAN_SAVINGS_UNDER, "withdrawn" to withdrawn, "plan" to plan.savings)
     }
 }

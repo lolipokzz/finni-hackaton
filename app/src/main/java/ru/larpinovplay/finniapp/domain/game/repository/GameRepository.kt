@@ -8,6 +8,7 @@ import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
+import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
@@ -54,6 +55,8 @@ interface GameRepository {
     suspend fun chooseGoal(goal: SavingsGoal): EmptyResult<StorageError>
 
     suspend fun deposit(amount: Int): Result<DepositResult, StorageError>
+
+    suspend fun withdraw(amount: Int): Result<WithdrawResult, StorageError>
 
     /** Достигнутая цель или null, если цели нет или на неё ещё не накоплено. */
     suspend fun reachGoal(): Result<SavingsGoal?, StorageError>

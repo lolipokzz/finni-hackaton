@@ -117,11 +117,12 @@ class HomeViewModelTest {
 
         val summary = checkNotNull(vm.state.value?.weekSummary)
         assertEquals(BudgetPlan(10, 20, 20), summary.plan)
-        // Ничего не потрачено: все 50 переходят на новую неделю, план начинается с прошлого
+        // 20 ушли в копилку сразу, остальное не потрачено и переходит на новую неделю; план начинается с прошлого
+        assertEquals(20, game.requireSnapshot().state.savings)
         val draft = vm.draft
         assertEquals(2, draft.week)
         assertEquals(GameRules.WEEK_INCOME, draft.income)
-        assertEquals(GameRules.START_BALANCE, draft.carried)
+        assertEquals(GameRules.START_BALANCE - 20, draft.carried)
         assertEquals(BudgetPlan(10, 20, 20), draft.plan)
         assertEquals(draft.budget - 50, draft.unallocated)
 

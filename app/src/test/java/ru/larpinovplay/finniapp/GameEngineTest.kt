@@ -15,11 +15,13 @@ import ru.larpinovplay.finniapp.domain.game.model.DepositResult
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
+import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
@@ -155,7 +157,59 @@ class GameEngineTest {
         assertEquals(ConfirmPlanResult.Success, ok)
         assertEquals(PeriodPhase.ACTIVE, planned.state.phase)
         assertEquals(BudgetPlan(20, 60, 20), planned.state.plan)
-        assertEquals(ConfirmPlanResult.Rejected(budget = 100), again)
+        assertEquals(ConfirmPlanResult.Rejected(budget = 80), again)
+    }
+
+    @Test
+    fun confirmedPlanSendsSavingsLineToPiggyBankRightAway() {
+        val (game, _) = GameEngine.confirmPlan(newGame(), BudgetPlan(mandatory = 20, optional = 60, savings = 20))
+
+        assertEquals(80, game.state.balance)
+        assertEquals(20, game.state.savings)
+        assertEquals(20, game.state.savedThisWeek)
+        assertEquals(LedgerReason.PlannedDeposit, game.state.ledger.last().reason)
+    }
+
+    @Test
+    fun planLeftShowsWhatRemainsPerCategoryAndGoesBelowZeroWhenOverspent() {
+        val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
+        assertNull(newGame().state.planLeft(ShopCategory.MANDATORY))   // плана ещё нет
+
+        val game = newGame()
+            .then { GameEngine.confirmPlan(it, BudgetPlan(mandatory = 30, optional = 5, savings = 65)) }
+            .then { GameEngine.buy(it, food) }
+            .then { GameEngine.buy(it, treat) }
+
+        assertEquals(30 - food.price, game.state.planLeft(ShopCategory.MANDATORY))
+        assertEquals(5 - treat.price, game.state.planLeft(ShopCategory.OPTIONAL))
+    }
+
+    @Test
+    fun planWithoutSavingsLineLeavesPiggyBankAlone() {
+        val game = newGame().planned()
+
+        assertEquals(0, game.state.savings)
+        assertEquals(1, game.state.ledger.size)
+    }
+
+    @Test
+    fun withdrawReturnsCoinsUpToWholePiggyBank() {
+        val planned = newGame().planned(savings = 20)
+
+        val (afterPart, part) = GameEngine.withdraw(planned, 15)
+        val (_, tooMuch) = GameEngine.withdraw(afterPart, 6)
+        val (_, zero) = GameEngine.withdraw(afterPart, 0)
+        val (empty, rest) = GameEngine.withdraw(afterPart, 5)
+
+        assertEquals(WithdrawResult.Success, part)
+        assertEquals(WithdrawResult.Rejected(savings = 5), tooMuch)
+        assertEquals(WithdrawResult.Rejected(savings = 5), zero)
+        assertEquals(WithdrawResult.Success, rest)
+        assertEquals(95, afterPart.state.balance)
+        assertEquals(LedgerReason.Withdraw, afterPart.state.ledger.last().reason)
+        assertEquals(0, empty.state.savings)
+        assertEquals(100, empty.state.balance)
+        assertEquals(0, empty.state.savedThisWeek)
     }
 
     @Test
@@ -194,7 +248,6 @@ class GameEngineTest {
         val week = newGame()
             .planned(mandatory = food.price, savings = 10)
             .then { GameEngine.buy(it, food) }
-            .then { GameEngine.deposit(it, 10) }
 
         val (game, summary) = week.finish()
 
@@ -228,7 +281,6 @@ class GameEngineTest {
             .then { GameEngine.confirmPlan(it, BudgetPlan(mandatory = 90, optional = 0, savings = 10)) }
             .then { GameEngine.buy(it, food) }
             .then { GameEngine.buy(it, treat) }
-            .then { GameEngine.deposit(it, 10) }
             .finish()
 
         assertFalse(summary.planKept)
@@ -237,17 +289,46 @@ class GameEngineTest {
     }
 
     @Test
-    fun savingLessThanPromisedBreaksPlanButStillCountsSavings() {
+    fun withdrawingBelowPromiseBreaksPlanButKeepsSavingsStarIfSomethingStays() {
         val (_, summary) = newGame()
             .planned(mandatory = food.price, savings = 20)
             .then { GameEngine.buy(it, food) }
-            .then { GameEngine.deposit(it, 5) }
+            .then { GameEngine.withdraw(it, 15) }
             .finish()
 
         assertFalse(summary.planKept)
         assertTrue(summary.savingsUnderPlan)
         assertTrue(summary.savedSomething)
+        assertEquals(5, summary.saved)
+        assertEquals(15, summary.withdrawn)
         assertEquals(2, summary.score)
+    }
+
+    @Test
+    fun extraDepositCoversWithdrawalWithinTheWeek() {
+        val (_, summary) = newGame()
+            .planned(mandatory = food.price, savings = 10)
+            .then { GameEngine.withdraw(it, 10) }
+            .then { GameEngine.deposit(it, 10) }
+            .then { GameEngine.buy(it, food) }
+            .finish()
+
+        assertTrue(summary.planKept)
+        assertEquals(3, summary.score)
+    }
+
+    @Test
+    fun buyingGoalIsNotWithdrawal() {
+        val cheap = goal.copy(cost = 10)
+        val (_, summary) = newGame()
+            .then { GameEngine.chooseGoal(it, cheap) }
+            .planned(mandatory = food.price, savings = 10)
+            .then { GameEngine.reachGoal(it) }
+            .then { GameEngine.buy(it, food) }
+            .finish()
+
+        assertTrue(summary.savedSomething && summary.planKept)
+        assertEquals(0, summary.withdrawn)
     }
 
     @Test
@@ -260,7 +341,6 @@ class GameEngineTest {
             game = game
                 .planned(mandatory = food.price, savings = 10)
                 .then { GameEngine.buy(it, food) }
-                .then { GameEngine.deposit(it, 10) }
                 .finish(day).first
         }
 
@@ -281,7 +361,7 @@ class GameEngineTest {
 
     @Test
     fun weekWithBrokenPromiseAndNoFoodScoresZeroAndLowersMood() {
-        val before = newGame().planned(savings = 10)
+        val before = newGame().planned(savings = 10).then { GameEngine.withdraw(it, 10) }
 
         val (game, summary) = before.finish()
 

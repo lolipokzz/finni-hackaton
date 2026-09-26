@@ -50,6 +50,7 @@ internal data class GameStateDto(
     val completedGoals: List<SavingsGoalDto> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
     val depositsByWeek: List<Int> = emptyList(),
+    val withdrawalsThisWeek: List<Int> = emptyList(),
     val taskResults: List<TaskResultDto> = emptyList(),
     val tasksDoneThisWeek: Int = 0,
     val history: List<WeekSummaryDto> = emptyList(),
@@ -84,6 +85,12 @@ internal sealed interface LedgerReasonDto {
 
     @Serializable @SerialName("deposit")
     data object Deposit : LedgerReasonDto
+
+    @Serializable @SerialName("planned_deposit")
+    data object PlannedDeposit : LedgerReasonDto
+
+    @Serializable @SerialName("withdraw")
+    data object Withdraw : LedgerReasonDto
 
     @Serializable @SerialName("goal_reached")
     data class GoalReached(val goalName: String) : LedgerReasonDto
@@ -139,6 +146,7 @@ internal data class WeekSummaryDto(
     val spentMandatory: Int,
     val spentOptional: Int,
     val saved: Int,
+    val withdrawn: Int = 0,
     val score: Int,
     val moodDelta: Int,
     val stageBefore: PetGrowthStage,

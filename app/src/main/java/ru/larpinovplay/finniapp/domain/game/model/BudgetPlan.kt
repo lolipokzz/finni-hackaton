@@ -1,7 +1,16 @@
 package ru.larpinovplay.finniapp.domain.game.model
 
+import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+
 /** Направление бюджета из ТЗ: нужное, желаемое, накопления. */
 enum class BudgetDirection { MANDATORY, OPTIONAL, SAVINGS }
+
+/** Строка плана, из которой оплачиваются товары этой категории. */
+val ShopCategory.budgetDirection: BudgetDirection
+    get() = when (this) {
+        ShopCategory.MANDATORY -> BudgetDirection.MANDATORY
+        ShopCategory.OPTIONAL -> BudgetDirection.OPTIONAL
+    }
 
 /**
  * План недели: сколько монет ребёнок решил отдать на каждое [BudgetDirection]. Это не отдельные кошельки,

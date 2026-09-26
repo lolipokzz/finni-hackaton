@@ -14,6 +14,7 @@ import ru.larpinovplay.finniapp.domain.game.model.TaskResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
@@ -37,14 +38,23 @@ object GameEngine {
     fun newGame(today: LocalDate, startBalance: Int = GameRules.START_BALANCE): GameState =
         GameState(periodStartedOn = today).post(LedgerReason.StartCoins, +startBalance)
 
-    /** Подтверждает план недели. План должен разложить весь баланс, без минусов, и только один раз за неделю. */
+    /**
+     * Подтверждает план недели. План должен разложить весь баланс, без минусов, и только один раз за неделю.
+     * Строка «Копилка» сразу переводится в копилку: отложить — поведение по умолчанию, а забрать можно ([withdraw]).
+     */
     fun confirmPlan(game: GameSnapshot, plan: BudgetPlan): Transition<ConfirmPlanResult> {
         val s = game.state
         val valid = s.phase == PeriodPhase.PLANNING &&
             plan.mandatory >= 0 && plan.optional >= 0 && plan.savings >= 0 &&
             plan.total == s.balance
         if (!valid) return Transition(game, ConfirmPlanResult.Rejected(budget = s.balance))
-        val state = s.copy(phase = PeriodPhase.ACTIVE, plan = plan)
+        val planned = s.copy(phase = PeriodPhase.ACTIVE, plan = plan)
+        val state = if (plan.savings > 0) {
+            planned.post(LedgerReason.PlannedDeposit, -plan.savings, +plan.savings)
+                .copy(depositsThisWeek = planned.depositsThisWeek + plan.savings)
+        } else {
+            planned
+        }
         return Transition(game.copy(state = state), ConfirmPlanResult.Success)
     }
 
@@ -66,6 +76,17 @@ object GameEngine {
         if (amount <= 0 || amount > s.balance) return Transition(game, DepositResult.Rejected(s.balance))
         val state = s.post(LedgerReason.Deposit, -amount, +amount).copy(depositsThisWeek = s.depositsThisWeek + amount)
         return Transition(game.copy(state = state), DepositResult.Success)
+    }
+
+    /**
+     * Забирает [amount] из копилки в кошелёк. Можно всё, до нуля: это деньги ребёнка. Снятое вычитается
+     * из отложенного за неделю, поэтому звёзды «Копилка» и «План» считаются уже после него.
+     */
+    fun withdraw(game: GameSnapshot, amount: Int): Transition<WithdrawResult> {
+        val s = game.state
+        if (amount <= 0 || amount > s.savings) return Transition(game, WithdrawResult.Rejected(s.savings))
+        val state = s.post(LedgerReason.Withdraw, +amount, -amount).copy(withdrawalsThisWeek = s.withdrawalsThisWeek + amount)
+        return Transition(game.copy(state = state), WithdrawResult.Success)
     }
 
     /** Достигнутая цель или null, если цели нет или на неё ещё не накоплено. */
@@ -102,9 +123,9 @@ object GameEngine {
         s.finishBlock(today)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
 
         val plan = s.plan ?: BudgetPlan()
-        val spentMandatory = s.purchases.filter { it.category == ShopCategory.MANDATORY }.sumOf { it.price }
-        val spentOptional = s.purchases.filter { it.category == ShopCategory.OPTIONAL }.sumOf { it.price }
-        val saved = s.depositsThisWeek.sum()
+        val spentMandatory = s.spentThisWeek(ShopCategory.MANDATORY)
+        val spentOptional = s.spentThisWeek(ShopCategory.OPTIONAL)
+        val saved = s.savedThisWeek
         val foodCovered = s.foodCovered
         val savedSomething = saved > 0
         // Перерасход на нужное не нарушает план: ребёнок не должен бояться накормить питомца
@@ -124,6 +145,7 @@ object GameEngine {
             spentMandatory = spentMandatory,
             spentOptional = spentOptional,
             saved = saved,
+            withdrawn = s.withdrawalsThisWeek.sum(),
             score = score,
             moodDelta = moodDelta,
             stageBefore = before.growthStage,
@@ -134,6 +156,7 @@ object GameEngine {
             history = s.history + summary,
             depositsByWeek = s.depositsByWeek + saved,
             depositsThisWeek = emptyList(),
+            withdrawalsThisWeek = emptyList(),
             purchases = emptyList(),
             tasksDoneThisWeek = 0,
             week = s.week + 1,

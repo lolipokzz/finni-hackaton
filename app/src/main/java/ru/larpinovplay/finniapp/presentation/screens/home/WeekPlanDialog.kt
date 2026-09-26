@@ -84,6 +84,14 @@ fun WeekPlanDialog(
                             modifier = Modifier.padding(start = 44.dp, bottom = 4.dp),
                         )
                     }
+                    if (direction == BudgetDirection.SAVINGS && draft.plan.savings > 0) {
+                        Text(
+                            feedback.text(FeedbackKey.PLAN_SAVINGS_NOW),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = FinniColors.NavyMuted,
+                            modifier = Modifier.padding(start = 44.dp, bottom = 4.dp),
+                        )
+                    }
                 }
                 Spacer(Modifier.height(12.dp))
                 Surface(

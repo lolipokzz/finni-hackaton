@@ -25,12 +25,22 @@ data class GameState(
     val goal: SavingsGoal? = null,
     val completedGoals: List<SavingsGoal> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
-    val depositsByWeek: List<Int> = emptyList(),    // сумма пополнений по закрытым неделям
+    val depositsByWeek: List<Int> = emptyList(),    // сколько за закрытую неделю отложено за вычетом снятого
+    val withdrawalsThisWeek: List<Int> = emptyList(),
     val taskResults: List<TaskResult> = emptyList(),
     val tasksDoneThisWeek: Int = 0,
     val history: List<WeekSummary> = emptyList(),
 ) {
     val foodCovered: Boolean get() = purchases.any { it.category == ShopCategory.MANDATORY }
+
+    /** Сколько за эту неделю потрачено на товары [category]. */
+    fun spentThisWeek(category: ShopCategory): Int = purchases.filter { it.category == category }.sumOf { it.price }
+
+    /** Сколько по плану недели ещё осталось на [category]; меньше нуля — потрачено сверх плана, null — плана нет. */
+    fun planLeft(category: ShopCategory): Int? = plan?.let { it[category.budgetDirection] - spentThisWeek(category) }
+
+    /** Сколько за эту неделю отложено за вычетом снятого; может быть меньше нуля. Покупка цели сюда не входит. */
+    val savedThisWeek: Int get() = depositsThisWeek.sum() - withdrawalsThisWeek.sum()
 
     val tasksPerWeek: Int get() = GameRules.TASKS_PER_WEEK
 
@@ -66,9 +76,12 @@ data class GameState(
         }
 
     /** Срок в неделях по среднему пополнению за последние 3 закрытые недели, иначе по текущей. */
-    fun weeksToGoal(): Int? {
+    fun weeksToGoal(): Int? = weeksToGoal(savings)
+
+    /** Срок, если бы в копилке было [savingsIfAny]: так окно снятия показывает, насколько отодвинется цель. */
+    fun weeksToGoal(savingsIfAny: Int): Int? {
         val g = goal ?: return null
-        val remaining = g.cost - savings
+        val remaining = g.cost - savingsIfAny
         if (remaining <= 0) return 0
         val recent = depositsByWeek.takeLast(3).filter { it > 0 }
         val avg = if (recent.isNotEmpty()) recent.average().toInt() else depositsThisWeek.sum()
