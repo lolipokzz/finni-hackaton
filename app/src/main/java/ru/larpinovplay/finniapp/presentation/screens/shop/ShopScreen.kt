@@ -83,8 +83,12 @@ fun ShopScreenContent(
             Spacer(Modifier.height(8.dp))
             ShopHeader(balance = state.balance, onBack = onBack)
             Spacer(Modifier.height(12.dp))
-            CategoryTabs(selected = state.tab, onSelect = { onAction(ShopAction.TabSelected(it)) })
+            CategoryTabs(selected = state.tab, budgets = state.budgets, onSelect = { onAction(ShopAction.TabSelected(it)) })
             Spacer(Modifier.height(10.dp))
+            state.budgets[state.tab]?.let {
+                PlanCard(it)
+                Spacer(Modifier.height(10.dp))
+            }
             if (state.tab == ShopCategory.MANDATORY) {
                 NeedsChecklist(state.foodCovered)
                 Spacer(Modifier.height(10.dp))
@@ -110,6 +114,7 @@ fun ShopScreenContent(
         PurchaseConfirmDialog(
             item = item,
             balance = state.balance,
+            budget = state.budgets[item.category],
             onConfirm = { onAction(ShopAction.ConfirmPurchase) },
             onDismiss = { onAction(ShopAction.DismissPending) }
         )
@@ -125,6 +130,7 @@ fun ShopScreenContent(
                 fb,
                 onGoToTasks = { onAction(ShopAction.DismissFeedback); onGoToTasks() },
                 onPick = { onAction(ShopAction.PickCheaper(it)) },
+                onTakeFromSavings = { onAction(ShopAction.BuyWithSavings) },
                 onDismiss = { onAction(ShopAction.DismissFeedback) }
             )
         }
@@ -158,8 +164,13 @@ private fun ShopHeader(balance: Int, onBack: () -> Unit) {
     }
 }
 
+/** Вкладки категорий. Под названием — остаток по плану, чтобы обе строки плана были видны сразу. */
 @Composable
-private fun CategoryTabs(selected: ShopCategory, onSelect: (ShopCategory) -> Unit) {
+private fun CategoryTabs(
+    selected: ShopCategory,
+    budgets: Map<ShopCategory, ShopUiState.CategoryBudget>,
+    onSelect: (ShopCategory) -> Unit,
+) {
     WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
         Row(Modifier.padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             ShopCategory.entries.forEach { category ->
@@ -170,18 +181,77 @@ private fun CategoryTabs(selected: ShopCategory, onSelect: (ShopCategory) -> Uni
                     color = if (isSelected) FinniColors.Blue else Color.Transparent,
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp)
+                        .height(if (budgets.isEmpty()) 48.dp else 60.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                         Text(
                             category.title,
                             style = MaterialTheme.typography.labelLarge,
                             color = if (isSelected) Color.White else FinniColors.Navy
                         )
+                        budgets[category]?.let { budget ->
+                            Text(
+                                budget.shortText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = when {
+                                    isSelected -> Color.White
+                                    budget.left < 0 -> FinniColors.Warning
+                                    else -> FinniColors.NavyMuted
+                                },
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/** «осталось 5» или «! сверх плана 10»: перерасход помечен словом и знаком, не только цветом. */
+private val ShopUiState.CategoryBudget.shortText: String
+    get() = if (left >= 0) "осталось $left" else "! сверх плана ${-left}"
+
+/** План недели на выбранную категорию: сколько задумано, потрачено и осталось. */
+@Composable
+private fun PlanCard(budget: ShopUiState.CategoryBudget) {
+    WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(R.drawable.ic_clipboard), null, Modifier.size(28.dp))
+                Text(
+                    "По плану на неделю: ${budget.planned}",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 8.dp).weight(1f),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            PlanBar(spent = budget.spent, planned = budget.planned)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (budget.left >= 0) "Потрачено ${budget.spent} · осталось ${budget.left}"
+                else "! Потрачено ${budget.spent}: на ${-budget.left} больше плана",
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (budget.left >= 0) FinniColors.NavyMuted else FinniColors.Warning,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlanBar(spent: Int, planned: Int) {
+    val fraction = if (planned > 0) (spent.toFloat() / planned).coerceIn(0f, 1f) else if (spent > 0) 1f else 0f
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(10.dp)
+            .background(FinniColors.Track, RoundedCornerShape(5.dp))
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth(fraction)
+                .height(10.dp)
+                .background(if (spent > planned) FinniColors.Warning else FinniColors.Blue, RoundedCornerShape(5.dp))
+        )
     }
 }
 
@@ -258,7 +328,13 @@ private fun ShopItemCard(item: ShopItem, affordable: Boolean, owned: Boolean, on
 // ---------- Диалоги ----------
 
 @Composable
-private fun PurchaseConfirmDialog(item: ShopItem, balance: Int, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+private fun PurchaseConfirmDialog(
+    item: ShopItem,
+    balance: Int,
+    budget: ShopUiState.CategoryBudget?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
     val remaining = balance - item.price
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -275,6 +351,15 @@ private fun PurchaseConfirmDialog(item: ShopItem, balance: Int, onConfirm: () ->
                     if (remaining >= 0) "Останется" else "Не хватает",
                     if (remaining >= 0) "$remaining монет" else "${-remaining} монет"
                 )
+                budget?.let {
+                    val leftAfter = it.left - item.price
+                    if (leftAfter >= 0) {
+                        InfoLine("По плану останется", "$leftAfter из ${it.planned}")
+                    } else {
+                        // Покупку не запрещаем: план — намерение ребёнка, а не запрет
+                        InfoLine("Сверх плана", "! ${-leftAfter} монет", FinniColors.Warning)
+                    }
+                }
             }
         },
         confirmButton = {
@@ -304,6 +389,7 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit
         title = { Text("Что изменилось", style = MaterialTheme.typography.headlineSmall) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
+                if (fb.fromSavings > 0) InfoLine("Из копилки", "${fb.fromSavings} монет")
                 InfoLine("Монеты", "−${item.price}, осталось ${fb.balanceAfter}")
                 InfoLine("Питомец", item.effectText)
                 Spacer(Modifier.height(8.dp))
@@ -335,6 +421,7 @@ private fun NotEnoughDialog(
     fb: PurchaseFeedback.NotEnough,
     onGoToTasks: () -> Unit,
     onPick: (ShopItem) -> Unit,
+    onTakeFromSavings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
@@ -345,6 +432,10 @@ private fun NotEnoughDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("${fb.item.name} стоит ${fb.item.price}. Вот что можно сделать:", style = MaterialTheme.typography.bodyLarge)
+                if (fb.canTakeFromSavings) {
+                    OptionButton("Взять ${fb.missing} из копилки и купить", onTakeFromSavings)
+                    Text(savingsConsequence(fb), style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
+                }
                 OptionButton("Выполнить задание и заработать", onGoToTasks)
                 fb.cheaper.forEach { OptionButton("Выбрать дешевле: ${it.name} за ${it.price}") { onPick(it) } }
                 OptionButton("Подождать следующую неделю", onDismiss)
@@ -355,6 +446,13 @@ private fun NotEnoughDialog(
             TextButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("Закрыть", style = MaterialTheme.typography.labelLarge) }
         }
     )
+}
+
+/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Домика» не хватит 60». */
+private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
+    val after = fb.savings - fb.missing
+    val goal = fb.goal ?: return "В копилке ${fb.savings} → станет $after"
+    return "В копилке ${fb.savings} → станет $after. До «${goal.name}» будет не хватать ${(goal.cost - after).coerceAtLeast(0)}"
 }
 
 @Composable
@@ -374,10 +472,10 @@ private fun OptionButton(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun InfoLine(label: String, value: String) {
+private fun InfoLine(label: String, value: String, valueColor: Color = FinniColors.Navy) {
     Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.End)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = valueColor)
     }
 }
 

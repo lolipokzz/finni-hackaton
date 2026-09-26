@@ -78,11 +78,12 @@ fun SavingsScreenContent(
             item { Spacer(Modifier.height(0.dp)); Header(state.balance, onBack) }
             item {
                 val goal = state.goal
-                if (goal == null) NoGoalCard() else CurrentGoalCard(
+                if (goal == null) NoGoalCard(state.savings, onWithdraw = { onAction(SavingsAction.WithdrawClicked) }) else CurrentGoalCard(
                     goal = goal,
                     state = state,
                     onDeposit = { onAction(SavingsAction.Deposit(it)) },
-                    onReach = { onAction(SavingsAction.ReachGoalClicked) }
+                    onReach = { onAction(SavingsAction.ReachGoalClicked) },
+                    onWithdraw = { onAction(SavingsAction.WithdrawClicked) },
                 )
             }
             item {
@@ -124,6 +125,15 @@ fun SavingsScreenContent(
             dismissButton = {
                 TextButton(onClick = { onAction(SavingsAction.DismissSwitch) }, modifier = Modifier.height(48.dp)) { Text("Оставить", style = MaterialTheme.typography.labelLarge) }
             }
+        )
+    }
+    state.withdraw?.let { draft ->
+        WithdrawDialog(
+            draft = draft,
+            goal = state.goal,
+            onChange = { onAction(SavingsAction.ChangeWithdraw(it)) },
+            onConfirm = { onAction(SavingsAction.ConfirmWithdraw) },
+            onDismiss = { onAction(SavingsAction.DismissWithdraw) },
         )
     }
     state.reached?.let { goal ->
@@ -180,16 +190,28 @@ private fun Header(balance: Int, onBack: () -> Unit) {
 
 // ---------- Текущая цель ----------
 
+/** Цели нет, но монеты в копилке уже могут быть: например, отложенные по плану недели. */
 @Composable
-private fun NoGoalCard() {
+private fun NoGoalCard(savings: Int, onWithdraw: () -> Unit) {
     WhiteCard(modifier = Modifier.fillMaxWidth(), color = FinniColors.CardPink) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(R.drawable.ic_pig), null, Modifier.size(48.dp))
-            Column(Modifier.padding(start = 12.dp)) {
-                Text("Цель пока не выбрана", style = MaterialTheme.typography.titleMedium)
-                Text("Выбери, на что копить, из списка ниже", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(R.drawable.ic_pig), null, Modifier.size(48.dp))
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text("Цель пока не выбрана", style = MaterialTheme.typography.titleMedium)
+                    if (savings > 0) Text("В копилке $savings", style = MaterialTheme.typography.bodyLarge)
+                    Text("Выбери, на что копить, из списка ниже", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
+                }
             }
+            if (savings > 0) WithdrawButton(onWithdraw)
         }
+    }
+}
+
+@Composable
+private fun WithdrawButton(onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(48.dp)) {
+        Text("Забрать из копилки", style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -199,6 +221,7 @@ private fun CurrentGoalCard(
     state: SavingsUiState,
     onDeposit: (Int) -> Unit,
     onReach: () -> Unit,
+    onWithdraw: () -> Unit,
 ) {
     val remaining = (goal.cost - state.savings).coerceAtLeast(0)
     val reachedGoal = state.savings >= goal.cost
@@ -271,6 +294,7 @@ private fun CurrentGoalCard(
                     Text(it.text(), style = MaterialTheme.typography.labelMedium, color = FinniColors.Warning, modifier = Modifier.padding(top = 6.dp))
                 }
             }
+            if (state.savings > 0) WithdrawButton(onWithdraw)
         }
     }
 }

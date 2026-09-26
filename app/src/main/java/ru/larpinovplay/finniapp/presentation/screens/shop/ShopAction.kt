@@ -10,4 +10,7 @@ sealed interface ShopAction {
     data object DismissPending : ShopAction
     data object DismissFeedback : ShopAction
     data class PickCheaper(val item: ShopItem) : ShopAction
+
+    /** Не хватает монет: взять недостающее из копилки и купить. */
+    data object BuyWithSavings : ShopAction
 }

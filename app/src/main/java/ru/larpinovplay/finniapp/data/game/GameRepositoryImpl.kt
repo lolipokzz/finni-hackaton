@@ -16,6 +16,7 @@ import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.Transition
+import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
@@ -80,6 +81,9 @@ class GameRepositoryImpl(
 
     override suspend fun deposit(amount: Int): Result<DepositResult, StorageError> =
         execute { GameEngine.deposit(it, amount) }
+
+    override suspend fun withdraw(amount: Int): Result<WithdrawResult, StorageError> =
+        execute { GameEngine.withdraw(it, amount) }
 
     override suspend fun reachGoal(): Result<SavingsGoal?, StorageError> =
         execute { GameEngine.reachGoal(it) }

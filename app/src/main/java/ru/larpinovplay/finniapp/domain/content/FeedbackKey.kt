@@ -8,6 +8,8 @@ enum class FeedbackKey(val id: String) {
     // Причины движений в журнале монет
     LEDGER_START("ledger.start"),
     LEDGER_DEPOSIT("ledger.deposit"),
+    LEDGER_PLANNED_DEPOSIT("ledger.planned_deposit"),
+    LEDGER_WITHDRAW("ledger.withdraw"),
     LEDGER_GOAL("ledger.goal"),
     LEDGER_TASK("ledger.task"),
     LEDGER_WEEK_INCOME("ledger.week_income"),
@@ -31,6 +33,12 @@ enum class FeedbackKey(val id: String) {
     PLAN_NEED_LOW("plan.need_low"),
     PLAN_UNALLOCATED("plan.unallocated"),
     PLAN_DONE("plan.done"),
+    PLAN_SAVINGS_NOW("plan.savings_now"),
+
+    // Окно «Забрать из копилки»
+    WITHDRAW_GOAL_FURTHER("withdraw.goal_further"),
+    WITHDRAW_WEEKS("withdraw.weeks"),
+    WITHDRAW_NO_GOAL("withdraw.no_goal"),
 
     // Фраза под питомцем и подсказка в облачке
     MOOD_HUNGRY("mood.hungry"),

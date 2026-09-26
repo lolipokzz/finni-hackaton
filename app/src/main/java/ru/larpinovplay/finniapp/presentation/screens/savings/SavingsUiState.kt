@@ -14,4 +14,18 @@ data class SavingsUiState(
     val switchTo: SavingsGoal? = null,      // смена цели ждёт подтверждения
     val reached: SavingsGoal? = null,       // цель только что достигнута: показываем праздник
     val depositError: DepositResult.Rejected? = null,   // последняя попытка отложить не удалась
-)
+    val withdraw: Withdraw? = null,         // открыто окно «Забрать из копилки»
+) {
+    /**
+     * Окно снятия: сколько забрать и что от этого изменится (docs: «экран подтверждения показывает последствия»).
+     * [weeksBefore] и [weeksAfter] — срок до цели; null — цели нет или срок пока не посчитать.
+     */
+    data class Withdraw(
+        val amount: Int,
+        val savingsBefore: Int,
+        val weeksBefore: Int?,
+        val weeksAfter: Int?,
+    ) {
+        val savingsAfter: Int get() = savingsBefore - amount
+    }
+}

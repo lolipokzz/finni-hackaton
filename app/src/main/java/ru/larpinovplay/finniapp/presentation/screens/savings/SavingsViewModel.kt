@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.content.Content
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
@@ -28,7 +29,15 @@ class SavingsViewModel(
         // Деньги, копилка и цель приходят из игры; окна и ошибка принадлежат экрану
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { snapshot ->
-                _state.update { fromGame(snapshot.state).copy(switchTo = it.switchTo, reached = it.reached, depositError = it.depositError) }
+                _state.update {
+                    val fresh = fromGame(snapshot.state)
+                    fresh.copy(
+                        switchTo = it.switchTo,
+                        reached = it.reached,
+                        depositError = it.depositError,
+                        withdraw = it.withdraw?.let { w -> withdrawDraft(snapshot.state, w.amount) },
+                    )
+                }
             }
         }
     }
@@ -45,6 +54,13 @@ class SavingsViewModel(
                 _state.update { it.copy(reached = reached) }
             }
             SavingsAction.DismissReached -> _state.update { it.copy(reached = null) }
+            SavingsAction.WithdrawClicked -> {
+                val game = game.requireSnapshot().state
+                _state.update { it.copy(withdraw = withdrawDraft(game, minOf(GameRules.PLAN_STEP, game.savings))) }
+            }
+            is SavingsAction.ChangeWithdraw -> changeWithdraw(action.increase)
+            SavingsAction.ConfirmWithdraw -> confirmWithdraw()
+            SavingsAction.DismissWithdraw -> _state.update { it.copy(withdraw = null) }
         }
     }
 
@@ -70,6 +86,32 @@ class SavingsViewModel(
             val rejected = game.deposit(amount).dataOrNull() as? DepositResult.Rejected
             _state.update { it.copy(depositError = rejected) }
         }
+    }
+
+    /** Окно снятия на [amount] монет; null, если в копилке пусто. Сумма всегда от 1 до всего, что есть. */
+    private fun withdrawDraft(game: GameState, amount: Int): SavingsUiState.Withdraw? {
+        if (game.savings <= 0) return null
+        val clamped = amount.coerceIn(1, game.savings)
+        return SavingsUiState.Withdraw(
+            amount = clamped,
+            savingsBefore = game.savings,
+            weeksBefore = game.weeksToGoal(),
+            weeksAfter = game.weeksToGoal(game.savings - clamped),
+        )
+    }
+
+    private fun changeWithdraw(increase: Boolean) {
+        val current = _state.value.withdraw ?: return
+        val step = if (increase) GameRules.PLAN_STEP else -GameRules.PLAN_STEP
+        val draft = withdrawDraft(game.requireSnapshot().state, current.amount + step)
+        _state.update { it.copy(withdraw = draft) }
+    }
+
+    private fun confirmWithdraw() {
+        val draft = _state.value.withdraw ?: return
+        _state.update { it.copy(withdraw = null) }
+        // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+        viewModelScope.launch { game.withdraw(draft.amount) }
     }
 
     private fun fromGame(game: GameState) = SavingsUiState(

@@ -12,11 +12,12 @@ data class WeekSummary(
     val week: Int,
     val plan: BudgetPlan,
     val foodCovered: Boolean,          // звезда «Забота»: питомец накормлен
-    val savedSomething: Boolean,       // звезда «Копилка»: за неделю копилка выросла
-    val planKept: Boolean,             // звезда «План»: желаемое не больше плана, отложено не меньше плана
+    val savedSomething: Boolean,       // звезда «Копилка»: отложено больше, чем забрано
+    val planKept: Boolean,             // звезда «План»: необязательное не больше плана, в копилке осталось не меньше обещанного
     val spentMandatory: Int,
     val spentOptional: Int,
-    val saved: Int,
+    val saved: Int,                    // отложено за вычетом снятого; может быть меньше нуля
+    val withdrawn: Int,                // сколько за неделю забрано из копилки
     val score: Int,                    // 0..3, по звезде за критерий
     val moodDelta: Int,
     val stageBefore: PetGrowthStage,
@@ -36,7 +37,7 @@ data class WeekSummary(
     /** Желаемого куплено больше плана. */
     val optionalOverPlan: Boolean get() = spentOptional > plan.optional
 
-    /** Отложено меньше обещанного. */
+    /** Отложено меньше обещанного: при переводе по плану так бывает, только если что-то забрали. */
     val savingsUnderPlan: Boolean get() = saved < plan.savings
 
     companion object {

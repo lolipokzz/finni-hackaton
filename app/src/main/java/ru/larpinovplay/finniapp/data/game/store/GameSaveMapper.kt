@@ -34,6 +34,7 @@ private fun GameState.toDto() = GameStateDto(
     completedGoals = completedGoals.map { it.toDto() },
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
+    withdrawalsThisWeek = withdrawalsThisWeek,
     taskResults = taskResults.map { it.toDto() },
     tasksDoneThisWeek = tasksDoneThisWeek,
     history = history.map { it.toDto() },
@@ -54,6 +55,7 @@ private fun GameStateDto.toDomain() = GameState(
     completedGoals = completedGoals.map { it.toDomain() },
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
+    withdrawalsThisWeek = withdrawalsThisWeek,
     taskResults = taskResults.map { it.toDomain() },
     tasksDoneThisWeek = tasksDoneThisWeek,
     history = history.map { it.toDomain() },
@@ -96,6 +98,8 @@ private fun LedgerReason.toDto(): LedgerReasonDto = when (this) {
     LedgerReason.StartCoins -> LedgerReasonDto.StartCoins
     is LedgerReason.Purchase -> LedgerReasonDto.Purchase(itemName)
     LedgerReason.Deposit -> LedgerReasonDto.Deposit
+    LedgerReason.PlannedDeposit -> LedgerReasonDto.PlannedDeposit
+    LedgerReason.Withdraw -> LedgerReasonDto.Withdraw
     is LedgerReason.GoalReached -> LedgerReasonDto.GoalReached(goalName)
     is LedgerReason.TaskReward -> LedgerReasonDto.TaskReward(taskTitle)
     LedgerReason.WeekIncome -> LedgerReasonDto.WeekIncome
@@ -105,6 +109,8 @@ private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
     LedgerReasonDto.StartCoins -> LedgerReason.StartCoins
     is LedgerReasonDto.Purchase -> LedgerReason.Purchase(itemName)
     LedgerReasonDto.Deposit -> LedgerReason.Deposit
+    LedgerReasonDto.PlannedDeposit -> LedgerReason.PlannedDeposit
+    LedgerReasonDto.Withdraw -> LedgerReason.Withdraw
     is LedgerReasonDto.GoalReached -> LedgerReason.GoalReached(goalName)
     is LedgerReasonDto.TaskReward -> LedgerReason.TaskReward(taskTitle)
     LedgerReasonDto.WeekIncome -> LedgerReason.WeekIncome
@@ -131,6 +137,7 @@ private fun WeekSummary.toDto() = WeekSummaryDto(
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
+    withdrawn = withdrawn,
     score = score,
     moodDelta = moodDelta,
     stageBefore = stageBefore,
@@ -147,6 +154,7 @@ private fun WeekSummaryDto.toDomain() = WeekSummary(
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
+    withdrawn = withdrawn,
     score = score,
     moodDelta = moodDelta,
     stageBefore = stageBefore,
