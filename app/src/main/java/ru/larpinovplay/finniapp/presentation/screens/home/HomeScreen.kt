@@ -458,6 +458,7 @@ private fun FinishWeekButton(block: FinishBlock?, onClick: () -> Unit) {
         null -> Triple("Завершить неделю", FinniColors.Green, Color.White)
         FinishBlock.SAME_DAY -> Triple("Новая неделя — завтра", FinniColors.Lavender, FinniColors.Navy)
         FinishBlock.PLAN_NOT_CONFIRMED -> Triple("Сначала план недели", FinniColors.Lavender, FinniColors.Navy)
+        FinishBlock.ADVENTURE_NOT_PLAYED -> Triple("Сначала приключение недели", FinniColors.Lavender, FinniColors.Navy)
     }
     Button(
         onClick = onClick,

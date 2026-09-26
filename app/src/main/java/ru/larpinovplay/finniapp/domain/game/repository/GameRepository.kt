@@ -1,6 +1,8 @@
 package ru.larpinovplay.finniapp.domain.game.repository
 
 import kotlinx.coroutines.flow.StateFlow
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
+import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.ConfirmPlanResult
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
@@ -69,6 +71,9 @@ interface GameRepository {
 
     /** Итог ответа или null, если задание сейчас недоступно. */
     suspend fun answerTask(task: Task, answer: TaskAnswer): Result<TaskOutcome?, StorageError>
+
+    /** Результат приключения или null, если оно сейчас не приключение недели (тогда проходится без награды). */
+    suspend fun completeAdventure(adventure: Adventure, mistakes: Int): Result<AdventureResult?, StorageError>
 
     suspend fun confirmPlan(plan: BudgetPlan): Result<ConfirmPlanResult, StorageError>
 

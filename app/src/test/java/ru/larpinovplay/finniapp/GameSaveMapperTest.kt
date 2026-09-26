@@ -22,7 +22,7 @@ class GameSaveMapperTest {
         assertEquals(
             setOf(
                 LedgerReason.StartCoins::class, LedgerReason.Purchase::class, LedgerReason.Deposit::class,
-                LedgerReason.PlannedDeposit::class, LedgerReason.Withdraw::class,
+                LedgerReason.PlannedDeposit::class, LedgerReason.Withdraw::class, LedgerReason.AdventureReward::class,
                 LedgerReason.GoalReached::class, LedgerReason.TaskReward::class, LedgerReason.WeekIncome::class,
             ),
             reasons,
@@ -33,6 +33,7 @@ class GameSaveMapperTest {
         assertTrue(game.state.completedGoals.isNotEmpty())
         assertTrue(game.state.taskResults.isNotEmpty())
         assertTrue(game.state.history.isNotEmpty())
+        assertTrue(game.state.adventureResults.isNotEmpty())
     }
 
     @Test
@@ -53,7 +54,7 @@ class GameSaveMapperTest {
     fun ledgerReasonNamesInFileAreStable() {
         val json = StorageJson.encodeToString(GameSaveFile.serializer(), GameSaveFile(game = game.toDto()))
 
-        listOf("start_coins", "purchase", "deposit", "planned_deposit", "withdraw", "goal_reached", "task_reward", "week_income").forEach { name ->
+        listOf("start_coins", "purchase", "deposit", "planned_deposit", "withdraw", "adventure_reward", "goal_reached", "task_reward", "week_income").forEach { name ->
             assertTrue("В файле нет причины $name", json.contains("\"$name\""))
         }
     }

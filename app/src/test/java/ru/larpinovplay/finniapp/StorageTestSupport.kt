@@ -59,6 +59,7 @@ internal object SampleGames {
         game = GameEngine.chooseGoal(game, content.goals.first()).game
         game = GameEngine.deposit(game, 5).game
         game = GameEngine.withdraw(game, 3).game
+        game = GameEngine.completeAdventure(game, content.adventures.first(), mistakes = 1, adventures = content.adventures).game
         game = GameEngine.finishWeek(game, DAY_1.plusDays(1)).game
         game = GameEngine.confirmPlan(game, BudgetPlan(optional = game.state.balance)).game
         game = GameEngine.buy(game, food).game

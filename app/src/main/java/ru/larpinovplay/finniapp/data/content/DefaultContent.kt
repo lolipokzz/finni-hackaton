@@ -7,4 +7,5 @@ fun defaultContent(): Content = Content(
     shopItems = defaultShopItems,
     goals = defaultGoals,
     tasks = defaultTasks,
+    adventures = defaultAdventures,
 )

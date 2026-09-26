@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.domain.game.engine
 
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
+import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.ConfirmPlanResult
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
@@ -133,12 +135,31 @@ object GameEngine {
     }
 
     /**
+     * Засчитывает приключение недели с [mistakes] ошибками и платит награду. Ошибки влияют только на её размер:
+     * пройти — главное. null, если [adventure] сейчас не приключение недели (уже пройдено или не по порядку).
+     */
+    fun completeAdventure(
+        game: GameSnapshot,
+        adventure: Adventure,
+        mistakes: Int,
+        adventures: List<Adventure>,
+    ): Transition<AdventureResult?> {
+        val s = game.state
+        if (s.adventureOfWeek(adventures)?.id != adventure.id) return Transition(game, null)
+        val perfect = mistakes == 0
+        val result = AdventureResult(adventure.id, s.week, perfect, if (perfect) adventure.reward else adventure.rewardOnMistake)
+        val state = s.post(LedgerReason.AdventureReward(adventure.title), +result.reward)
+            .copy(adventureResults = s.adventureResults + result)
+        return Transition(game.copy(state = state), result)
+    }
+
+    /**
      * Закрывает неделю, если [GameState.finishBlock] не мешает: считает звёзды, меняет питомца,
      * начинает новую неделю в фазе плана и зачисляет карманные деньги.
      */
-    fun finishWeek(game: GameSnapshot, today: LocalDate): Transition<FinishWeekResult> {
+    fun finishWeek(game: GameSnapshot, today: LocalDate, adventures: List<Adventure> = emptyList()): Transition<FinishWeekResult> {
         val s = game.state
-        s.finishBlock(today)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
+        s.finishBlock(today, adventures)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
 
         val plan = s.plan ?: BudgetPlan()
         val spentMandatory = s.spentThisWeek(ShopCategory.MANDATORY)

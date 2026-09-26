@@ -286,6 +286,40 @@ class GameEngineTest {
     }
 
     @Test
+    fun weekWaitsForAdventureButNotForRightAnswers() {
+        val adventures = content.adventures
+        val planned = newGame().planned()
+
+        val (_, blocked) = GameEngine.finishWeek(planned, day2, adventures)
+        val (played, result) = GameEngine.completeAdventure(planned, adventures.first(), mistakes = 3, adventures = adventures)
+
+        assertEquals(FinishWeekResult.Blocked(FinishBlock.ADVENTURE_NOT_PLAYED), blocked)
+        assertEquals(adventures.first().rewardOnMistake, checkNotNull(result).reward)
+        assertEquals(100 + adventures.first().rewardOnMistake, played.state.balance)
+        assertEquals(LedgerReason.AdventureReward(adventures.first().title), played.state.ledger.last().reason)
+        assertTrue(GameEngine.finishWeek(played, day2, adventures).result is FinishWeekResult.Finished)
+    }
+
+    @Test
+    fun oneAdventurePerWeekInOrderAndUnplayedOneWaits() {
+        val first = content.adventures.first()
+        val second = first.copy(id = "second", title = "Второе")
+        val adventures = listOf(first, second)
+        val week1 = newGame().planned()
+
+        val (_, outOfOrder) = GameEngine.completeAdventure(week1, second, mistakes = 0, adventures = adventures)
+        val afterFirst = week1.then { GameEngine.completeAdventure(it, first, mistakes = 0, adventures = adventures) }
+        val (_, twice) = GameEngine.completeAdventure(afterFirst, first, mistakes = 0, adventures = adventures)
+
+        assertNull(outOfOrder)
+        assertNull(twice)
+        assertNull(afterFirst.state.adventureOfWeek(adventures))   // одно за неделю
+        // Неделя 2: второе ждёт; не сыграл — оно же ждёт и на неделе 3
+        val week2 = GameEngine.finishWeek(afterFirst, day2, adventures).game
+        assertEquals(second, week2.state.adventureOfWeek(adventures))
+    }
+
+    @Test
     fun demoWeekFinishesTheSameDay() {
         val start = newGame()
         val demo = start.copy(state = start.state.copy(demoMode = true)).planned()

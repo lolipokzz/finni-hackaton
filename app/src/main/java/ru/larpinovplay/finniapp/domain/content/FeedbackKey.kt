@@ -12,6 +12,7 @@ enum class FeedbackKey(val id: String) {
     LEDGER_WITHDRAW("ledger.withdraw"),
     LEDGER_GOAL("ledger.goal"),
     LEDGER_TASK("ledger.task"),
+    LEDGER_ADVENTURE("ledger.adventure"),
     LEDGER_WEEK_INCOME("ledger.week_income"),
 
     // Объяснение итога недели
@@ -26,6 +27,7 @@ enum class FeedbackKey(val id: String) {
 
     // Почему неделю пока нельзя закончить
     FINISH_NO_PLAN("finish.no_plan"),
+    FINISH_NO_ADVENTURE("finish.no_adventure"),
     FINISH_SAME_DAY("finish.same_day"),
 
     // Окно плана недели
@@ -55,6 +57,21 @@ enum class FeedbackKey(val id: String) {
     STORAGE_WRITE_FAILED("storage.write_failed"),
     STORAGE_CORRUPTED("storage.corrupted"),
     STORAGE_INCOMPATIBLE("storage.incompatible"),
+
+    // Приключение недели: разбор каждого шага
+    ADVENTURE_PAY_EXACT("adventure.pay_exact"),
+    ADVENTURE_PAY_CHANGE("adventure.pay_change"),
+    ADVENTURE_PAY_NOT_ENOUGH("adventure.pay_not_enough"),
+    ADVENTURE_PAY_EXTRA("adventure.pay_extra"),
+    ADVENTURE_CHANGE_OK("adventure.change_ok"),
+    ADVENTURE_CHANGE_WRONG("adventure.change_wrong"),
+    ADVENTURE_CHANGE_NONE("adventure.change_none"),
+    ADVENTURE_BASKET_FITS("adventure.basket_fits"),
+    ADVENTURE_BASKET_OVER("adventure.basket_over"),
+    ADVENTURE_BASKET_MISSING("adventure.basket_missing"),
+    ADVENTURE_DONE_PERFECT("adventure.done_perfect"),
+    ADVENTURE_DONE_MISTAKES("adventure.done_mistakes"),
+    ADVENTURE_REPLAY("adventure.replay"),
 
     // Темы заданий
     TOPIC_BUDGET("topic.budget"),

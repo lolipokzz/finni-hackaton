@@ -146,7 +146,7 @@ class HomeViewModel(
             animationsEnabled = settings.animationsEnabled,
             soundEnabled = settings.soundEnabled,
             voiceRepeatEnabled = settings.voiceRepeatEnabled,
-            suggestedSection = HomeSection.TASKS.takeIf { activeTask != null },
+            suggestedSection = HomeSection.TASKS.takeIf { activeTask != null || finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED },
             info = current?.info,
             weekSummary = current?.weekSummary,
             finishBlock = finishBlock,
