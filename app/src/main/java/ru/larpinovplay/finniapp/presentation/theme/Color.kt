@@ -19,8 +19,7 @@ object FinniColors {
     val LavenderDeep = Color(0xFFB9C6FF)
 
     // Поверхности
-    val Wall = Color(0xFFE6EEFF)
-    val WallBottom = Color(0xFFF3EEFA)
+    val Wall = Color(0xFFB095D9)         // верх стены на фоне-иллюстрации: виден под системными панелями
     val Card = Color(0xF5FFFFFF)         // белая карточка с лёгкой прозрачностью
     val CardPeach = Color(0xFFFFF3EA)
     val CardPink = Color(0xFFFFE8F1)
@@ -37,14 +36,4 @@ object FinniColors {
     val Coral = Color(0xFFFF6F61)
     val Warning = Color(0xFFFF5A5F)
     val Sunny = Color(0xFFFFE7A3)
-
-    // Комната
-    val FloorTop = Color(0xFFF6E3C1)
-    val FloorBottom = Color(0xFFEBCF9F)
-    val RugLight = Color(0xFFF8F4EC)
-    val RugRing = Color(0xFFBFD9F5)
-    val WindowSkyTop = Color(0xFFBFE1FF)
-    val WindowSkyBottom = Color(0xFFE3F4FF)
-    val Beanbag = Color(0xFFF6D77A)
-    val Plant = Color(0xFF8BCB8F)
 }

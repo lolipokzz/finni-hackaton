@@ -11,6 +11,8 @@ import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
  * ```
  * Home ─┬─ Tasks ── TaskPlay ── TaskResult (диалог) ── назад на Tasks
  *       ├─ Shop ── (нехватка монет) ── Tasks
+ *       │    └─ (купил одежду) ── Wardrobe
+ *       ├─ Wardrobe ── (пусто) ── Shop
  *       ├─ Savings
  *       ├─ Progress
  *       ├─ Settings
@@ -38,6 +40,9 @@ data class TaskResult(val taskId: String, val outcome: TaskOutcome) : NavKey
 data object Shop : NavKey
 
 @Serializable
+data object Wardrobe : NavKey
+
+@Serializable
 data object Savings : NavKey
 
 @Serializable
@@ -53,6 +58,7 @@ data object Adult : NavKey
 fun HomeSection.toRoute(): NavKey = when (this) {
     HomeSection.TASKS -> Tasks
     HomeSection.SHOP -> Shop
+    HomeSection.WARDROBE -> Wardrobe
     HomeSection.SAVINGS -> Savings
     HomeSection.PROGRESS -> Progress
     HomeSection.SETTINGS -> Settings

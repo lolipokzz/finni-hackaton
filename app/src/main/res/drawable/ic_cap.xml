@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- Кепка: купол, козырёк, пуговка -->
+    <path android:fillColor="#3D7BE0" android:pathData="M3.5,15.5C3.5,9.5 7.3,6 12,6s8.5,3.5 8.5,9.5z"/>
+    <path android:fillColor="#2A5DB3" android:pathData="M12,15.5h10c0.8,0 0.9,1.6 0,1.9c-2.4,0.8 -6.2,1.1 -10,0.6z"/>
+    <path android:fillColor="#F4F4F0" android:pathData="M3.2,15h17.6v1.4H3.2z"/>
+    <path android:fillColor="#F4F4F0" android:pathData="M12,5.2m-1.2,0a1.2,1.2 0,1 1,2.4 0a1.2,1.2 0,1 1,-2.4 0"/>
+</vector>

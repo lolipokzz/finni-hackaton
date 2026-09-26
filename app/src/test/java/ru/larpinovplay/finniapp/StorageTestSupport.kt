@@ -53,6 +53,9 @@ internal object SampleGames {
         game = GameEngine.deposit(game, 5).game
         game = GameEngine.finishWeek(game).game
         game = GameEngine.buy(game, food).game
+        val cap = content.shopItems.first { it.isWearable }
+        game = GameEngine.buy(game, cap).game
+        game = GameEngine.wear(game, cap).game
         return game
     }
 

@@ -6,6 +6,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 
 /**
  * Формат файла сохранения. Это копия доменных моделей, а не они сами: домен не знает о JSON, а формат файла
@@ -39,6 +40,7 @@ internal data class GameStateDto(
     val week: Int = 1,
     val ledger: List<LedgerEntryDto> = emptyList(),
     val purchases: List<ShopItemDto> = emptyList(),
+    val wardrobe: List<ShopItemDto> = emptyList(),
     val goal: SavingsGoalDto? = null,
     val completedGoals: List<SavingsGoalDto> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
@@ -56,6 +58,7 @@ internal data class PetDto(
     val satiety: Int,
     val mood: Int,
     val growthPoints: Int,
+    val outfit: Map<WearableSlot, String> = emptyMap(),
 )
 
 @Serializable
@@ -97,6 +100,7 @@ internal data class ShopItemDto(
     val satiety: Int = 0,
     val mood: Int = 0,
     val hint: String = "",
+    val slot: WearableSlot? = null,
 )
 
 @Serializable

@@ -13,6 +13,7 @@ import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.task.evaluate
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
@@ -31,15 +32,32 @@ object GameEngine {
     fun newGame(startBalance: Int = GameRules.START_BALANCE): GameState =
         GameState().post(LedgerReason.StartCoins, +startBalance)
 
+    /**
+     * Покупка: списывает монеты и сразу действует на питомца. Одежда ещё и попадает в гардероб навсегда
+     * (надевается отдельно, см. [wear]) и считается тратой недели, как любая покупка.
+     */
     fun buy(game: GameSnapshot, item: ShopItem): Transition<PurchaseResult> {
         val s = game.state
+        if (item.isWearable && s.owns(item)) return Transition(game, PurchaseResult.AlreadyOwned)
         if (item.price > s.balance) {
             return Transition(game, PurchaseResult.NotEnough(missing = item.price - s.balance))
         }
-        val state = s.post(LedgerReason.Purchase(item.name), -item.price).copy(purchases = s.purchases + item)
+        val state = s.post(LedgerReason.Purchase(item.name), -item.price).copy(
+            purchases = s.purchases + item,
+            wardrobe = if (item.isWearable) s.wardrobe + item else s.wardrobe,
+        )
         val pet = game.pet.changeSatiety(item.satiety).changeMood(item.mood)
         return Transition(GameSnapshot(state, pet), PurchaseResult.Success(item, balanceAfter = state.balance))
     }
+
+    /** Надевает вещь из гардероба на её место (прежняя вещь с этого места снимается). false — вещи нет в гардеробе. */
+    fun wear(game: GameSnapshot, item: ShopItem): Transition<Boolean> {
+        if (!item.isWearable || !game.state.owns(item)) return Transition(game, false)
+        return Transition(game.copy(pet = game.pet.wear(item)), true)
+    }
+
+    fun takeOff(game: GameSnapshot, slot: WearableSlot): Transition<Unit> =
+        Transition(game.copy(pet = game.pet.takeOff(slot)), Unit)
 
     fun chooseGoal(game: GameSnapshot, goal: SavingsGoal): Transition<Unit> =
         Transition(game.copy(state = game.state.copy(goal = goal)), Unit)

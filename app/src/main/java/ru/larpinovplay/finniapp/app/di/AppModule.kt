@@ -12,6 +12,7 @@ import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressViewModel
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.shop.ShopViewModel
+import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeViewModel
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskPlayViewModel
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksViewModel
 
@@ -26,6 +27,7 @@ val appModule = module {
     viewModel { TasksViewModel(get(), get()) }
     viewModel { (taskId: String) -> TaskPlayViewModel(taskId, get(), get()) }
     viewModel { ShopViewModel(get(), get()) }
+    viewModel { WardrobeViewModel(get()) }
     viewModel { SavingsViewModel(get(), get()) }
     viewModel { ProgressViewModel(get(), get()) }
     viewModel { SettingsViewModel(get()) }

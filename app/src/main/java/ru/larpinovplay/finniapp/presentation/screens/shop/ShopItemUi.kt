@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 
 /** Картинка товара по его id из справочника. */
 val ShopItem.icon: Int
@@ -13,6 +14,9 @@ val ShopItem.icon: Int
         "meat" -> R.drawable.ic_meat
         "lemonade" -> R.drawable.ic_lemonade
         "chips" -> R.drawable.ic_chips
+        "cap" -> R.drawable.ic_cap
+        "glasses" -> R.drawable.ic_glasses
+        "bowtie" -> R.drawable.ic_bowtie
         else -> R.drawable.ic_cart
     }
 
@@ -27,6 +31,17 @@ val ShopCategory.title: String
     get() = when (this) {
         ShopCategory.MANDATORY -> "Обязательные"
         ShopCategory.OPTIONAL -> "Необязательные"
+    }
+
+/** Подпись категории на карточке; у одежды ещё и то, что она остаётся навсегда. */
+val ShopItem.categoryText: String
+    get() = if (isWearable) "${category.title} · навсегда" else category.title
+
+val WearableSlot.title: String
+    get() = when (this) {
+        WearableSlot.HEAD -> "На голову"
+        WearableSlot.EYES -> "На глаза"
+        WearableSlot.NECK -> "На шею"
     }
 
 private fun Int.signed() = if (this > 0) "+$this" else "$this"

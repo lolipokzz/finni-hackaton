@@ -1,6 +1,7 @@
 package ru.larpinovplay.finniapp
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -17,6 +18,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 
@@ -41,6 +43,55 @@ class GameEngineTest {
 
         assertEquals(100, game.state.balance)
         assertEquals(1, game.state.ledger.size)
+    }
+
+    private val cap = content.shopItems.first { it.slot == WearableSlot.HEAD }
+    private val glasses = content.shopItems.first { it.slot == WearableSlot.EYES }
+
+    @Test
+    fun boughtClothesStayInWardrobeAfterWeekEnds() {
+        val (game, result) = GameEngine.buy(newGame(), cap)
+
+        assertEquals(PurchaseResult.Success(cap, balanceAfter = 100 - cap.price), result)
+        assertEquals(listOf(cap), game.state.wardrobe)
+        assertTrue(game.state.purchases.contains(cap))   // как любая покупка, это трата недели
+
+        val nextWeek = GameEngine.finishWeek(game).game
+        assertTrue(nextWeek.state.purchases.isEmpty())
+        assertEquals(listOf(cap), nextWeek.state.wardrobe)
+    }
+
+    @Test
+    fun clothesAreBoughtOnlyOnce() {
+        val game = newGame().then { GameEngine.buy(it, cap) }
+
+        val (again, result) = GameEngine.buy(game, cap)
+
+        assertEquals(PurchaseResult.AlreadyOwned, result)
+        assertEquals(game, again)
+    }
+
+    @Test
+    fun onlyOwnedClothesCanBeWorn() {
+        val (game, worn) = GameEngine.wear(newGame(), cap)
+
+        assertFalse(worn)
+        assertTrue(game.pet.outfit.isEmpty())
+    }
+
+    @Test
+    fun oneItemPerSlotAndTakingOffFreesIt() {
+        val owner = newGame(startBalance = 200)
+            .then { GameEngine.buy(it, cap) }
+            .then { GameEngine.buy(it, glasses) }
+        val balance = owner.state.balance
+
+        val dressed = owner.then { GameEngine.wear(it, cap) }.then { GameEngine.wear(it, glasses) }
+        assertEquals(mapOf(WearableSlot.HEAD to cap.id, WearableSlot.EYES to glasses.id), dressed.pet.outfit)
+        assertEquals(balance, dressed.state.balance)   // надевать бесплатно
+
+        val undressed = dressed.then { GameEngine.takeOff(it, WearableSlot.HEAD) }
+        assertEquals(mapOf(WearableSlot.EYES to glasses.id), undressed.pet.outfit)
     }
 
     @Test

@@ -19,11 +19,12 @@ internal data class SettingsSaveFile(
     val soundEnabled: Boolean = true,
     val animationsEnabled: Boolean = true,
     val tipsEnabled: Boolean = true,
+    val voiceRepeatEnabled: Boolean = true,
 )
 
-internal fun SettingsSaveFile.toDomain() = AppSettings(soundEnabled, animationsEnabled, tipsEnabled)
+internal fun SettingsSaveFile.toDomain() = AppSettings(soundEnabled, animationsEnabled, tipsEnabled, voiceRepeatEnabled)
 
-internal fun AppSettings.toDto() = SettingsSaveFile(soundEnabled, animationsEnabled, tipsEnabled)
+internal fun AppSettings.toDto() = SettingsSaveFile(soundEnabled, animationsEnabled, tipsEnabled, voiceRepeatEnabled)
 
 internal object SettingsSaveSerializer : Serializer<SettingsSaveFile> {
 

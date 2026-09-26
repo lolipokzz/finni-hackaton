@@ -1,5 +1,15 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -54,11 +64,19 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
+import ru.larpinovplay.finniapp.presentation.components.PetHostOwner
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.components.PetSpec
+import ru.larpinovplay.finniapp.presentation.components.RoomAnchor
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.rememberRoomAnchor
+import ru.larpinovplay.finniapp.presentation.components.roomOrigin
+import ru.larpinovplay.finniapp.presentation.components.roomPetSlot
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
+import ru.larpinovplay.finniapp.presentation.pet.accessoryNodes
+import ru.larpinovplay.finniapp.presentation.pet.hitAnimations
 import ru.larpinovplay.finniapp.presentation.pet.idleAnimation
+import ru.larpinovplay.finniapp.presentation.pet.pettingAnimation
 import ru.larpinovplay.finniapp.presentation.pet.tapAnimation
 import ru.larpinovplay.finniapp.presentation.pet.modelAsset
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
@@ -100,8 +118,9 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier,
     petHost: PetHostState? = null,   // null — превью и тесты: 3D-питомец не рисуется
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        RoomBackground()
+    val room = rememberRoomAnchor()
+    Box(modifier = modifier.fillMaxSize().roomOrigin(room)) {
+        RoomBackground(anchor = room)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -132,7 +151,7 @@ fun HomeScreenContent(
                 state.tip?.let { TipBubble(text = it.text()) }
             }
             Box(Modifier.fillMaxWidth().weight(1f)) {
-                PetArea(state, petHost, modifier = Modifier.align(Alignment.BottomCenter))
+                PetArea(state, petHost, room, modifier = Modifier.align(Alignment.BottomCenter))
             }
 
             Spacer(Modifier.height(6.dp))
@@ -325,16 +344,25 @@ private fun WeekLine(state: HomeUiState, modifier: Modifier = Modifier) {
  * Если модели для вида нет, рисуется кружок-заглушка.
  */
 @Composable
-private fun PetArea(state: HomeUiState, petHost: PetHostState?, modifier: Modifier = Modifier) {
+private fun PetArea(state: HomeUiState, petHost: PetHostState?, room: RoomAnchor, modifier: Modifier = Modifier) {
     val pet = state.pet
     val asset = pet.look.modelAsset(pet.growthStage)
+    // Повторять слова можно, только если это разрешено взрослым, звук включён и есть доступ к микрофону.
+    // Спрашиваем доступ лишь при живом питомце: в превью нет механизма разрешений
+    val wantsVoice = state.voiceRepeatEnabled && state.soundEnabled
+    val micGranted = petHost != null && asset != null && rememberMicrophone(ask = wantsVoice)
     val spec = asset?.let {
         PetSpec(
             assetName = it,
             tintArgb = pet.look.color.argb,
             animationsEnabled = state.animationsEnabled,
-            idleAnimation = pet.look.idleAnimation,
+            soundEnabled = state.soundEnabled,
+            voiceEnabled = wantsVoice && micGranted,
+            idleAnimation = pet.idleAnimation,
             tapAnimation = pet.look.tapAnimation,
+            hitAnimations = pet.look.hitAnimations,
+            pettingAnimation = pet.look.pettingAnimation,
+            accessories = pet.accessoryNodes,
         )
     }
     SideEffect { petHost?.spec = spec }
@@ -345,7 +373,8 @@ private fun PetArea(state: HomeUiState, petHost: PetHostState?, modifier: Modifi
             modifier = modifier
                 .fillMaxHeight()
                 .aspectRatio(1f, matchHeightConstraintsFirst = true)
-                .onGloballyPositioned { petHost?.slot = it }
+                .onGloballyPositioned { petHost?.setSlot(PetHostOwner.HOME, it) }
+                .roomPetSlot(room)
         )
     } else {
         Box(
@@ -359,6 +388,23 @@ private fun PetArea(state: HomeUiState, petHost: PetHostState?, modifier: Modifi
             Text(pet.name, style = MaterialTheme.typography.headlineSmall, color = Color.White)
         }
     }
+}
+
+/**
+ * Есть ли доступ к микрофону. Если [ask] и доступа нет — один раз за показ экрана спрашивает у системы
+ * (после двух отказов Android сам перестаёт показывать запрос, и питомец просто не повторяет слова).
+ */
+@Composable
+private fun rememberMicrophone(ask: Boolean): Boolean {
+    val context = LocalContext.current
+    var granted by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+    }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
+    LaunchedEffect(ask) {
+        if (ask && !granted) request.launch(Manifest.permission.RECORD_AUDIO)
+    }
+    return granted
 }
 
 /** Белое облачко с лампочкой и хвостиком снизу слева. */
@@ -410,6 +456,7 @@ private data class MenuItem(val section: HomeSection, @DrawableRes val icon: Int
 private val menuItems = listOf(
     MenuItem(HomeSection.TASKS, R.drawable.ic_target, "Задания"),
     MenuItem(HomeSection.SHOP, R.drawable.ic_cart, "Магазин"),
+    MenuItem(HomeSection.WARDROBE, R.drawable.ic_hanger, "Гардероб"),
     MenuItem(HomeSection.SAVINGS, R.drawable.ic_pig, "Копилка"),
     MenuItem(HomeSection.PROGRESS, R.drawable.ic_star, "Прогресс"),
 )

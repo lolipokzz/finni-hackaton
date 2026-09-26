@@ -4,6 +4,7 @@ package ru.larpinovplay.finniapp.presentation.screens.home
 enum class HomeSection(val title: String) {
     TASKS("Задания"),
     SHOP("Магазин"),
+    WARDROBE("Гардероб"),
     SAVINGS("Копилка"),
     PROGRESS("Прогресс"),
     SETTINGS("Настройки"),

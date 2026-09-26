@@ -81,6 +81,8 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
                 AdultCard("Настройки") {
                     PreferenceSwitch("Звук", state.settings.soundEnabled, !state.busy, viewModel::setSound)
                     PreferenceSwitch("Анимации", state.settings.animationsEnabled, !state.busy, viewModel::setAnimations)
+                    // Микрофон: звук обрабатывается только на устройстве, не сохраняется и никуда не отправляется
+                    PreferenceSwitch("Кот повторяет слова (микрофон)", state.settings.voiceRepeatEnabled, !state.busy, viewModel::setVoiceRepeat)
                 }
                 AdultCard("Демонстрационный режим") {
                     Text("Тестовый питомец, 100 монет, первая неделя. Игровые недели завершаются кнопкой, без ожидания реального времени.")

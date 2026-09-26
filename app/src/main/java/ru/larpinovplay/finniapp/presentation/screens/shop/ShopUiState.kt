@@ -8,6 +8,7 @@ data class ShopUiState(
     val foodCovered: Boolean,
     val tab: ShopCategory,
     val items: List<ShopItem>,                    // товары выбранной вкладки
+    val owned: Set<String> = emptySet(),          // id одежды, которая уже в гардеробе
     val pending: ShopItem? = null,                // ждёт подтверждения
     val feedback: PurchaseFeedback? = null,
 )
