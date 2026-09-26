@@ -26,17 +26,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
-import ru.larpinovplay.finniapp.presentation.game.foodText
+import ru.larpinovplay.finniapp.domain.game.model.Deed
+import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
+import ru.larpinovplay.finniapp.presentation.game.deedText
 import ru.larpinovplay.finniapp.presentation.game.grewText
 import ru.larpinovplay.finniapp.presentation.game.icon
 import ru.larpinovplay.finniapp.presentation.game.label
-import ru.larpinovplay.finniapp.presentation.game.planText
-import ru.larpinovplay.finniapp.presentation.game.savedText
+import ru.larpinovplay.finniapp.presentation.game.title
+import ru.larpinovplay.finniapp.presentation.pet.nextStageTitle
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
- * Итоги недели (ТЗ 2.5.9, 2.5.10): план против факта по каждому направлению, три звезды с объяснением,
- * что стало с питомцем и сколько пришло на новую неделю. Отметки — значок и слово, не только цвет (ТЗ 3.6).
+ * Итоги недели (ТЗ 2.5.9, 2.5.10): четыре дела недели с объяснением и сколько шагов роста они дали,
+ * план против факта по каждому направлению, что стало с питомцем и сколько пришло на новую неделю. Отметки — значок и слово, не только цвет (ТЗ 3.6).
  * Закрывается только кнопкой: за итогами сразу идёт план новой недели.
  */
 @Composable
@@ -51,25 +53,28 @@ fun WeekSummaryDialog(summary: WeekSummary, onDismiss: () -> Unit) {
         title = { Text("Неделя ${summary.week}: итоги", style = MaterialTheme.typography.headlineSmall) },
         text = {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                SectionTitle("Дела недели: ${summary.steps} из ${WeekDeeds.MAX_STEPS}")
+                Deed.entries.forEach { DeedLine(summary.deeds[it], it.title, summary.deedText(it)) }
+                Text(
+                    when {
+                        summary.grew -> summary.grewText()
+                        summary.stepsToNextStage != null ->
+                            "+${summary.steps} ${stepsWord(summary.steps)} роста. До того как Финни станет " +
+                                "${nextStageTitle(summary.stageAfter)}, ещё ${summary.stepsToNextStage}"
+                        else -> "+${summary.steps} ${stepsWord(summary.steps)} роста"
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = FinniColors.Blue,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+
+                Spacer(Modifier.height(12.dp))
                 SectionTitle("План и факт")
                 BudgetDirection.entries.forEach { PlanFactRow(it, plan = summary.plan[it], fact = summary.fact(it)) }
 
                 Spacer(Modifier.height(12.dp))
-                SectionTitle("Звёзды: ${summary.score} из ${WeekSummary.MAX_SCORE}")
-                StarLine(summary.foodCovered, "Забота", summary.foodText())
-                StarLine(summary.savedSomething, "Копилка", summary.savedText())
-                StarLine(summary.planKept, "План", summary.planText())
-                if (summary.grew) {
-                    Text(
-                        summary.grewText(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = FinniColors.Blue,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
+                if (summary.savingsBonus > 0) StatRow("Бонус копилки", "+${summary.savingsBonus} в копилку")
                 StatRow("Настроение", if (summary.moodDelta >= 0) "+${summary.moodDelta}" else "${summary.moodDelta}")
                 StatRow("На новую неделю", "+${summary.nextIncome} карманных")
             }
@@ -106,19 +111,27 @@ private fun PlanFactRow(direction: BudgetDirection, plan: Int, fact: Int) {
     }
 }
 
+/** Дело недели: ✓ или ○ и слово, а не только цвет (ТЗ 3.6). */
 @Composable
-private fun StarLine(earned: Boolean, name: String, explanation: String) {
+private fun DeedLine(done: Boolean, name: String, explanation: String) {
     Row(Modifier.padding(vertical = 3.dp)) {
         Text(
-            if (earned) "★" else "☆",
+            if (done) "✓" else "○",
             style = MaterialTheme.typography.titleLarge,
-            color = if (earned) FinniColors.Satiety else FinniColors.NavyMuted,
+            color = if (done) FinniColors.Mood else FinniColors.NavyMuted,
         )
         Column(Modifier.padding(start = 8.dp)) {
-            Text(if (earned) "$name — есть" else "$name — пока нет", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            Text(if (done) "$name — сделано" else "$name — не вышло", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
             Text(explanation, style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
+
+/** «1 шаг», «2 шага», «0 шагов». */
+private fun stepsWord(n: Int): String = when {
+    n % 10 == 1 && n % 100 != 11 -> "шаг"
+    n % 10 in 2..4 && n % 100 !in 12..14 -> "шага"
+    else -> "шагов"
 }
 
 @Composable

@@ -14,6 +14,9 @@ sealed interface LedgerReason {
 
     /** Ребёнок забрал монеты из копилки обратно в кошелёк. */
     data object Withdraw : LedgerReason
+
+    /** Бонус копилки за неделю, в которую отложено достаточно: приходит сразу в копилку. */
+    data object SavingsBonus : LedgerReason
     data class GoalReached(val goalName: String) : LedgerReason
     data class TaskReward(val taskTitle: String) : LedgerReason
     data class AdventureReward(val adventureTitle: String) : LedgerReason

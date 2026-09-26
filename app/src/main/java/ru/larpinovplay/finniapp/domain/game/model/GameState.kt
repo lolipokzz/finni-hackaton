@@ -35,8 +35,6 @@ data class GameState(
     val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),
 ) {
-    val foodCovered: Boolean get() = purchases.any { it.category == ShopCategory.MANDATORY }
-
     fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id }
 
     /** Сколько за эту неделю потрачено на товары [category]. */
@@ -54,6 +52,9 @@ data class GameState(
     val weekIncome: Int
         get() = ledger.filter { it.week == week && (it.reason == LedgerReason.WeekIncome || it.reason == LedgerReason.StartCoins) }
             .sumOf { it.balanceDelta }
+
+    /** Сколько вещей и целей радуют Финни каждую неделю: одежда из гардероба и достигнутые цели. */
+    val lastingJoys: Int get() = wardrobe.size + completedGoals.size
 
     /** Приключение этой недели уже пройдено. */
     val adventureDoneThisWeek: Boolean get() = adventureResults.any { it.week == week }

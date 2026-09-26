@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
@@ -90,7 +91,7 @@ fun ShopScreenContent(
                 Spacer(Modifier.height(10.dp))
             }
             if (state.tab == ShopCategory.MANDATORY) {
-                NeedsChecklist(state.foodCovered)
+                NeedsChecklist(state.weekSatiety)
                 Spacer(Modifier.height(10.dp))
             }
             LazyColumn(
@@ -255,9 +256,14 @@ private fun PlanBar(spent: Int, planned: Int) {
     }
 }
 
-/** Чек-лист обязательного на неделю (docs/03-processes.md, П5). Статус словом, не только галочкой. */
+/**
+ * Дело «Финни сыт»: сколько сытости куплено из нужных на неделю (docs/03-processes.md, П5).
+ * Статус словом, не только галочкой.
+ */
 @Composable
-private fun NeedsChecklist(foodCovered: Boolean) {
+private fun NeedsChecklist(weekSatiety: Int) {
+    val need = GameRules.WEEKLY_HUNGER
+    val foodCovered = weekSatiety >= need
     WhiteCard(modifier = Modifier.fillMaxWidth(), color = FinniColors.CardPeach, shape = RoundedCornerShape(18.dp)) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -267,7 +273,8 @@ private fun NeedsChecklist(foodCovered: Boolean) {
             Column(Modifier.padding(start = 10.dp)) {
                 Text("Еда на неделю", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    if (foodCovered) "Куплено. Финни будет сыт" else "Ещё не куплено. Это важнее игрушек",
+                    if (foodCovered) "Куплено $weekSatiety сытости из $need. Финни будет сыт всю неделю"
+                    else "Куплено $weekSatiety сытости из $need. Еда важнее игрушек",
                     style = MaterialTheme.typography.bodyMedium,
                     color = FinniColors.NavyMuted
                 )

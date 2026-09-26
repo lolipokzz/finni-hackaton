@@ -22,17 +22,17 @@ class PetTest {
     fun newbornIsBabyWithNeutralStats() {
         assertEquals(PetGrowthStage.BABY, pet.growthStage)
         assertEquals(0, pet.growthPoints)
-        assertEquals(5, pet.pointsToNextStage)
+        assertEquals(PetGrowthStage.TEEN.minGrowthPoints, pet.pointsToNextStage)
         assertFalse(pet.isHungry)
         assertEquals(MoodLevel.NEUTRAL, pet.mood.level)
     }
 
     @Test
-    fun satietyAndMoodAreClampedTo0To100() {
+    fun satietyIsClampedTo0To100AndMoodTo20To100() {
         assertEquals(100, pet.changeSatiety(+500).satiety.value)
         assertEquals(0, pet.changeSatiety(-500).satiety.value)
         assertEquals(100, pet.changeMood(+500).mood.value)
-        assertEquals(0, pet.changeMood(-500).mood.value)
+        assertEquals(20, pet.changeMood(-500).mood.value)   // ниже «скучает» не опускается
     }
 
     @Test
@@ -44,7 +44,7 @@ class PetTest {
 
     @Test
     fun moodLevelThresholdsAreFortyAndSeventy() {
-        assertEquals(MoodLevel.SAD, PetMood(39).level)
+        assertEquals(MoodLevel.BORED, PetMood(39).level)
         assertEquals(MoodLevel.NEUTRAL, PetMood(40).level)
         assertEquals(MoodLevel.NEUTRAL, PetMood(69).level)
         assertEquals(MoodLevel.HAPPY, PetMood(70).level)
@@ -52,18 +52,18 @@ class PetTest {
 
     @Test
     fun stageIsDerivedFromGrowthPoints() {
-        assertEquals(PetGrowthStage.BABY, pet.grow(4).growthStage)
-        assertEquals(PetGrowthStage.TEEN, pet.grow(5).growthStage)
-        assertEquals(PetGrowthStage.TEEN, pet.grow(9).growthStage)
-        assertEquals(PetGrowthStage.ADULT, pet.grow(10).growthStage)
+        assertEquals(PetGrowthStage.BABY, pet.grow(7).growthStage)
+        assertEquals(PetGrowthStage.TEEN, pet.grow(8).growthStage)
+        assertEquals(PetGrowthStage.TEEN, pet.grow(15).growthStage)
+        assertEquals(PetGrowthStage.ADULT, pet.grow(16).growthStage)
         assertEquals(PetGrowthStage.ADULT, pet.grow(50).growthStage)
     }
 
     @Test
     fun pointsToNextStageShrinksAndEndsAtLastStage() {
-        assertEquals(1, pet.grow(4).pointsToNextStage)
-        assertEquals(5, pet.grow(5).pointsToNextStage)
-        assertNull(pet.grow(10).pointsToNextStage)
+        assertEquals(1, pet.grow(7).pointsToNextStage)
+        assertEquals(8, pet.grow(8).pointsToNextStage)
+        assertNull(pet.grow(16).pointsToNextStage)
     }
 
     @Test(expected = IllegalArgumentException::class)

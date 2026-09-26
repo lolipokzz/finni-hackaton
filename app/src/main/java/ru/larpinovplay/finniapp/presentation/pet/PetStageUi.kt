@@ -7,3 +7,10 @@ fun PetGrowthStage.title(): String = when (this) {
     PetGrowthStage.TEEN -> "Подросток"
     PetGrowthStage.ADULT -> "Взрослый"
 }
+
+/** Кем станет питомец на следующей стадии: «…станет подростком». Для последней стадии — пусто. */
+fun nextStageTitle(stage: PetGrowthStage): String = when (stage) {
+    PetGrowthStage.BABY -> "подростком"
+    PetGrowthStage.TEEN -> "взрослым"
+    PetGrowthStage.ADULT -> ""
+}

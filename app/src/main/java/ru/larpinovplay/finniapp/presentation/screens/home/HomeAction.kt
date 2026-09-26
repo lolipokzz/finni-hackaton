@@ -10,6 +10,8 @@ sealed interface HomeAction {
     data object DismissInfo : HomeAction
     data object DismissWeekSummary : HomeAction
     data object DismissFinishNotice : HomeAction
+    data object ShowDeeds : HomeAction
+    data object DismissDeeds : HomeAction
 
     /** «+» или «−» у строки плана. */
     data class ChangePlan(val direction: BudgetDirection, val increase: Boolean) : HomeAction

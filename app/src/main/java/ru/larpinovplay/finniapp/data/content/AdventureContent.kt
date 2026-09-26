@@ -34,8 +34,8 @@ internal val defaultAdventures: List<Adventure> = listOf(
                     "Запомни: сдачу считают сразу у кассы.",
             ),
         ),
-        reward = 10,
-        rewardOnMistake = 5,
+        reward = 5,
+        rewardOnMistake = 3,
     ),
     Adventure(
         id = "park_walk",
@@ -76,8 +76,8 @@ internal val defaultAdventures: List<Adventure> = listOf(
                     "сначала выбирают самое важное, а остальное — если останется.",
             ),
         ),
-        reward = 10,
-        rewardOnMistake = 5,
+        reward = 5,
+        rewardOnMistake = 3,
     ),
     Adventure(
         id = "scratched_paw",
@@ -135,8 +135,8 @@ internal val defaultAdventures: List<Adventure> = listOf(
                     "если очень нужно, оттуда можно взять.",
             ),
         ),
-        reward = 10,
-        rewardOnMistake = 5,
+        reward = 5,
+        rewardOnMistake = 3,
     ),
     Adventure(
         id = "fair",
@@ -213,8 +213,8 @@ internal val defaultAdventures: List<Adventure> = listOf(
                     "из-за скидки не спешат, а сдачу проверяют сразу.",
             ),
         ),
-        reward = 10,
-        rewardOnMistake = 5,
+        reward = 5,
+        rewardOnMistake = 3,
     ),
     Adventure(
         id = "friend_gift",
@@ -281,7 +281,7 @@ internal val defaultAdventures: List<Adventure> = listOf(
                     "Большие покупки получаются, когда копишь заранее и по плану.",
             ),
         ),
-        reward = 10,
-        rewardOnMistake = 5,
+        reward = 5,
+        rewardOnMistake = 3,
     ),
 )
