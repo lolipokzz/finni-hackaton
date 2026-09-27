@@ -36,6 +36,11 @@ import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
 import ru.larpinovplay.finniapp.domain.game.model.Deed
+import ru.larpinovplay.finniapp.presentation.components.CardDialog
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CardTitle
+import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.game.label
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors

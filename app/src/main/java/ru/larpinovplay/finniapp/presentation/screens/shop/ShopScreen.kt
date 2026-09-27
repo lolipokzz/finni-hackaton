@@ -1,50 +1,82 @@
 package ru.larpinovplay.finniapp.presentation.screens.shop
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.game.engine.GameRules
+import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
+import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import ru.larpinovplay.finniapp.presentation.components.BackButton
+import ru.larpinovplay.finniapp.presentation.components.CardDialog
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CoinPill
+import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.EffectChip
+import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
+import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.SoftButton
+import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.components.creamCard
+import ru.larpinovplay.finniapp.presentation.screens.home.barColor
+import ru.larpinovplay.finniapp.presentation.screens.home.sticker
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
  * Магазин, ТЗ 2.5.6: товары двух типов; до покупки видны цена, категория и влияние на питомца;
  * покупка требует подтверждения; при нехватке монет — объяснение и варианты, а не просто отказ.
+ *
+ * Тот же язык наклеек, что у главного экрана и окон недели: кремовые карточки в белой обводке,
+ * у категорий — наклейки дел, к которым они ведут (обязательное — еда, необязательное — радость).
  */
 @Composable
 fun ShopScreen(
@@ -76,37 +108,42 @@ fun ShopScreenContent(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp)
-        ) {
-            Spacer(Modifier.height(8.dp))
-            ShopHeader(balance = state.balance, onBack = onBack)
-            Spacer(Modifier.height(12.dp))
-            CategoryTabs(selected = state.tab, budgets = state.budgets, onSelect = { onAction(ShopAction.TabSelected(it)) })
+        Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
-            state.budgets[state.tab]?.let {
-                PlanCard(it)
-                Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BackButton(onBack)
+                Text(
+                    "Магазин",
+                    style = OnRoomLabel.copy(fontSize = 26.sp),
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                CoinPill(state.balance)
             }
-            if (state.tab == ShopCategory.MANDATORY) {
-                NeedsChecklist(state.weekSatiety)
-                Spacer(Modifier.height(10.dp))
-            }
-            LazyColumn(
+            Spacer(Modifier.height(14.dp))
+            CategoryTabs(selected = state.tab, onSelect = { onAction(ShopAction.TabSelected(it)) })
+            Spacer(Modifier.height(12.dp))
+            // Товары — плитки по три: картинка, название, цена. Что даёт вещь, видно в окне покупки
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.weight(1f)
+                contentPadding = PaddingValues(bottom = 20.dp),
+                modifier = Modifier.weight(1f),
             ) {
+                val budget = state.budgets[state.tab]
+                if (budget != null || state.tab == ShopCategory.MANDATORY) {
+                    item(key = "plan-${state.tab}", span = { GridItemSpan(maxLineSpan) }) {
+                        PlanCard(state.tab, budget, state.weekSatiety)
+                    }
+                }
                 items(state.items, key = { it.id }) { item ->
-                    ShopItemCard(
+                    ShopItemTile(
                         item = item,
                         affordable = item.price <= state.balance,
                         owned = item.id in state.owned,
                         onBuy = { onAction(ShopAction.BuyClicked(item)) },
                     )
                 }
-                item { Spacer(Modifier.height(12.dp)) }
             }
         }
     }
@@ -138,201 +175,304 @@ fun ShopScreenContent(
     }
 }
 
-// ---------- Шапка и вкладки ----------
+// ---------- Цвета и наклейки категорий: те же, что у дел недели и плана ----------
 
-@Composable
-private fun ShopHeader(balance: Int, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Surface(onClick = onBack, shape = CircleShape, color = FinniColors.Lavender, modifier = Modifier.size(48.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("‹", style = MaterialTheme.typography.headlineMedium, color = FinniColors.Navy)
-            }
-        }
-        Text("Магазин", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-        WhiteCard(shape = RoundedCornerShape(20.dp)) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(painterResource(R.drawable.ic_coin), null, Modifier.size(26.dp))
-                Text("$balance", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 6.dp))
-            }
-        }
+private val ShopCategory.deed: Deed
+    get() = when (this) {
+        ShopCategory.MANDATORY -> Deed.FED
+        ShopCategory.OPTIONAL -> Deed.NOT_BORED
     }
-}
 
-/** Вкладки категорий. Под названием — остаток по плану, чтобы обе строки плана были видны сразу. */
+private val ShopCategory.direction: BudgetDirection
+    get() = when (this) {
+        ShopCategory.MANDATORY -> BudgetDirection.MANDATORY
+        ShopCategory.OPTIONAL -> BudgetDirection.OPTIONAL
+    }
+
+private val ShopCategory.tint: Color get() = deed.sticker.second
+
+private val SatietyTint = Color(0xFFFFF0E6)
+private val MoodTint = Color(0xFFFFF5C9)
+private val WarnInk = Color(0xFFB4471B)
+private val WarnTint = Color(0xFFFFF0E6)
+
+// ---------- Вкладки ----------
+
+/** Две вкладки-наклейки в одной кремовой плашке. Выбранная — бирюзовая, как главные кнопки. */
 @Composable
-private fun CategoryTabs(
-    selected: ShopCategory,
-    budgets: Map<ShopCategory, ShopUiState.CategoryBudget>,
-    onSelect: (ShopCategory) -> Unit,
-) {
-    WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(22.dp)) {
-        Row(Modifier.padding(6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            ShopCategory.entries.forEach { category ->
-                val isSelected = category == selected
-                Surface(
-                    onClick = { onSelect(category) },
-                    shape = RoundedCornerShape(18.dp),
-                    color = if (isSelected) FinniColors.Blue else Color.Transparent,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(if (budgets.isEmpty()) 48.dp else 60.dp)
+private fun CategoryTabs(selected: ShopCategory, onSelect: (ShopCategory) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .creamCard(CircleShape, elevation = 8.dp)
+            .padding(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        ShopCategory.entries.forEach { category ->
+            val isSelected = category == selected
+            Surface(
+                onClick = { onSelect(category) },
+                shape = CircleShape,
+                color = if (isSelected) FinniColors.Teal else Color.Transparent,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp)
+                    .semantics {
+                        role = Role.Tab
+                        this.selected = isSelected
+                    },
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                        Text(
-                            category.title,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = if (isSelected) Color.White else FinniColors.Navy
-                        )
-                        budgets[category]?.let { budget ->
-                            Text(
-                                budget.shortText,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = when {
-                                    isSelected -> Color.White
-                                    budget.left < 0 -> FinniColors.Warning
-                                    else -> FinniColors.NavyMuted
-                                },
-                            )
-                        }
-                    }
+                    Box(
+                        Modifier.size(32.dp).clip(CircleShape).background(category.tint).border(2.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) { Image(painterResource(category.deed.sticker.first), null, Modifier.size(20.dp)) }
+                    Text(
+                        category.title,
+                        fontSize = 15.sp, fontWeight = FontWeight.Black,
+                        color = if (isSelected) Color.White else FinniColors.Ink,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
     }
 }
 
-/** «осталось 5» или «! сверх плана 10»: перерасход помечен словом и знаком, не только цветом. */
-private val ShopUiState.CategoryBudget.shortText: String
-    get() = if (left >= 0) "осталось $left" else "! сверх плана ${-left}"
-
-/** План недели на выбранную категорию: сколько задумано, потрачено и осталось. */
-@Composable
-private fun PlanCard(budget: ShopUiState.CategoryBudget) {
-    WhiteCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(R.drawable.ic_clipboard), null, Modifier.size(28.dp))
-                Text(
-                    "По плану на неделю: ${budget.planned}",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(start = 8.dp).weight(1f),
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            PlanBar(spent = budget.spent, planned = budget.planned)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                if (budget.left >= 0) "Потрачено ${budget.spent} · осталось ${budget.left}"
-                else "! Потрачено ${budget.spent}: на ${-budget.left} больше плана",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (budget.left >= 0) FinniColors.NavyMuted else FinniColors.Warning,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlanBar(spent: Int, planned: Int) {
-    val fraction = if (planned > 0) (spent.toFloat() / planned).coerceIn(0f, 1f) else if (spent > 0) 1f else 0f
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(10.dp)
-            .background(FinniColors.Track, RoundedCornerShape(5.dp))
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth(fraction)
-                .height(10.dp)
-                .background(if (spent > planned) FinniColors.Warning else FinniColors.Blue, RoundedCornerShape(5.dp))
-        )
-    }
-}
+// ---------- План категории и еда на неделю ----------
 
 /**
- * Дело «Финни сыт»: сколько сытости куплено из нужных на неделю (docs/03-processes.md, П5).
- * Статус словом, не только галочкой.
+ * Карточка над товарами: сколько по плану осталось на эту категорию, и — у обязательного —
+ * куплено ли еды на неделю (дело «Финни сыт»). Перерасход помечен знаком и словами, не только цветом.
  */
 @Composable
-private fun NeedsChecklist(weekSatiety: Int) {
-    val need = GameRules.WEEKLY_HUNGER
-    val foodCovered = weekSatiety >= need
-    WhiteCard(modifier = Modifier.fillMaxWidth(), color = FinniColors.CardPeach, shape = RoundedCornerShape(18.dp)) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(if (foodCovered) "✓" else "○", style = MaterialTheme.typography.titleLarge, color = if (foodCovered) FinniColors.Mood else FinniColors.NavyMuted)
-            Column(Modifier.padding(start = 10.dp)) {
-                Text("Еда на неделю", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    if (foodCovered) "Куплено $weekSatiety сытости из $need. Финни будет сыт всю неделю"
-                    else "Куплено $weekSatiety сытости из $need. Еда важнее игрушек",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = FinniColors.NavyMuted
+private fun PlanCard(category: ShopCategory, budget: ShopUiState.CategoryBudget?, weekSatiety: Int) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .creamCard(RoundedCornerShape(26.dp), elevation = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        budget?.let { b ->
+            val over = b.left < 0
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.clearAndSetSemantics {
+                    contentDescription = if (over) "Сверх плана на ${-b.left}. Потрачено ${b.spent} из ${b.planned}"
+                    else "По плану осталось ${b.left} из ${b.planned}"
+                },
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (over) "! Сверх плана на ${-b.left}" else "По плану осталось",
+                        fontSize = 15.sp, fontWeight = FontWeight.Black,
+                        color = if (over) WarnInk else FinniColors.Ink,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!over) {
+                        Image(painterResource(R.drawable.ic_coin), null, Modifier.size(20.dp))
+                        Text(
+                            " ${b.left}",
+                            fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.CoinInk,
+                        )
+                        Text(" из ${b.planned}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                    }
+                }
+                // Полоска — остаток: тает с каждой покупкой; сверх плана — вся тёплая, как предупреждение
+                Meter(
+                    fraction = when {
+                        over -> 1f
+                        b.planned > 0 -> b.left.toFloat() / b.planned
+                        else -> 0f
+                    },
+                    color = if (over) FinniColors.DeedPending else category.direction.barColor,
                 )
             }
         }
+        if (category == ShopCategory.MANDATORY) {
+            if (budget != null) DashedDivider()
+            FoodLine(weekSatiety)
+        }
+    }
+}
+
+/** Дело «Финни сыт»: сколько сытости куплено из нужных на неделю (docs/03-processes.md, П5). */
+@Composable
+private fun FoodLine(weekSatiety: Int) {
+    val need = GameRules.WEEKLY_HUNGER
+    val done = weekSatiety >= need
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.clearAndSetSemantics {
+            contentDescription = "Еда на неделю: куплено $weekSatiety сытости из $need" + if (done) ". Сделано" else ""
+        },
+    ) {
+        DeedMark(done)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text("Еда на неделю", fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, modifier = Modifier.weight(1f))
+                Text("${weekSatiety.coerceAtMost(need)} из $need", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (done) FinniColors.Teal else FinniColors.InkMuted)
+            }
+            Meter(fraction = weekSatiety.toFloat() / need, color = if (done) FinniColors.TealBright else FinniColors.SatietyRing)
+            if (!done) Text("Сначала еда — потом радости", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        }
+    }
+}
+
+/** Отметка дела: бирюзовый кружок с галочкой или пунктирное место под наклейку — как в карточке дел. */
+@Composable
+private fun DeedMark(done: Boolean) {
+    if (done) {
+        Box(
+            Modifier.size(36.dp).clip(CircleShape).background(FinniColors.Teal).border(3.dp, Color.White, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(16.dp)) }
+    } else {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(SatietyTint), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.size(36.dp)) {
+                val w = 2.5.dp.toPx()
+                drawCircle(
+                    FinniColors.DeedPending, radius = size.minDimension / 2 - w / 2,
+                    style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
+                )
+            }
+            Image(painterResource(R.drawable.ic_meter_apple), null, Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun Meter(fraction: Float, color: Color) {
+    val shown by animateFloatAsState(fraction.coerceIn(0f, 1f), label = "meter")
+    Box(Modifier.fillMaxWidth().height(10.dp).clip(CircleShape).background(FinniColors.Dashed)) {
+        if (shown > 0f) Box(Modifier.fillMaxWidth(shown).fillMaxHeight().clip(CircleShape).background(color))
     }
 }
 
 // ---------- Карточка товара ----------
 
+/** Что даёт вещь: наклейки-числа сытости и настроения; у одежды — ещё «навсегда». */
 @Composable
-private fun ShopItemCard(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit) {
-    WhiteCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                Modifier
-                    .size(64.dp)
-                    .background(FinniColors.BlueLight, RoundedCornerShape(18.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(painterResource(item.icon), null, Modifier.size(42.dp))
-            }
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp)
-            ) {
-                Text(item.name, style = MaterialTheme.typography.titleMedium)
-                Text(item.categoryText, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
-                Text(item.effectText, style = MaterialTheme.typography.bodyMedium, color = FinniColors.Navy)
-                Text(item.hint, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${item.price}", style = MaterialTheme.typography.titleLarge)
-                    Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
-                }
-                // Кнопка активна всегда: попытка купить при нехватке — учебная ситуация (ТЗ 2.5.6).
-                // Выключена только у одежды, которая уже есть: её покупают один раз
-                Button(
-                    onClick = onBuy,
-                    enabled = !owned,
-                    shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (affordable) FinniColors.Green else FinniColors.LavenderDeep,
-                        contentColor = if (affordable) Color.White else FinniColors.Navy
-                    ),
-                    modifier = Modifier.height(44.dp)
-                ) { Text(if (owned) "Уже есть" else "Купить", style = MaterialTheme.typography.labelLarge) }
-            }
+private fun EffectChips(item: ShopItem, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        if (item.satiety != 0) EffectChip(R.drawable.ic_meter_apple, item.satiety, SatietyTint)
+        if (item.mood != 0) EffectChip(R.drawable.ic_meter_smile, item.mood, MoodTint)
+        if (item.isWearable) {
+            Text(
+                "навсегда", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
+                modifier = Modifier.clip(CircleShape).background(FinniColors.CardMint).padding(horizontal = 9.dp, vertical = 3.dp),
+            )
         }
     }
 }
 
-// ---------- Диалоги ----------
+/**
+ * Плитка товара: крупная картинка, название и цена. Нажимается вся плитка — дальше окно покупки,
+ * где видно, что вещь даст Финни. Нажать можно и когда монет не хватает: это учебная ситуация (ТЗ 2.5.6),
+ * тогда цена просто спокойнее. Одежду, которая уже есть, второй раз не купить.
+ */
+@Composable
+private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit) {
+    val shape = RoundedCornerShape(24.dp)
+    Surface(
+        onClick = onBuy,
+        enabled = !owned,
+        shape = shape,
+        color = Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .creamCard(shape, elevation = 8.dp)
+            .clearAndSetSemantics {
+                role = Role.Button
+                contentDescription = when {
+                    owned -> "${item.name}: уже есть в гардеробе"
+                    affordable -> "${item.name}, ${item.price} монет. Купить"
+                    else -> "${item.name}, ${item.price} монет. Монет не хватает"
+                }
+            },
+    ) {
+        Column(
+            Modifier.padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            CardSticker(item.icon, item.category.tint, size = 78.dp, iconScale = 0.66f)
+            Text(
+                item.name,
+                fontSize = 14.sp, lineHeight = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink,
+                textAlign = TextAlign.Center, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
+            PriceTag(item.price, affordable, owned)
+        }
+    }
+}
+
+/** Цена на плитке: персиковая, если хватает монет, спокойная — если нет; у купленной одежды — «есть». */
+@Composable
+private fun PriceTag(price: Int, affordable: Boolean, owned: Boolean) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .clip(CircleShape)
+            .background(
+                when {
+                    owned -> FinniColors.CardMint
+                    affordable -> FinniColors.ActionPeach
+                    else -> FinniColors.Pebble
+                }
+            ),
+        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (owned) {
+            Box(Modifier.size(20.dp).clip(CircleShape).background(FinniColors.Teal), contentAlignment = Alignment.Center) {
+                Image(painterResource(R.drawable.ic_check), null, Modifier.size(10.dp))
+            }
+            Text("есть", fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal)
+        } else {
+            Image(painterResource(R.drawable.ic_coin), null, Modifier.size(24.dp))
+            Text(
+                "$price", fontSize = 18.sp, fontWeight = FontWeight.Black,
+                color = if (affordable) FinniColors.ActionPeachInk else FinniColors.InkMuted,
+            )
+        }
+    }
+}
+
+// ---------- Окна покупки ----------
+
+/** Шапка окна покупки: наклейка товара, крупная строка и бирюзовая подстрока. */
+@Composable
+private fun ItemHeader(item: ShopItem, title: String, subtitle: String, done: Boolean = false) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Box {
+            CardSticker(item.icon, item.category.tint, size = 72.dp)
+            if (done) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 6.dp, y = 4.dp)
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(FinniColors.Teal)
+                        .border(3.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(14.dp)) }
+            }
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, modifier = Modifier.semantics { heading() })
+            Text(subtitle, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal)
+        }
+    }
+}
 
 @Composable
 private fun PurchaseConfirmDialog(
@@ -343,83 +483,61 @@ private fun PurchaseConfirmDialog(
     onDismiss: () -> Unit,
 ) {
     val remaining = balance - item.price
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = Color.White,
-        icon = { Image(painterResource(item.icon), null, Modifier.size(56.dp)) },
-        title = { Text("Купить ${item.name.lowercase()}?", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center) },
-        text = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                InfoLine("Цена", "${item.price} монет")
-                InfoLine("Категория", item.categoryText)
-                InfoLine("Эффект", item.effectText)
-                InfoLine(
-                    if (remaining >= 0) "Останется" else "Не хватает",
-                    if (remaining >= 0) "$remaining монет" else "${-remaining} монет"
-                )
-                budget?.let {
-                    val leftAfter = it.left - item.price
-                    if (leftAfter >= 0) {
-                        InfoLine("По плану останется", "$leftAfter из ${it.planned}")
-                    } else {
-                        // Покупку не запрещаем: план — намерение ребёнка, а не запрет
-                        InfoLine("Сверх плана", "! ${-leftAfter} монет", FinniColors.Warning)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = onConfirm, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
-                Text("Купить", style = MaterialTheme.typography.labelLarge)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("Не сейчас", style = MaterialTheme.typography.labelLarge) }
+    CardDialog(onDismiss = onDismiss) {
+        ItemHeader(item, "Купить ${item.name.lowercase()}?", "${item.category.title} · ${item.price} монет")
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Финни получит", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            EffectChips(item)
         }
-    )
+        Text(item.hint, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        DashedDivider()
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (remaining >= 0) StatRow("Останется монет", "$remaining", coin = true)
+            else StatRow("Не хватает монет", "${-remaining}", coin = true, warn = true)
+            budget?.let {
+                val leftAfter = it.left - item.price
+                // Покупку не запрещаем: план — намерение ребёнка, а не запрет
+                if (leftAfter >= 0) StatRow("По плану останется", "$leftAfter из ${it.planned}")
+                else StatRow("Сверх плана", "! ${-leftAfter}", warn = true)
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TealButton("Купить", R.drawable.ic_coin, onConfirm)
+            SoftButton("Не сейчас", onDismiss)
+        }
+    }
 }
 
 @Composable
 private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit, onDismiss: () -> Unit) {
     val item = fb.item
     val explanation = when {
-        item.category == ShopCategory.MANDATORY -> "${item.name} — это нужное. Финни поел и доволен!"
-        item.isWearable -> "${item.name} теперь в гардеробе навсегда. Надень это Финни! Помни: это желаемое, а не еда"
-        else -> "${item.name} порадовал Финни. Помни: это желаемое, а не еда"
+        item.category == ShopCategory.MANDATORY -> "${item.name} — это обязательное. Финни поел и доволен!"
+        item.isWearable -> "${item.name} теперь в гардеробе навсегда. Надень это Финни! Помни: это необязательное, а не еда"
+        else -> "${item.name} порадовал Финни. Помни: это необязательное, а не еда"
     }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = Color.White,
-        icon = { Image(painterResource(item.icon), null, Modifier.size(56.dp)) },
-        title = { Text("Что изменилось", style = MaterialTheme.typography.headlineSmall) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                if (fb.fromSavings > 0) InfoLine("Из копилки", "${fb.fromSavings} монет")
-                InfoLine("Монеты", "−${item.price}, осталось ${fb.balanceAfter}")
-                InfoLine("Питомец", item.effectText)
-                Spacer(Modifier.height(8.dp))
-                Text(explanation, style = MaterialTheme.typography.bodyLarge)
-            }
-        },
-        confirmButton = {
-            if (item.isWearable) {
-                Button(onClick = onGoToWardrobe, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
-                    Text("Надеть", style = MaterialTheme.typography.labelLarge)
-                }
-            } else {
-                Button(onClick = onDismiss, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
-                    Text("Понятно", style = MaterialTheme.typography.labelLarge)
-                }
-            }
-        },
-        dismissButton = {
-            if (item.isWearable) {
-                TextButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("Потом", style = MaterialTheme.typography.labelLarge) }
-            }
+    CardDialog(onDismiss = onDismiss) {
+        ItemHeader(item, "Куплено!", item.name, done = true)
+        Text(explanation, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Финни получил", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            EffectChips(item)
         }
-    )
+        DashedDivider()
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (fb.fromSavings > 0) StatRow("Взято из копилки", "${fb.fromSavings}", coin = true)
+            StatRow("Потрачено", "${item.price}", coin = true)
+            StatRow("Осталось монет", "${fb.balanceAfter}", coin = true)
+        }
+        if (item.isWearable) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                TealButton("Надеть", R.drawable.ic_nav_wardrobe, onGoToWardrobe)
+                SoftButton("Потом", onDismiss)
+            }
+        } else {
+            TealButton("Понятно", R.drawable.ic_check, onDismiss)
+        }
+    }
 }
 
 /** Нехватка средств: сколько не хватает и что можно сделать (docs/03-processes.md, П5). */
@@ -431,28 +549,52 @@ private fun NotEnoughDialog(
     onTakeFromSavings: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = Color.White,
-        title = { Text("Не хватает ${fb.missing} монет", style = MaterialTheme.typography.headlineSmall) },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("${fb.item.name} стоит ${fb.item.price}. Вот что можно сделать:", style = MaterialTheme.typography.bodyLarge)
-                if (fb.canTakeFromSavings) {
-                    OptionButton("Взять ${fb.missing} из копилки и купить", onTakeFromSavings)
-                    Text(savingsConsequence(fb), style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
-                }
-                OptionButton("Выполнить задание и заработать", onGoToTasks)
-                fb.cheaper.forEach { OptionButton("Выбрать дешевле: ${it.name} за ${it.price}") { onPick(it) } }
-                OptionButton("Подождать следующую неделю", onDismiss)
+    CardDialog(onDismiss = onDismiss) {
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Не хватает ${fb.missing} монет",
+                    fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text("${fb.item.name} стоит ${fb.item.price}", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal)
             }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss, modifier = Modifier.height(48.dp)) { Text("Закрыть", style = MaterialTheme.typography.labelLarge) }
+            PebbleButton(R.drawable.ic_close, "Закрыть", onDismiss)
         }
-    )
+        Text("Что можно сделать", fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (fb.canTakeFromSavings) {
+                OptionRow(R.drawable.ic_deed_pig, Color(0xFFFFE6F0), "Взять ${fb.missing} из копилки и купить", savingsConsequence(fb), onTakeFromSavings)
+            }
+            OptionRow(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2), "Заработать на задании", null, onGoToTasks)
+            fb.cheaper.forEach { cheaper ->
+                OptionRow(cheaper.icon, cheaper.category.tint, "Выбрать дешевле: ${cheaper.name}", "${cheaper.price} монет · ${cheaper.effectText}") { onPick(cheaper) }
+            }
+            OptionRow(R.drawable.ic_moon, Color(0xFFEEF0FF), "Подождать следующую неделю", "Придут новые карманные", onDismiss)
+        }
+    }
+}
+
+/** Вариант выхода из нехватки: наклейка, что сделать и что из этого будет, стрелка — туда. */
+@Composable
+private fun OptionRow(icon: Int, tint: Color, title: String, subtitle: String?, onClick: () -> Unit) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(22.dp), color = tint.copy(alpha = 0.55f), modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CardSticker(icon, tint, size = 44.dp)
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+                subtitle?.let { Text(it, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted) }
+            }
+            Image(
+                painterResource(R.drawable.ic_arrow_right), null, Modifier.size(18.dp),
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(FinniColors.InkMuted),
+            )
+        }
+    }
 }
 
 /** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Домика» не хватит 60». */
@@ -462,41 +604,24 @@ private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     return "В копилке ${fb.savings} → станет $after. До «${goal.name}» будет не хватать ${(goal.cost - after).coerceAtLeast(0)}"
 }
 
+/** Строка «что изменится»: подпись слева, число справа; предупреждение — на тёплой пилюле и со словами. */
 @Composable
-private fun OptionButton(text: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = FinniColors.BlueLight,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-    ) {
-        Box(contentAlignment = Alignment.CenterStart, modifier = Modifier.padding(horizontal = 14.dp)) {
-            Text(text, style = MaterialTheme.typography.labelLarge, color = FinniColors.Navy)
+private fun StatRow(label: String, value: String, coin: Boolean = false, warn: Boolean = false) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (warn) WarnInk else FinniColors.InkMuted, modifier = Modifier.weight(1f))
+        Row(
+            Modifier.clip(CircleShape).background(if (warn) WarnTint else Color.Transparent).padding(horizontal = if (warn) 10.dp else 0.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (coin) Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(end = 4.dp).size(20.dp))
+            Text(
+                value, fontSize = 16.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.End,
+                color = when {
+                    warn -> WarnInk
+                    coin -> FinniColors.CoinInk
+                    else -> FinniColors.Ink
+                },
+            )
         }
     }
-}
-
-@Composable
-private fun InfoLine(label: String, value: String, valueColor: Color = FinniColors.Navy) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, textAlign = TextAlign.End, color = valueColor)
-    }
-}
-
-@Composable
-private fun WhiteCard(
-    modifier: Modifier = Modifier,
-    color: Color = FinniColors.Card,
-    shape: RoundedCornerShape = RoundedCornerShape(24.dp),
-    content: @Composable () -> Unit,
-) {
-    Surface(
-        modifier = modifier.shadow(6.dp, shape, ambientColor = FinniColors.Navy.copy(alpha = 0.15f), spotColor = FinniColors.Navy.copy(alpha = 0.15f)),
-        shape = shape,
-        color = color,
-        content = content
-    )
 }

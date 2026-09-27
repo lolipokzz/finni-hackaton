@@ -33,6 +33,13 @@ import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
 import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.presentation.components.CardDialog
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CardTitle
+import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.Growth
+import ru.larpinovplay.finniapp.presentation.components.Paws
+import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.game.deedText
 import ru.larpinovplay.finniapp.presentation.game.grewText
 import ru.larpinovplay.finniapp.presentation.game.label

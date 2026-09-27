@@ -73,11 +73,19 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
+import ru.larpinovplay.finniapp.presentation.components.creamCard
+import ru.larpinovplay.finniapp.presentation.components.BubbleTail
+import ru.larpinovplay.finniapp.presentation.components.CoinPill
+import ru.larpinovplay.finniapp.presentation.components.MeterRing
+import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
+import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.PetHostOwner
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.components.PetSpec
+import ru.larpinovplay.finniapp.presentation.components.PillButton
 import ru.larpinovplay.finniapp.presentation.components.RoomAnchor
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.Sticker
 import ru.larpinovplay.finniapp.presentation.components.rememberRoomAnchor
 import ru.larpinovplay.finniapp.presentation.components.roomOrigin
 import ru.larpinovplay.finniapp.presentation.components.roomPetSlot
@@ -199,7 +207,7 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
             onClick = { onAction(HomeAction.ShowInfo(HomeInfo.MOOD)) },
         )
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            CoinPill(state.balance) { onAction(HomeAction.ShowInfo(HomeInfo.COINS)) }
+            CoinPill(state.balance, onClick = { onAction(HomeAction.ShowInfo(HomeInfo.COINS)) })
         }
         PebbleButton(
             icon = R.drawable.ic_gear_line,
@@ -207,29 +215,6 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
             color = FinniColors.Cream.copy(alpha = 0.85f),
             onClick = { onAction(HomeAction.OpenSection(HomeSection.SETTINGS)) },
         )
-    }
-}
-
-@Composable
-private fun CoinPill(coins: Int, onClick: () -> Unit) {
-    val shape = CircleShape
-    Surface(
-        onClick = onClick,
-        shape = shape,
-        color = Color.Transparent,
-        modifier = Modifier
-            .height(52.dp)
-            .creamCard(shape, elevation = 8.dp, border = 3.dp)
-            .semantics { contentDescription = "Монеты: $coins" },
-    ) {
-        Row(
-            Modifier.background(FinniColors.CoinPill).padding(start = 6.dp, end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Image(painterResource(R.drawable.ic_coin), null, Modifier.size(36.dp))
-            Text("$coins", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.CoinInk)
-        }
     }
 }
 
