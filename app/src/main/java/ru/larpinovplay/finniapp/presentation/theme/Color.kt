@@ -62,4 +62,7 @@ object FinniColors {
     val PawNew = Color(0xFFFFB020)       // шаг роста, заработанный на этой неделе
     val PawEmpty = Color(0xFFD6ECE6)
     val DeedPending = Color(0xFFFF9A62)
+    val WarnInk = Color(0xFFB4471B)      // мягкое предупреждение: «сверх плана», «не вышло»
+    val WarnTint = Color(0xFFFFF0E6)
+    val DreamTint = Color(0xFFFFE6F0)    // мечта и копилка
 }

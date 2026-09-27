@@ -346,3 +346,41 @@ fun EffectChip(@DrawableRes icon: Int, value: Int, tint: Color, modifier: Modifi
         Text(if (value > 0) "+$value" else "$value", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
     }
 }
+
+/** «−» и «+» — такие же круглые кнопки, как «закрыть» у карточек. */
+@Composable
+fun StepButton(symbol: String, description: String, enabled: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = FinniColors.Pebble,
+        modifier = Modifier.size(48.dp).alpha(if (enabled) 1f else 0.4f).semantics { contentDescription = description },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+        }
+    }
+}
+
+/** Строка «что изменится»: подпись слева, число справа; предупреждение — на тёплой пилюле и со словами. */
+@Composable
+fun StatRow(label: String, value: String, coin: Boolean = false, warn: Boolean = false) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (warn) FinniColors.WarnInk else FinniColors.InkMuted, modifier = Modifier.weight(1f))
+        Row(
+            Modifier.clip(CircleShape).background(if (warn) FinniColors.WarnTint else Color.Transparent).padding(horizontal = if (warn) 10.dp else 0.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (coin) Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(end = 4.dp).size(20.dp))
+            Text(
+                value, fontSize = 16.sp, fontWeight = FontWeight.Black,
+                color = when {
+                    warn -> FinniColors.WarnInk
+                    coin -> FinniColors.CoinInk
+                    else -> FinniColors.Ink
+                },
+            )
+        }
+    }
+}

@@ -65,6 +65,7 @@ import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
 import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.components.SoftButton
+import ru.larpinovplay.finniapp.presentation.components.StatRow
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.screens.home.barColor
@@ -193,8 +194,7 @@ private val ShopCategory.tint: Color get() = deed.sticker.second
 
 private val SatietyTint = Color(0xFFFFF0E6)
 private val MoodTint = Color(0xFFFFF5C9)
-private val WarnInk = Color(0xFFB4471B)
-private val WarnTint = Color(0xFFFFF0E6)
+private val WarnInk = FinniColors.WarnInk
 
 // ---------- Вкладки ----------
 
@@ -603,26 +603,4 @@ private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     val after = fb.savings - fb.missing
     val goal = fb.goal ?: return "В копилке ${fb.savings} → станет $after"
     return "В копилке ${fb.savings} → станет $after. До «${goal.name}» будет не хватать ${(goal.cost - after).coerceAtLeast(0)}"
-}
-
-/** Строка «что изменится»: подпись слева, число справа; предупреждение — на тёплой пилюле и со словами. */
-@Composable
-private fun StatRow(label: String, value: String, coin: Boolean = false, warn: Boolean = false) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = if (warn) WarnInk else FinniColors.InkMuted, modifier = Modifier.weight(1f))
-        Row(
-            Modifier.clip(CircleShape).background(if (warn) WarnTint else Color.Transparent).padding(horizontal = if (warn) 10.dp else 0.dp, vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (coin) Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(end = 4.dp).size(20.dp))
-            Text(
-                value, fontSize = 16.sp, fontWeight = FontWeight.Black, textAlign = TextAlign.End,
-                color = when {
-                    warn -> WarnInk
-                    coin -> FinniColors.CoinInk
-                    else -> FinniColors.Ink
-                },
-            )
-        }
-    }
 }

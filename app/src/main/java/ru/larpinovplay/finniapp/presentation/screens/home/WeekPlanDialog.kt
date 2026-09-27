@@ -15,13 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -40,6 +38,7 @@ import ru.larpinovplay.finniapp.presentation.components.CardDialog
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.CardTitle
 import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.StepButton
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.game.label
@@ -173,22 +172,6 @@ private fun PlanRow(
                 modifier = Modifier.width(64.dp).semantics { contentDescription = "${direction.label}: $amount" },
             )
             StepButton("+", "Прибавить: ${direction.label}", enabled = canIncrease) { onChange(true) }
-        }
-    }
-}
-
-/** «−» и «+» — такие же круглые кнопки, как «закрыть» у карточки дел. */
-@Composable
-private fun StepButton(symbol: String, description: String, enabled: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = CircleShape,
-        color = FinniColors.Pebble,
-        modifier = Modifier.size(48.dp).alpha(if (enabled) 1f else 0.4f).semantics { contentDescription = description },
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
         }
     }
 }
