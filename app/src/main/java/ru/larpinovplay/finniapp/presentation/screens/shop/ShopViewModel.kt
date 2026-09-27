@@ -18,7 +18,6 @@ import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
-import ru.larpinovplay.finniapp.presentation.pet.supportsWardrobe
 import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 class ShopViewModel(
@@ -87,11 +86,7 @@ class ShopViewModel(
         }
     }
 
-    /** Одежду показываем, только если её видно на модели питомца. */
-    private fun itemsOf(category: ShopCategory): List<ShopItem> {
-        val wardrobe = game.requireSnapshot().pet.look.supportsWardrobe
-        return content.shopItems.filter { it.category == category && (wardrobe || !it.isWearable) }
-    }
+    private fun itemsOf(category: ShopCategory): List<ShopItem> = content.shopItems.filter { it.category == category }
 
     private fun ownedIds(): Set<String> = game.requireSnapshot().state.wardrobe.mapTo(mutableSetOf()) { it.id }
 

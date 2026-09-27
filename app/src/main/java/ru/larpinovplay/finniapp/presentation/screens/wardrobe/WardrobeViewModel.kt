@@ -14,7 +14,6 @@ import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.presentation.pet.accessoryNodes
 import ru.larpinovplay.finniapp.presentation.pet.accessoryNode
-import ru.larpinovplay.finniapp.presentation.pet.supportsWardrobe
 
 /** Гардероб: купленная одежда питомца, по одной вещи на место. Всё состояние — из игры. */
 class WardrobeViewModel(private val game: GameRepository) : ViewModel() {
@@ -36,12 +35,10 @@ class WardrobeViewModel(private val game: GameRepository) : ViewModel() {
     private fun toUiState(snapshot: GameSnapshot): WardrobeUiState {
         val pet = snapshot.pet
         val items = snapshot.state.wardrobe
-            .filter { pet.look.accessoryNode(it.id) != null }
+            .filter { accessoryNode(it.id) != null }
             .sortedBy { it.slot }
             .map { WardrobeItem(it, worn = it.slot?.let(pet.outfit::get) == it.id) }
         return WardrobeUiState(
-            petName = pet.name,
-            supported = pet.look.supportsWardrobe,
             items = items,
             accessories = pet.accessoryNodes,
         )

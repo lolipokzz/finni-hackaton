@@ -28,7 +28,6 @@ import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeViewModel
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationViewModel
@@ -88,7 +87,7 @@ class AppModuleTest {
     /** Остальные экраны открываются только после создания питомца, поэтому и в тесте игра сначала начата. */
     @Test
     fun everyGameScreenViewModelResolves() = runBlocking {
-        koin.get<GameRepository>().createPet(Pet.newborn("Финни", PetLook(PetSpecies.BUNNY, PetColor.CORAL)))
+        koin.get<GameRepository>().createPet(Pet.newborn("Финни", PetLook(PetColor.CORAL)))
 
         koin.get<HomeViewModel>()
         koin.get<TasksViewModel>()

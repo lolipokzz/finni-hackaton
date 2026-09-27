@@ -70,7 +70,6 @@ private fun GameStateDto.toDomain() = GameState(
 
 private fun Pet.toDto() = PetDto(
     name = name,
-    species = look.species,
     color = look.color,
     satiety = satiety.value,
     mood = mood.value,
@@ -80,7 +79,7 @@ private fun Pet.toDto() = PetDto(
 
 private fun PetDto.toDomain() = Pet(
     name = name,
-    look = PetLook(species, color),
+    look = PetLook(color),   // вид из старых сохранений (кролик) не читается: теперь это кот
     satiety = PetSatiety(satiety),
     mood = PetMood(mood),
     growthPoints = growthPoints,

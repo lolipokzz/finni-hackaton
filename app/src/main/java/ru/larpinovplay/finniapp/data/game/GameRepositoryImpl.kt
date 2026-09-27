@@ -24,7 +24,6 @@ import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.storage.StorageError
@@ -114,7 +113,7 @@ class GameRepositoryImpl(
         val demo = GameSnapshot(
             GameEngine.newGame(today(), startBalance).copy(demoMode = true),
             // Кот: у него весь функционал — удары, поглаживание, эмоции, гардероб, голос
-            Pet.newborn("Финни Демо", PetLook(PetSpecies.CAT, PetColor.CORAL)),
+            Pet.newborn("Финни Демо", PetLook(PetColor.CORAL)),
         )
         persist(demo)
     }

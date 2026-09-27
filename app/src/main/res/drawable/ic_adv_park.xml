@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Приключение «Прогулка в парке»: дерево и воздушный шарик. -->
+    <path android:fillColor="#BFEFD6"
+        android:pathData="M5,43 a17,3 0 1,0 34,0 a17,3 0 1,0 -34,0Z"/>
+    <path android:fillColor="#B9784A"
+        android:pathData="M21,27 h2 a2,2 0 0,1 2,2 v12 a2,2 0 0,1 -2,2 h-2 a2,2 0 0,1 -2,-2 v-12 a2,2 0 0,1 2,-2Z"/>
+    <path android:fillColor="#4CC38A"
+        android:pathData="M6.5,24 a7.5,7.5 0 1,0 15,0 a7.5,7.5 0 1,0 -15,0Z"/>
+    <path android:fillColor="#4CC38A"
+        android:pathData="M22.5,24 a7.5,7.5 0 1,0 15,0 a7.5,7.5 0 1,0 -15,0Z"/>
+    <path android:fillColor="#5CD69C"
+        android:pathData="M11,17 a11,11 0 1,0 22,0 a11,11 0 1,0 -22,0Z"/>
+    <path android:fillColor="#9BEBC2"
+        android:pathData="M15.6,13 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0Z"/>
+    <path android:strokeColor="#8A5A70" android:strokeWidth="1.5" android:strokeLineCap="round"
+        android:pathData="M39 18c-2 5 1 9-1 14"/>
+    <path android:fillColor="#FF6FA8"
+        android:pathData="M33.5,11 a5.5,6.5 0 1,0 11,0 a5.5,6.5 0 1,0 -11,0Z"/>
+    <path android:fillColor="#FFB0D0"
+        android:pathData="M35.6,9 a1.4,2 0 1,0 2.8,0 a1.4,2 0 1,0 -2.8,0Z"/>
+</vector>

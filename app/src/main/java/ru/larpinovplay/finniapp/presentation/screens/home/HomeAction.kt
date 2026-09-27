@@ -9,7 +9,6 @@ sealed interface HomeAction {
     data class ShowInfo(val info: HomeInfo) : HomeAction
     data object DismissInfo : HomeAction
     data object DismissWeekSummary : HomeAction
-    data object DismissFinishNotice : HomeAction
     data object ShowDeeds : HomeAction
     data object DismissDeeds : HomeAction
 

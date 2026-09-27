@@ -92,6 +92,19 @@ class DataStoreGameStoreTest {
         assertEquals(Result.Success(game), openStore().load())
     }
 
+    /** Раньше питомец мог быть кроликом; теперь он всегда кот, а прогресс старого сохранения остаётся. */
+    @Test
+    fun oldBunnySaveLoadsAsCat() = runBlocking {
+        val scope = newScope()
+        val game = SampleGames.rich()
+        DataStoreGameStore.create(scope, { file }, flaky).save(game)
+        scope.coroutineContext[Job]!!.cancelAndJoin()
+        file.writeText(file.readText().replaceFirst("\"pet\":{", "\"pet\":{\"species\":\"BUNNY\","))
+        assertTrue(file.readText().contains("\"species\":\"BUNNY\""))
+
+        assertEquals(Result.Success(game), openStore().load())
+    }
+
     // ---------- Повреждённые и чужие данные ----------
 
     @Test

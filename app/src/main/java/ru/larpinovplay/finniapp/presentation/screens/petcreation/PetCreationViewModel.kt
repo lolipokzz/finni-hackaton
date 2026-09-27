@@ -8,7 +8,6 @@ import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.util.result.Result
 
@@ -73,13 +72,10 @@ class PetCreationViewModel(
 
         viewModelScope.launch {
             _state.value = creation.copy(isCreating = true)
-            _state.value = when (val created = game.createPet(Pet.newborn(name = creation.name, look = PetLook(PET_SPECIES, color)))) {
+            _state.value = when (val created = game.createPet(Pet.newborn(name = creation.name, look = PetLook(color)))) {
                 is Result.Success -> PetCreationUiState.Loaded
                 is Result.Error -> creation.copy(isCreating = false, notice = created.error)   // игру не записали: остаёмся на форме
             }
         }
     }
 }
-
-/** Питомец в игре один — кот: у него есть весь функционал (анимации, гардероб, голос). Выбирается только раскраска. */
-private val PET_SPECIES = PetSpecies.CAT

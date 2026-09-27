@@ -1,30 +1,33 @@
 package ru.larpinovplay.finniapp.presentation.screens.savings
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,23 +36,50 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
+import ru.larpinovplay.finniapp.presentation.components.BackButton
+import ru.larpinovplay.finniapp.presentation.components.CardDialog
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CoinPill
+import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.EffectChip
+import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
+import ru.larpinovplay.finniapp.presentation.components.PillButton
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.SoftButton
+import ru.larpinovplay.finniapp.presentation.components.StatRow
+import ru.larpinovplay.finniapp.presentation.components.StepButton
+import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.changesRoom
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
  * Копилка, ТЗ 2.5.7: цели с понятной стоимостью, выбранная цель выделена; видны накоплено,
- * осталось и срок по среднему пополнению; можно регулярно переводить монеты в копилку.
+ * осталось и срок по среднему пополнению; можно регулярно переводить монеты в копилку и забирать их.
+ *
+ * Сверху — мечта в большом розовом кольце: то же кольцо, что вокруг «Копилки» в меню главного экрана,
+ * только крупно. Под ним — все мечты плитками, как товары в магазине.
  */
 @Composable
 fun SavingsScreen(
@@ -70,62 +100,57 @@ fun SavingsScreenContent(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            item { Spacer(Modifier.height(0.dp)); Header(state.balance, onBack) }
-            item {
-                val goal = state.goal
-                if (goal == null) NoGoalCard(state.savings, onWithdraw = { onAction(SavingsAction.WithdrawClicked) }) else CurrentGoalCard(
-                    goal = goal,
-                    state = state,
-                    onDeposit = { onAction(SavingsAction.Deposit(it)) },
-                    onReach = { onAction(SavingsAction.ReachGoalClicked) },
-                    onWithdraw = { onAction(SavingsAction.WithdrawClicked) },
-                )
+        Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BackButton(onBack)
+                Text("Копилка", style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
+                CoinPill(state.balance)
             }
-            item {
-                Text(
-                    "На что копим",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(start = 6.dp, top = 6.dp)
-                )
+            Spacer(Modifier.height(14.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 20.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                item(key = "dream", span = { GridItemSpan(maxLineSpan) }) {
+                    val goal = state.goal
+                    if (goal == null) NoDreamCard(state.savings, onWithdraw = { onAction(SavingsAction.WithdrawClicked) })
+                    else DreamCard(
+                        goal = goal,
+                        state = state,
+                        onDeposit = { onAction(SavingsAction.Deposit(it)) },
+                        onReach = { onAction(SavingsAction.ReachGoalClicked) },
+                        onWithdraw = { onAction(SavingsAction.WithdrawClicked) },
+                    )
+                }
+                item(key = "title", span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        if (state.goal == null) "Выбери мечту" else "Все мечты",
+                        style = OnRoomLabel.copy(fontSize = 20.sp),
+                        modifier = Modifier.padding(start = 4.dp, top = 6.dp).semantics { heading() },
+                    )
+                }
+                items(state.goals, key = { it.id }) { goal ->
+                    GoalTile(
+                        goal = goal,
+                        selected = goal.id == state.goal?.id,
+                        completed = goal.id in state.completedGoalIds,
+                        onClick = { onAction(SavingsAction.GoalClicked(goal)) },
+                    )
+                }
             }
-            items(state.goals, key = { it.id }) { goal ->
-                GoalCard(
-                    goal = goal,
-                    selected = goal.id == state.goal?.id,
-                    completed = goal.id in state.completedGoalIds,
-                    onClick = { onAction(SavingsAction.GoalClicked(goal)) }
-                )
-            }
-            item { Spacer(Modifier.height(12.dp)) }
         }
     }
 
     state.switchTo?.let { goal ->
-        AlertDialog(
-            onDismissRequest = { onAction(SavingsAction.DismissSwitch) },
-            shape = RoundedCornerShape(28.dp),
-            containerColor = Color.White,
-            title = { Text("Поменять цель?", style = MaterialTheme.typography.headlineSmall) },
-            text = {
-                Text(
-                    "Копилка останется: ${state.savings} монет. Теперь ты будешь копить на «${goal.name}» за ${goal.cost}.",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            },
-            confirmButton = {
-                Button(onClick = { onAction(SavingsAction.ConfirmSwitch) }, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
-                    Text("Да, поменять", style = MaterialTheme.typography.labelLarge)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { onAction(SavingsAction.DismissSwitch) }, modifier = Modifier.height(48.dp)) { Text("Оставить", style = MaterialTheme.typography.labelLarge) }
-            }
+        SwitchGoalDialog(
+            goal = goal,
+            savings = state.savings,
+            onConfirm = { onAction(SavingsAction.ConfirmSwitch) },
+            onDismiss = { onAction(SavingsAction.DismissSwitch) },
         )
     }
     state.withdraw?.let { draft ->
@@ -137,93 +162,42 @@ fun SavingsScreenContent(
             onDismiss = { onAction(SavingsAction.DismissWithdraw) },
         )
     }
-    state.reached?.let { goal ->
-        AlertDialog(
-            onDismissRequest = { onAction(SavingsAction.DismissReached) },
-            shape = RoundedCornerShape(28.dp),
-            containerColor = Color.White,
-            icon = { Image(painterResource(goal.icon), null, Modifier.size(64.dp)) },
-            title = { Text("Ура! Цель достигнута", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center) },
-            text = {
-                val done = when {
-                    goal.id == "room" -> "«${goal.name}» готов: загляни на главный экран, какая теперь комната у Финни!"
-                    goal.trip -> "«${goal.name}»: Финни уехал на целую неделю — загляни на главный экран! Когда неделя закончится, он вернётся домой с сувенирами."
-                    changesRoom(goal.id) -> "«${goal.name}» теперь в комнате Финни — загляни на главный экран."
-                    else -> "«${goal.name}» теперь у Финни."
-                }
-                Text(
-                    "$done Ты откладывал каждую неделю — и получилось. Настроение +30. Выбери новую цель!",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
+    state.reached?.let { goal -> DreamCameTrueDialog(goal, onDismiss = { onAction(SavingsAction.DismissReached) }) }
+}
+
+// ---------- Мечта ----------
+
+/**
+ * Большое кольцо мечты: розовая дуга растёт по мере накопления, в середине — сама мечта.
+ * Заполнение плавно догоняет новое значение после «Отложить».
+ */
+@Composable
+private fun DreamRing(progress: Float, icon: Int, modifier: Modifier = Modifier, size: Dp = 176.dp) {
+    val shown by animateFloatAsState(
+        progress.coerceIn(0f, 1f),
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+        label = "dream",
+    )
+    Box(modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(size)) {
+            val stroke = 16.dp.toPx()
+            val inset = stroke / 2
+            val arcSize = androidx.compose.ui.geometry.Size(this.size.width - stroke, this.size.height - stroke)
+            val topLeft = androidx.compose.ui.geometry.Offset(inset, inset)
+            drawArc(FinniColors.DreamTrack, 0f, 360f, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(stroke))
+            if (shown > 0f) {
+                drawArc(
+                    FinniColors.DreamRing, -90f, 360f * shown, useCenter = false, topLeft = topLeft, size = arcSize,
+                    style = Stroke(stroke, cap = StrokeCap.Round),
                 )
-            },
-            confirmButton = {
-                Button(onClick = { onAction(SavingsAction.DismissReached) }, shape = RoundedCornerShape(16.dp), modifier = Modifier.height(48.dp)) {
-                    Text("Здорово", style = MaterialTheme.typography.labelLarge)
-                }
-            }
-        )
-    }
-}
-
-// ---------- Шапка ----------
-
-@Composable
-private fun Header(balance: Int, onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Surface(onClick = onBack, shape = CircleShape, color = FinniColors.Lavender, modifier = Modifier.size(48.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("‹", style = MaterialTheme.typography.headlineMedium, color = FinniColors.Navy)
             }
         }
-        Text("Копилка", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-        WhiteCard(shape = RoundedCornerShape(20.dp)) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Image(painterResource(R.drawable.ic_coin), null, Modifier.size(26.dp))
-                Text("$balance", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(start = 6.dp))
-            }
-        }
-    }
-}
-
-// ---------- Текущая цель ----------
-
-/** Цели нет, но монеты в копилке уже могут быть: например, отложенные по плану недели. */
-@Composable
-private fun NoGoalCard(savings: Int, onWithdraw: () -> Unit) {
-    WhiteCard(modifier = Modifier.fillMaxWidth(), color = FinniColors.CardPink) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(painterResource(R.drawable.ic_pig), null, Modifier.size(48.dp))
-                Column(Modifier.padding(start = 12.dp)) {
-                    Text("Цель пока не выбрана", style = MaterialTheme.typography.titleMedium)
-                    if (savings > 0) Text("В копилке $savings", style = MaterialTheme.typography.bodyLarge)
-                    Text("Выбери, на что копить, из списка ниже", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
-                }
-            }
-            if (savings > 0) WithdrawButton(onWithdraw)
-        }
+        CardSticker(icon, FinniColors.DreamTint, size = size - 44.dp, iconScale = 0.62f)
     }
 }
 
 @Composable
-private fun WithdrawButton(onClick: () -> Unit) {
-    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(48.dp)) {
-        Text("Забрать из копилки", style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-@Composable
-private fun CurrentGoalCard(
+private fun DreamCard(
     goal: SavingsGoal,
     state: SavingsUiState,
     onDeposit: (Int) -> Unit,
@@ -231,172 +205,242 @@ private fun CurrentGoalCard(
     onWithdraw: () -> Unit,
 ) {
     val remaining = (goal.cost - state.savings).coerceAtLeast(0)
-    val reachedGoal = state.savings >= goal.cost
-    var amount by remember { mutableIntStateOf(10) }   // ввод суммы: пока не нажата «Отложить», это не состояние экрана
+    val reached = state.savings >= goal.cost
+    // Сколько отложить: пока не нажато «Отложить», это не состояние экрана
+    var picked by remember { mutableIntStateOf(10) }
+    val maxAmount = state.balance.coerceAtLeast(GameRules.PLAN_STEP)
+    val amount = picked.coerceIn(GameRules.PLAN_STEP, maxAmount)   // кошелёк мог опустеть после выбора
 
-    WhiteCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(64.dp)
-                        .background(FinniColors.BlueLight, RoundedCornerShape(18.dp)),
-                    contentAlignment = Alignment.Center
-                ) { Image(painterResource(goal.icon), null, Modifier.size(42.dp)) }
-                Column(Modifier.padding(start = 12.dp)) {
-                    Text("Моя цель", style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
-                    Text(goal.name, style = MaterialTheme.typography.titleLarge)
-                    Text("Накоплено ${state.savings} из ${goal.cost}", style = MaterialTheme.typography.bodyLarge)
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-            ProgressBar(state.savings, goal.cost)
-            Spacer(Modifier.height(8.dp))
-            Row {
-                Text(
-                    if (reachedGoal) "Хватает на цель!" else "Осталось $remaining",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    when {
-                        reachedGoal -> ""
-                        state.weeksToGoal != null -> "≈ ${state.weeksToGoal} нед."
-                        else -> "Начни откладывать — посчитаю срок"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = FinniColors.NavyMuted,
-                    textAlign = TextAlign.End
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            if (reachedGoal) {
-                Button(
-                    onClick = onReach,
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = FinniColors.Green, contentColor = Color.White),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                ) { Text("Получить!", style = MaterialTheme.typography.titleMedium) }
-            } else {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    StepButton("−") { amount = (amount - 5).coerceAtLeast(5) }
-                    Text(
-                        "$amount",
-                        style = MaterialTheme.typography.headlineSmall,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.size(width = 56.dp, height = 36.dp)
-                    )
-                    StepButton("+") { amount = (amount + 5).coerceAtMost(state.balance.coerceAtLeast(5)) }
-                    Button(
-                        onClick = { onDeposit(amount) },
-                        shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp)
-                    ) { Text("Отложить", style = MaterialTheme.typography.titleMedium) }
-                }
-                state.depositError?.let {
-                    Text(it.text(), style = MaterialTheme.typography.labelMedium, color = FinniColors.Warning, modifier = Modifier.padding(top = 6.dp))
-                }
-            }
-            if (state.savings > 0) WithdrawButton(onWithdraw)
-        }
-    }
-}
-
-@Composable
-private fun StepButton(text: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = CircleShape, color = FinniColors.BlueLight, modifier = Modifier.size(48.dp)) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(text, style = MaterialTheme.typography.headlineSmall, color = FinniColors.Blue)
-        }
-    }
-}
-
-@Composable
-private fun ProgressBar(value: Int, max: Int) {
-    Box(
+    Column(
         Modifier
             .fillMaxWidth()
-            .height(12.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(FinniColors.Track)
+            .creamCard(RoundedCornerShape(34.dp), elevation = 10.dp)
+            .padding(start = 18.dp, end = 18.dp, top = 20.dp, bottom = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            Modifier
-                .fillMaxWidth((value.toFloat() / max).coerceIn(0f, 1f))
-                .fillMaxHeight()
-                .background(FinniColors.Care, RoundedCornerShape(6.dp))
-        )
+            contentAlignment = Alignment.BottomCenter,
+            modifier = Modifier.clearAndSetSemantics {
+                contentDescription = "Мечта: ${goal.name}. Накоплено ${state.savings} из ${goal.cost}"
+            },
+        ) {
+            DreamRing(state.savings.toFloat() / goal.cost, goal.icon, Modifier.padding(bottom = 18.dp))
+            // Накоплено — наклейка на нижнем краю кольца
+            Row(
+                Modifier
+                    .creamCard(CircleShape, elevation = 6.dp, border = 3.dp)
+                    .background(FinniColors.CoinPill)
+                    .padding(start = 6.dp, end = 14.dp, top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Image(painterResource(R.drawable.ic_coin), null, Modifier.size(26.dp))
+                Text("${state.savings}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = FinniColors.CoinInk)
+                Text("из ${goal.cost}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(goal.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, textAlign = TextAlign.Center)
+            Text(
+                when {
+                    reached -> "Хватает на мечту!"
+                    state.weeksToGoal != null -> "Осталось $remaining · примерно ${state.weeksToGoal} нед."
+                    else -> "Осталось $remaining. Отложи — и я посчитаю срок"
+                },
+                fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal, textAlign = TextAlign.Center,
+            )
+        }
+
+        DashedDivider()
+        if (reached) {
+            TealButton("Получить мечту!", R.drawable.ic_sun_small, onReach)
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StepButton("−", "Отложить меньше", enabled = amount > GameRules.PLAN_STEP) {
+                    picked = (amount - GameRules.PLAN_STEP).coerceAtLeast(GameRules.PLAN_STEP)
+                }
+                Text(
+                    "$amount",
+                    fontSize = 22.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, textAlign = TextAlign.Center,
+                    modifier = Modifier.width(52.dp).semantics { contentDescription = "Отложить: $amount" },
+                )
+                StepButton("+", "Отложить больше", enabled = amount < maxAmount) {
+                    picked = (amount + GameRules.PLAN_STEP).coerceAtMost(maxAmount)
+                }
+                Spacer(Modifier.width(10.dp))
+                TealButton("Отложить", R.drawable.ic_coin, { onDeposit(amount) }, modifier = Modifier.weight(1f))
+            }
+            state.depositError?.let {
+                Text(it.text(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk, textAlign = TextAlign.Center)
+            }
+        }
+        if (state.savings > 0) {
+            PillButton("Забрать из копилки", onWithdraw, color = FinniColors.Pebble, ink = FinniColors.InkMuted)
+        }
     }
 }
 
-// ---------- Список целей ----------
-
-/** Карточка цели. Выбранная выделена рамкой и меткой «Цель», не только цветом. */
+/** Мечта ещё не выбрана, но монеты в копилке уже могут быть: например, отложенные по плану недели. */
 @Composable
-private fun GoalCard(goal: SavingsGoal, selected: Boolean, completed: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
+private fun NoDreamCard(savings: Int, onWithdraw: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .creamCard(RoundedCornerShape(34.dp), elevation = 10.dp)
+            .padding(18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        CardSticker(R.drawable.ic_deed_pig, FinniColors.DreamTint, size = 112.dp, iconScale = 0.6f)
+        Text("На что будем копить?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, textAlign = TextAlign.Center)
+        Text(
+            if (savings > 0) "В копилке уже $savings. Выбери мечту ниже — и они пойдут на неё"
+            else "Выбери мечту ниже. Её кольцо появится и в меню",
+            fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+        )
+        if (savings > 0) PillButton("Забрать из копилки", onWithdraw, color = FinniColors.Pebble, ink = FinniColors.InkMuted)
+    }
+}
+
+// ---------- Все мечты ----------
+
+/** Плитка мечты: картинка, название и цена. Выбранная — в бирюзовой рамке и со словом «копим», не только цветом. */
+@Composable
+private fun GoalTile(goal: SavingsGoal, selected: Boolean, completed: Boolean, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(26.dp)
     Surface(
         onClick = onClick,
         shape = shape,
-        color = if (selected) FinniColors.BlueLight else FinniColors.Card,
-        border = if (selected) BorderStroke(3.dp, FinniColors.Blue) else null,
+        color = Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(6.dp, shape, ambientColor = FinniColors.Navy.copy(alpha = 0.15f), spotColor = FinniColors.Navy.copy(alpha = 0.15f))
-    ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier
-                    .size(56.dp)
-                    .background(Color.White, RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
-            ) { Image(painterResource(goal.icon), null, Modifier.size(38.dp)) }
-            Column(
-                Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp)
-            ) {
-                Text(goal.name, style = MaterialTheme.typography.titleMedium)
-                Text(goal.hint, style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
-                if (completed) Text("Уже получено", style = MaterialTheme.typography.labelSmall, color = FinniColors.Mood)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${goal.cost}", style = MaterialTheme.typography.titleLarge)
-                    Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(20.dp))
+            .creamCard(shape, elevation = 8.dp)
+            // Белая обводка наклейки рисуется поверх, поэтому бирюзовая рамка шире: видны её внутренние 3 dp
+            .then(if (selected) Modifier.border(7.dp, FinniColors.Teal, shape) else Modifier)
+            .clearAndSetSemantics {
+                role = Role.Button
+                contentDescription = "${goal.name}, ${goal.cost} монет" + when {
+                    selected -> ". Копим на неё"
+                    completed -> ". Уже получено. Выбрать снова"
+                    else -> ". Выбрать"
                 }
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (selected) FinniColors.Blue else FinniColors.Lavender,
-                ) {
-                    Text(
-                        if (selected) "✓ Цель" else "Выбрать",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (selected) Color.White else FinniColors.Navy,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+            },
+    ) {
+        Column(
+            Modifier.padding(start = 10.dp, end = 10.dp, top = 14.dp, bottom = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box {
+                CardSticker(goal.icon, FinniColors.DreamTint, size = 88.dp, iconScale = 0.64f)
+                if (completed) {
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 4.dp, y = 2.dp)
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(FinniColors.Teal)
+                            .border(3.dp, Color.White, CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(13.dp)) }
+                }
+            }
+            Text(
+                goal.name, fontSize = 15.sp, lineHeight = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink,
+                textAlign = TextAlign.Center, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .clip(CircleShape)
+                    .background(if (selected) FinniColors.Teal else FinniColors.DreamTint),
+                horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (selected) {
+                    Text("копим", fontSize = 15.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text("· ${goal.cost}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.85f))
+                } else {
+                    Image(painterResource(R.drawable.ic_coin), null, Modifier.size(22.dp))
+                    Text("${goal.cost}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.CoinInk)
                 }
             }
         }
     }
 }
 
+// ---------- Окна ----------
+
 @Composable
-private fun WhiteCard(
-    modifier: Modifier = Modifier,
-    color: Color = FinniColors.Card,
-    shape: RoundedCornerShape = RoundedCornerShape(24.dp),
-    content: @Composable () -> Unit,
-) {
-    Surface(
-        modifier = modifier.shadow(6.dp, shape, ambientColor = FinniColors.Navy.copy(alpha = 0.15f), spotColor = FinniColors.Navy.copy(alpha = 0.15f)),
-        shape = shape,
-        color = color,
-        content = content
-    )
+private fun GoalHeader(goal: SavingsGoal, title: String, subtitle: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        CardSticker(goal.icon, FinniColors.DreamTint, size = 72.dp, iconScale = 0.62f)
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, modifier = Modifier.semantics { heading() })
+            Text(subtitle, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal)
+        }
+    }
+}
+
+/** Смена мечты: монеты в копилке никуда не деваются, меняется только то, на что они копятся. */
+@Composable
+private fun SwitchGoalDialog(goal: SavingsGoal, savings: Int, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    CardDialog(onDismiss = onDismiss) {
+        // Название мечты не склоняется в «Копим на …», поэтому оно в подстроке, а не в вопросе
+        GoalHeader(goal, "Новая мечта?", "${goal.name} · ${goal.cost} монет")
+        Text(goal.hint, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        DashedDivider()
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatRow("В копилке останется", "$savings", coin = true)
+            StatRow("Осталось накопить", "${(goal.cost - savings).coerceAtLeast(0)}", coin = true)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TealButton("Да, копим", R.drawable.ic_check, onConfirm)
+            SoftButton("Оставить прежнюю", onDismiss)
+        }
+    }
+}
+
+/** Мечта сбылась: праздник вместе с Финни и что это ему дало. */
+@Composable
+private fun DreamCameTrueDialog(goal: SavingsGoal, onDismiss: () -> Unit) {
+    CardDialog(onDismiss = onDismiss) {
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Box {
+                DreamRing(1f, goal.icon, size = 148.dp)
+                Box(
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = (-6).dp, y = (-6).dp)
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(FinniColors.Teal)
+                        .border(3.dp, Color.White, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(18.dp)) }
+            }
+            Text(
+                "Мечта сбылась!", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
+                textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
+            )
+            val done = when {
+                goal.id == "room" -> "Ремонт готов: загляни на главный экран, какая теперь комната у Финни!"
+                goal.trip -> "Финни уехал на целую неделю — загляни на главный экран! Когда неделя закончится, он вернётся с сувенирами."
+                changesRoom(goal.id) -> "«${goal.name}» теперь в комнате Финни — загляни на главный экран."
+                else -> "«${goal.name}» теперь у Финни."
+            }
+            Text(
+                "$done Ты откладывал каждую неделю — и получилось!",
+                fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Финни получил", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                EffectChip(R.drawable.ic_meter_smile, GameRules.GOAL_MOOD_BONUS, Color(0xFFFFF5C9))
+            }
+        }
+        TealButton("Выбрать новую мечту", R.drawable.ic_sun_small, onDismiss)
+    }
 }

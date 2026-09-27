@@ -3,26 +3,32 @@ package ru.larpinovplay.finniapp.presentation.screens.home
 import androidx.compose.runtime.Composable
 import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
+import ru.larpinovplay.finniapp.presentation.screens.home.HomeUiState.Speech
 
-/** Фраза под питомцем. */
+/** Что Финни говорит в облачке. */
 @Composable
-fun HomeUiState.MoodExplanation.text(): String {
-    val feedback = LocalFeedback.current
-    return when (this) {
-        HomeUiState.MoodExplanation.Hungry -> feedback.text(FeedbackKey.MOOD_HUNGRY)
-        HomeUiState.MoodExplanation.Grew -> feedback.text(FeedbackKey.MOOD_GREW)
-        is HomeUiState.MoodExplanation.Purchased -> feedback.text(FeedbackKey.MOOD_PURCHASE, "item" to itemName.lowercase())
-        HomeUiState.MoodExplanation.Waiting -> feedback.text(FeedbackKey.MOOD_DEFAULT)
+fun Speech.text(): String = LocalFeedback.current.text(
+    when (this) {
+        Speech.WEEK_READY -> FeedbackKey.SAY_WEEK_READY
+        Speech.ON_TRIP -> FeedbackKey.SAY_ON_TRIP
+        Speech.HUNGRY -> FeedbackKey.SAY_HUNGRY
+        Speech.ADVENTURE -> FeedbackKey.SAY_ADVENTURE
+        Speech.CHOOSE_GOAL -> FeedbackKey.SAY_CHOOSE_GOAL
+        Speech.BORED -> FeedbackKey.SAY_BORED
+        Speech.NEW_TASK -> FeedbackKey.SAY_NEW_TASK
+        Speech.TOMORROW -> FeedbackKey.SAY_TOMORROW
     }
-}
+)
 
-/** Текст облачка с подсказкой. */
-@Composable
-fun HomeUiState.Tip.text(): String {
-    val feedback = LocalFeedback.current
-    return when (this) {
-        HomeUiState.Tip.ChooseGoal -> feedback.text(FeedbackKey.TIP_CHOOSE_GOAL)
-        HomeUiState.Tip.OnTrip -> feedback.text(FeedbackKey.TIP_ON_TRIP)
-        is HomeUiState.Tip.SaveFor -> feedback.text(FeedbackKey.TIP_SAVE_FOR, "goal" to goalName)
+/** Кнопка под репликой: подпись и действие; null — на сегодня всё, звать некуда. */
+val Speech.button: Pair<String, HomeAction>?
+    get() = when (this) {
+        Speech.WEEK_READY -> "Смотрим!" to HomeAction.ShowDeeds
+        Speech.HUNGRY -> "Сходим в магазин" to HomeAction.OpenSection(HomeSection.SHOP)
+        Speech.ADVENTURE -> "Вперёд!" to HomeAction.OpenSection(HomeSection.TASKS)
+        Speech.CHOOSE_GOAL -> "В копилку" to HomeAction.OpenSection(HomeSection.SAVINGS)
+        Speech.BORED -> "Выберем радость" to HomeAction.OpenSection(HomeSection.SHOP)
+        Speech.NEW_TASK -> "К заданиям" to HomeAction.OpenSection(HomeSection.TASKS)
+        Speech.ON_TRIP -> null
+        Speech.TOMORROW -> null
     }
-}

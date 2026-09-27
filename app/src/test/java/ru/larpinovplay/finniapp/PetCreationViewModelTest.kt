@@ -13,7 +13,6 @@ import org.junit.Before
 import org.junit.Test
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.storage.StorageError
@@ -65,7 +64,7 @@ class PetCreationViewModelTest {
 
         assertEquals(PetCreationUiState.Loaded, restarted.state.value)
         // Вид не выбирается: питомец всегда кот, раскраска — выбранная
-        assertEquals(Pet.newborn("Финни", PetLook(PetSpecies.CAT, PetColor.CORAL)), store.saved?.pet)
+        assertEquals(Pet.newborn("Финни", PetLook(PetColor.CORAL)), store.saved?.pet)
     }
 
     @Test

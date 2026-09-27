@@ -17,6 +17,7 @@ import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
+import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.weekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
@@ -60,12 +61,12 @@ class HomeViewModel(
                 // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
                 when (val result = game.finishWeek().dataOrNull()) {
                     is FinishWeekResult.Finished -> _state.update { it?.copy(weekSummary = result.summary) }
-                    is FinishWeekResult.Blocked -> _state.update { it?.copy(finishNotice = result.reason, finishBlock = result.reason) }
+                    // Карточка дел сама объясняет, чего не хватает
+                    is FinishWeekResult.Blocked -> _state.update { it?.copy(finishBlock = result.reason, deedsOpen = true) }
                     null -> Unit
                 }
             }
             HomeAction.DismissWeekSummary -> _state.update { it?.copy(weekSummary = null) }
-            HomeAction.DismissFinishNotice -> _state.update { it?.copy(finishNotice = null) }
             is HomeAction.ChangePlan -> changePlan(action.direction, action.increase)
             HomeAction.ConfirmPlan -> viewModelScope.launch {
                 val draft = _state.value?.planDraft ?: return@launch
@@ -125,7 +126,8 @@ class HomeViewModel(
         finishBlock: FinishBlock?,
         current: HomeUiState?,
     ): HomeUiState {
-        val activeTask = game.availableTasks(content.tasks).firstOrNull()
+        val tasks = game.availableTasks(content.tasks).size
+        val deeds = GameSnapshot(game, pet).weekDeeds
         val planDraft = if (game.phase == PeriodPhase.PLANNING) {
             current?.planDraft?.takeIf { it.week == game.week && it.budget == game.balance } ?: newPlanDraft(game)
         } else {
@@ -133,36 +135,39 @@ class HomeViewModel(
         }
         return HomeUiState(
             pet = pet,
-            moodExplanation = when {
-                pet.isHungry -> HomeUiState.MoodExplanation.Hungry
-                game.history.lastOrNull()?.grew == true -> HomeUiState.MoodExplanation.Grew
-                game.purchases.isNotEmpty() -> HomeUiState.MoodExplanation.Purchased(game.purchases.last().name)
-                else -> HomeUiState.MoodExplanation.Waiting
-            },
             demoMode = game.demoMode,
             balance = game.balance,
             savings = game.savings,
             goal = game.goal?.let { HomeUiState.Goal(name = it.name, cost = it.cost) },
             week = game.week,
-            activeTask = activeTask?.let { HomeUiState.ActiveTask(title = it.title, reward = it.reward) },
-            tip = when {
-                !settings.tipsEnabled -> null
-                game.currentTrip != null -> HomeUiState.Tip.OnTrip
-                game.goal == null -> HomeUiState.Tip.ChooseGoal
-                else -> HomeUiState.Tip.SaveFor(game.goal.name)
-            },
+            speech = if (settings.tipsEnabled) speech(game, deeds, finishBlock, tasks) else null,
+            tasksBadge = tasks + if (finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED) 1 else 0,
             animationsEnabled = settings.animationsEnabled,
             soundEnabled = settings.soundEnabled,
             voiceRepeatEnabled = settings.voiceRepeatEnabled,
-            suggestedSection = HomeSection.TASKS.takeIf { activeTask != null || finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED },
             info = current?.info,
             weekSummary = current?.weekSummary,
             finishBlock = finishBlock,
-            finishNotice = current?.finishNotice,
-            deeds = GameSnapshot(game, pet).weekDeeds,
+            deeds = deeds,
             weekSatiety = game.weekSatiety,
             deedsOpen = current?.deedsOpen ?: false,
             planDraft = planDraft,
         )
+    }
+
+    /**
+     * Одно самое важное дело сейчас — от того, что нельзя отложить, к приятному. Пока идёт план недели,
+     * Финни молчит: всё внимание окну плана.
+     */
+    private fun speech(game: GameState, deeds: WeekDeeds, finishBlock: FinishBlock?, tasks: Int): HomeUiState.Speech? = when {
+        game.phase == PeriodPhase.PLANNING -> null
+        finishBlock == null -> HomeUiState.Speech.WEEK_READY
+        game.currentTrip != null -> HomeUiState.Speech.ON_TRIP   // Финни в поездке: звать в магазин и к заданиям некого
+        !deeds.fed -> HomeUiState.Speech.HUNGRY
+        finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED -> HomeUiState.Speech.ADVENTURE
+        game.goal == null -> HomeUiState.Speech.CHOOSE_GOAL
+        !deeds.notBored -> HomeUiState.Speech.BORED
+        tasks > 0 -> HomeUiState.Speech.NEW_TASK
+        else -> HomeUiState.Speech.TOMORROW
     }
 }

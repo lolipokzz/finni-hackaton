@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Шаг приключения: рассказ — раскрытая книжка. -->
+    <path android:fillColor="#8FA4FF"
+        android:pathData="M4 14c10-4 20 1 20 1s10-5 20-1v25c-10-4-20 1-20 1s-10-5-20-1z"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M7 13c8-3 16 1.5 16 1.5v23S15 34 7 35.5z"/>
+    <path android:fillColor="#FFF3E2"
+        android:pathData="M25 14.5s8-4.5 16-1.5v22.5c-8-1.5-16 2-16 2z"/>
+    <path android:strokeColor="#D6DDFF" android:strokeWidth="1.6" android:strokeLineCap="round"
+        android:pathData="M10 19c3.5-1 7 0 10 1M10 24c3.5-1 7 0 10 1M28 20c3-1 7-2 10-1M28 25c3-1 7-2 10-1"/>
+</vector>
