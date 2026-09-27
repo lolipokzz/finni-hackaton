@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phosphor baseball-cap-fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <!-- Кепка: купол, козырёк, пуговка -->
-    <path android:fillColor="#3D7BE0" android:pathData="M3.5,15.5C3.5,9.5 7.3,6 12,6s8.5,3.5 8.5,9.5z"/>
-    <path android:fillColor="#2A5DB3" android:pathData="M12,15.5h10c0.8,0 0.9,1.6 0,1.9c-2.4,0.8 -6.2,1.1 -10,0.6z"/>
-    <path android:fillColor="#F4F4F0" android:pathData="M3.2,15h17.6v1.4H3.2z"/>
-    <path android:fillColor="#F4F4F0" android:pathData="M12,5.2m-1.2,0a1.2,1.2 0,1 1,2.4 0a1.2,1.2 0,1 1,-2.4 0"/>
+    android:viewportWidth="256" android:viewportHeight="256">
+    <path android:fillColor="#5B7BFF" android:pathData="M 128 24 A 104.12 104.12 0 0 0 24 128 v 56 a 24 24 0 0 0 24 24 24.11 24.11 0 0 0 14.18 -4.64 C 74.33 194.53 95.6 184 128 184 s 53.67 10.52 65.81 19.35 A 24 24 0 0 0 232 184 V 128 A 104.12 104.12 0 0 0 128 24 Z M 40 128 A 88.15 88.15 0 0 1 109.81 41.9 a 167 167 0 0 0 -28.87 76.76 A 166 166 0 0 0 40 136.88 Z m 176 56 a 7.77 7.77 0 0 1 -4.34 7.1 8 8 0 0 1 -8.44 -.69 C 189.16 180.2 164.7 168 128 168 S 66.84 180.2 52.78 190.42 a 8 8 0 0 1 -8.44 .69 A 7.77 7.77 0 0 1 40 184 V 156.07 a 150.62 150.62 0 0 1 49.93 -23.28 7.06 7.06 0 0 0 1 -.26 154.06 154.06 0 0 1 74.17 0 8.64 8.64 0 0 0 1 .27 A 150.49 150.49 0 0 1 216 156.07 Z m 0 -47.13 a 166 166 0 0 0 -40.94 -18.22 A 167 167 0 0 0 146.19 41.9 88.15 88.15 0 0 1 216 128 Z"/>
 </vector>

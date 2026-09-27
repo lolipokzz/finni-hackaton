@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute bike_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
-    <!-- Детский велосипед: тёмные колёса с жёлтыми ободами, розовая рама, руль и седло -->
-    <path android:strokeColor="#2B2233" android:strokeWidth="1.8" android:pathData="M5.5,16.5m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0"/>
-    <path android:strokeColor="#2B2233" android:strokeWidth="1.8" android:pathData="M18.5,16.5m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0"/>
-    <path android:strokeColor="#F6BC68" android:strokeWidth="0.8" android:pathData="M5.5,16.5m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0"/>
-    <path android:strokeColor="#F6BC68" android:strokeWidth="0.8" android:pathData="M18.5,16.5m-2.2,0a2.2,2.2 0,1 1,4.4 0a2.2,2.2 0,1 1,-4.4 0"/>
-    <path android:strokeColor="#C44F7B" android:strokeWidth="1.6" android:strokeLineCap="round" android:strokeLineJoin="round"
-        android:pathData="M5.5,16.5L9,9.5h7l2.5,7M9,9.5l3,7 4,-7M12,16.5L9.5,7.5M16,9.5l-1.2,-3.5"/>
-    <path android:strokeColor="#3A2E45" android:strokeWidth="1.8" android:strokeLineCap="round" android:pathData="M8,7.2h3M13.5,6h3"/>
+    <path android:fillColor="#FF6F61" android:pathData="M 10 5 a 1 1 0 0 1 1 -1 h 2.614 a 3 3 0 0 1 2.809 1.947 l 2.294 6.117 a 4.001 4.001 0 1 1 -2.072 .171 L 16.182 11 9.21 13.614 A 4 4 0 1 1 6 12 h .022 l -1.111 -2 H 4 a 1 1 0 0 1 0 -2 h 4 a 1 1 0 0 1 0 2 h -.8 l 1.026 1.847 7.254 -2.72 -.93 -2.478 A 1 1 0 0 0 13.614 6 H 11 a 1 1 0 0 1 -1 -1"/>
 </vector>

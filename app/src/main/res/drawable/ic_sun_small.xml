@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute sun_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
-    <!-- Солнышко на кнопке «Завершить неделю». -->
-    <path android:fillColor="#FFD66B"
-        android:pathData="M7,12 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0Z"/>
-    <path android:fillColor="#000000" android:strokeColor="#FFD66B" android:strokeWidth="2.2" android:strokeLineCap="round"
-        android:pathData="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>
+    <path android:fillColor="#FFC23D" android:pathData="M 12 19 a 1 1 0 0 1 1 1 v 1 a 1 1 0 1 1 -2 0 v -1 a 1 1 0 0 1 1 -1 m 6.364 -2.05 .707 .707 a 1 1 0 0 1 -1.414 1.414 l -.707 -.707 a 1 1 0 0 1 1.414 -1.414 m -12.728 0 a 1 1 0 0 1 1.497 1.32 l -.083 .094 -.707 .707 a 1 1 0 0 1 -1.497 -1.32 l .083 -.094 z M 12 6 a 6 6 0 1 1 0 12 6 6 0 0 1 0 -12 m -8 5 a 1 1 0 0 1 .117 1.993 L 4 13 H 3 a 1 1 0 0 1 -.117 -1.993 L 3 11 z m 17 0 a 1 1 0 1 1 0 2 h -1 a 1 1 0 1 1 0 -2 z M 4.929 4.929 a 1 1 0 0 1 1.32 -.083 l .094 .083 .707 .707 a 1 1 0 0 1 -1.32 1.497 l -.094 -.083 -.707 -.707 a 1 1 0 0 1 0 -1.414 m 14.142 0 a 1 1 0 0 1 0 1.414 l -.707 .707 a 1 1 0 1 1 -1.414 -1.414 l .707 -.707 a 1 1 0 0 1 1.414 0 M 12 2 a 1 1 0 0 1 1 1 v 1 a 1 1 0 1 1 -2 0 V 3 a 1 1 0 0 1 1 -1"/>
 </vector>
