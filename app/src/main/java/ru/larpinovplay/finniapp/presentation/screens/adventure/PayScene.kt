@@ -1,6 +1,9 @@
 package ru.larpinovplay.finniapp.presentation.screens.adventure
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -16,9 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,14 +30,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -44,10 +49,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import ru.larpinovplay.finniapp.domain.adventure.model.AdventureScene
-import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 import kotlin.math.roundToInt
+import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.adventure.model.AdventureScene
+import ru.larpinovplay.finniapp.presentation.adventure.AdventureLook
+import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /** Купюра или монета, которую сейчас тащат: где её левый верхний угол (в координатах окна) и откуда её взяли. */
 private data class Drag(val index: Int, val topLeft: Offset, val size: IntSize, val fromCounter: Boolean) {
@@ -61,7 +70,7 @@ private data class Drag(val index: Int, val topLeft: Offset, val size: IntSize, 
  * Где сейчас палец — состояние самого жеста, оно живёт здесь; что лежит на прилавке — в [AdventureUiState].
  */
 @Composable
-internal fun PayScene(scene: AdventureScene.Pay, state: AdventureUiState, onAction: (AdventureAction) -> Unit) {
+internal fun PayScene(scene: AdventureScene.Pay, state: AdventureUiState, look: AdventureLook, onAction: (AdventureAction) -> Unit) {
     val locked = state.check != null
     var drag by remember { mutableStateOf<Drag?>(null) }
     var origin by remember { mutableStateOf(Offset.Zero) }       // где эта карточка в окне
@@ -82,10 +91,9 @@ internal fun PayScene(scene: AdventureScene.Pay, state: AdventureUiState, onActi
     }
     val handlers = DragHandlers(enabled = !locked, onDragStart, onDragBy, onDragEnd, onCancel = { drag = null })
 
-    Card {
-        Box(Modifier.onGloballyPositioned { origin = it.positionInRoot() }) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(scene.text, style = MaterialTheme.typography.bodyLarge)
+    Box(Modifier.onGloballyPositioned { origin = it.positionInRoot() }) {
+        SceneCard(R.drawable.ic_coin, "Оплата", look) {
+                BodyText(scene.text)
                 Hint(scene.hint)
 
                 Counter(
@@ -107,14 +115,9 @@ internal fun PayScene(scene: AdventureScene.Pay, state: AdventureUiState, onActi
                 )
 
                 if (!locked) {
-                    Button(
-                        onClick = { onAction(AdventureAction.Pay) },
-                        enabled = state.onCounter.isNotEmpty(),
-                        shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                    ) { Text("Заплатить ${state.counterSum}", style = MaterialTheme.typography.titleMedium) }
+                    TealButton("Заплатить ${state.counterSum}", R.drawable.ic_coin, { onAction(AdventureAction.Pay) }, enabled = state.onCounter.isNotEmpty())
                 }
-            }
+        }
 
             // Купюра под пальцем рисуется поверх всей карточки, чтобы её не закрывали ни прилавок, ни кошелёк
             drag?.let { d ->
@@ -124,14 +127,16 @@ internal fun PayScene(scene: AdventureScene.Pay, state: AdventureUiState, onActi
                     modifier = Modifier
                         .zIndex(1f)
                         .offset { IntOffset(topLeft.x.roundToInt(), topLeft.y.roundToInt()) }
-                        .shadow(8.dp, if (scene.wallet[d.index] >= BILL_MIN) RoundedCornerShape(10.dp) else CircleShape),
+                        .shadow(10.dp, if (scene.wallet[d.index] >= BILL_MIN) RoundedCornerShape(10.dp) else CircleShape),
                 )
             }
-        }
     }
 }
 
-/** Прилавок: заметная деревянная зона. Подсвечивается рамкой, когда над ней несут купюру. */
+/**
+ * Прилавок: деревянная зона под полосатым навесом, как у лавки. Подсвечивается бирюзовой рамкой,
+ * когда над ней несут купюру.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Counter(
@@ -144,23 +149,31 @@ private fun Counter(
     onToggle: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = FinniColors.Counter,
-        border = BorderStroke(if (highlighted) 4.dp else 2.dp, if (highlighted) FinniColors.Blue else FinniColors.CounterEdge),
-        modifier = modifier.fillMaxWidth().heightIn(min = 140.dp),
+    val shape = RoundedCornerShape(22.dp)
+    Column(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = 150.dp)
+            .clip(shape)
+            .background(FinniColors.Counter)
+            .border(if (highlighted) 4.dp else 2.dp, if (highlighted) FinniColors.Teal else FinniColors.CounterEdge, shape),
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Awning()
+        Column(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Прилавок", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Text("$sum", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Прилавок", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color(0xFF7A4B1F), modifier = Modifier.weight(1f))
+                Row(
+                    Modifier.clip(CircleShape).background(Color.White).padding(start = 4.dp, end = 12.dp, top = 3.dp, bottom = 3.dp)
+                        .semantics(mergeDescendants = true) { contentDescription = "На прилавке $sum" },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Image(painterResource(R.drawable.ic_coin), null, Modifier.size(24.dp))
+                    Text("$sum", fontSize = 19.sp, fontWeight = FontWeight.Black, color = FinniColors.CoinInk)
+                }
             }
             if (pieces.isEmpty()) {
-                Text(
-                    "Перетащи сюда купюры и монеты из кошелька",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = FinniColors.NavyMuted,
-                )
+                Text("Перетащи сюда купюры и монеты из кошелька", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9A7040))
             } else {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     pieces.forEach { index ->
@@ -168,6 +181,23 @@ private fun Counter(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Полосатый навес лавки с фестонами по нижнему краю. */
+@Composable
+private fun Awning() {
+    Canvas(Modifier.fillMaxWidth().height(26.dp)) {
+        // Фестон — полукруг под каждой полосой: полос столько, чтобы он целиком уместился в высоту навеса
+        val scallop = size.height * 0.45f
+        val stripes = (size.width / (scallop * 2)).toInt().coerceAtLeast(1)
+        val w = size.width / stripes
+        val band = size.height - w / 2
+        repeat(stripes) { i ->
+            val color = if (i % 2 == 0) Color(0xFFFF8A7A) else Color.White
+            drawRect(color, topLeft = Offset(i * w, 0f), size = Size(w, band))
+            drawCircle(color, radius = w / 2, center = Offset(i * w + w / 2, band))
         }
     }
 }
@@ -181,16 +211,17 @@ private fun Wallet(
     handlers: DragHandlers,
     onToggle: (Int) -> Unit,
 ) {
-    Surface(shape = RoundedCornerShape(18.dp), color = FinniColors.Lavender, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Кошелёк", style = MaterialTheme.typography.titleMedium)
-            if (pieces.isEmpty()) {
-                Text("Пусто: всё на прилавке", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
-            } else {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    pieces.forEach { index ->
-                        DraggablePiece(index, wallet[index], fromCounter = false, dragging == index, handlers, "положить на прилавок") { onToggle(index) }
-                    }
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Color(0xFFEEF0FF)).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text("Кошелёк", fontSize = 16.sp, fontWeight = FontWeight.Black, color = Color(0xFF2A2F6B))
+        if (pieces.isEmpty()) {
+            Text("Пусто: всё на прилавке", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        } else {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                pieces.forEach { index ->
+                    DraggablePiece(index, wallet[index], fromCounter = false, dragging == index, handlers, "положить на прилавок") { onToggle(index) }
                 }
             }
         }
@@ -243,18 +274,28 @@ private fun DraggablePiece(
     )
 }
 
-/** Купюра — зелёный прямоугольник, монета — жёлтый кружок: отличаются формой, а не только цветом. */
+/**
+ * Купюра — зелёная бумажка с рамкой-узором, монета — золотой кружок с ободком:
+ * отличаются формой, а не только цветом.
+ */
 @Composable
 private fun MoneyFace(value: Int, modifier: Modifier = Modifier) {
-    val bill = value >= BILL_MIN
-    Surface(
-        shape = if (bill) RoundedCornerShape(10.dp) else CircleShape,
-        color = if (bill) FinniColors.CardMint else FinniColors.Sunny,
-        border = BorderStroke(2.dp, if (bill) FinniColors.Green else FinniColors.Satiety),
-        modifier = modifier.size(width = if (bill) 76.dp else 52.dp, height = 52.dp),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text("$value", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = FinniColors.Navy)
+    if (value >= BILL_MIN) {
+        Box(
+            modifier.size(width = 80.dp, height = 52.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFCFF3E2))
+                .border(2.dp, Color(0xFF4CC38A), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.padding(5.dp).fillMaxSize().border(1.5.dp, Color(0xFF9FE3C2), RoundedCornerShape(7.dp)))
+            Text("$value", fontSize = 21.sp, fontWeight = FontWeight.Black, color = Color(0xFF0B5E4F))
+        }
+    } else {
+        Box(
+            modifier.size(54.dp).clip(CircleShape).background(Color(0xFFFFC23D)).border(2.dp, Color(0xFFF0A31A), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFFFDD7A)))
+            Text("$value", fontSize = 19.sp, fontWeight = FontWeight.Black, color = FinniColors.CoinInk)
         }
     }
 }

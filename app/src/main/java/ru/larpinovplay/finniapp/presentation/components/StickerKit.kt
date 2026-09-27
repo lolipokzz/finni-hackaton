@@ -212,7 +212,7 @@ fun CardSticker(@DrawableRes icon: Int, tint: Color, modifier: Modifier = Modifi
 
 /** Главная кнопка карточки: бирюзовая, во всю ширину. Выключенная — серая, без тени. */
 @Composable
-fun TealButton(text: String, @DrawableRes icon: Int, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+fun TealButton(text: String, @DrawableRes icon: Int?, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Surface(
         onClick = onClick,
         enabled = enabled,
@@ -222,7 +222,7 @@ fun TealButton(text: String, @DrawableRes icon: Int, onClick: () -> Unit, modifi
         modifier = modifier.fillMaxWidth().height(56.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(icon), null, Modifier.size(24.dp).alpha(if (enabled) 1f else 0.5f))
+            icon?.let { Image(painterResource(it), null, Modifier.size(24.dp).alpha(if (enabled) 1f else 0.5f)) }
             Text(text, fontSize = 17.sp, fontWeight = FontWeight.Black, color = if (enabled) Color.White else FinniColors.InkMuted)
         }
     }

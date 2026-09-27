@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Приключение «Поцарапанная лапка»: лапка с пластырем и сердечком. -->
+    <path android:fillColor="#FFB48F"
+        android:pathData="M7.5,19 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0Z"/>
+    <path android:fillColor="#FFB48F"
+        android:pathData="M14.2,11 a4.8,4.8 0 1,0 9.6,0 a4.8,4.8 0 1,0 -9.6,0Z"/>
+    <path android:fillColor="#FFB48F"
+        android:pathData="M24.2,11 a4.8,4.8 0 1,0 9.6,0 a4.8,4.8 0 1,0 -9.6,0Z"/>
+    <path android:fillColor="#FFB48F"
+        android:pathData="M31.5,19 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0Z"/>
+    <path android:fillColor="#FFB48F"
+        android:pathData="M24 20c-7 0-13 7-13 13 0 4 3 6 6 6 3 0 4.5-2 7-2s4 2 7 2c3 0 6-2 6-6 0-6-6-13-13-13z"/>
+    <group android:rotation="-28" android:pivotX="24" android:pivotY="30">
+        <path android:fillColor="#FFE6A8"
+            android:pathData="M15.5,26 h17 a4.5,4.5 0 0,1 4.5,4.5 v0 a4.5,4.5 0 0,1 -4.5,4.5 h-17 a4.5,4.5 0 0,1 -4.5,-4.5 v-0 a4.5,4.5 0 0,1 4.5,-4.5Z"/>
+        <path android:fillColor="#F5D38A"
+            android:pathData="M20,26 h8 v9 h-8Z"/>
+        <path android:fillColor="#D9A95A"
+            android:pathData="M21.6,29 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0Z"/>
+        <path android:fillColor="#D9A95A"
+            android:pathData="M24.6,29 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0Z"/>
+        <path android:fillColor="#D9A95A"
+            android:pathData="M21.6,32 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0Z"/>
+        <path android:fillColor="#D9A95A"
+            android:pathData="M24.6,32 a0.9,0.9 0 1,0 1.8,0 a0.9,0.9 0 1,0 -1.8,0Z"/>
+    </group>
+    <path android:fillColor="#FF6F8F"
+        android:pathData="M40 3.5c-1.2-1.6-4-1-4 1.2 0 2 4 4.3 4 4.3s4-2.3 4-4.3c0-2.2-2.8-2.8-4-1.2z"/>
+</vector>
