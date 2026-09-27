@@ -11,7 +11,8 @@ import java.time.LocalDate
 
 /**
  * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб.
- * [purchases] — покупки текущей недели (обнуляются в конце недели), [wardrobe] — купленная одежда, она остаётся.
+ * [purchases] — покупки текущей недели (обнуляются в конце недели); [wardrobe] — купленная одежда и [room] — вещи
+ * в комнате питомца, они остаются навсегда.
  * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine][ru.larpinovplay.finniapp.domain.game.engine.GameEngine].
  */
 data class GameState(
@@ -25,6 +26,7 @@ data class GameState(
     val ledger: List<LedgerEntry> = emptyList(),
     val purchases: List<ShopItem> = emptyList(),
     val wardrobe: List<ShopItem> = emptyList(),
+    val room: List<ShopItem> = emptyList(),
     val goal: SavingsGoal? = null,
     val completedGoals: List<SavingsGoal> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
@@ -35,7 +37,7 @@ data class GameState(
     val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),
 ) {
-    fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id }
+    fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id } || room.any { it.id == item.id }
 
     /** Сколько за эту неделю потрачено на товары [category]. */
     fun spentThisWeek(category: ShopCategory): Int = purchases.filter { it.category == category }.sumOf { it.price }
@@ -53,8 +55,8 @@ data class GameState(
         get() = ledger.filter { it.week == week && (it.reason == LedgerReason.WeekIncome || it.reason == LedgerReason.StartCoins) }
             .sumOf { it.balanceDelta }
 
-    /** Сколько вещей и целей радуют Финни каждую неделю: одежда из гардероба и достигнутые цели. */
-    val lastingJoys: Int get() = wardrobe.size + completedGoals.size
+    /** Сколько вещей и целей радуют Финни каждую неделю: одежда из гардероба, вещи в комнате и достигнутые цели. */
+    val lastingJoys: Int get() = wardrobe.size + room.size + completedGoals.size
 
     /** Приключение этой недели уже пройдено. */
     val adventureDoneThisWeek: Boolean get() = adventureResults.any { it.week == week }
