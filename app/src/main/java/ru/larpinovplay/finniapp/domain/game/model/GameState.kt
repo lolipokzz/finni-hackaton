@@ -27,6 +27,7 @@ data class GameState(
     val wardrobe: List<ShopItem> = emptyList(),
     val goal: SavingsGoal? = null,
     val completedGoals: List<SavingsGoal> = emptyList(),
+    val trip: Trip? = null,                         // последняя поездка; питомец в ней, только пока идёт её неделя
     val depositsThisWeek: List<Int> = emptyList(),
     val depositsByWeek: List<Int> = emptyList(),    // сколько за закрытую неделю отложено за вычетом снятого
     val withdrawalsThisWeek: List<Int> = emptyList(),
@@ -55,6 +56,9 @@ data class GameState(
 
     /** Сколько вещей и целей радуют Финни каждую неделю: одежда из гардероба и достигнутые цели. */
     val lastingJoys: Int get() = wardrobe.size + completedGoals.size
+
+    /** Поездка, в которой питомец сейчас; null — он дома. */
+    val currentTrip: Trip? get() = trip?.takeIf { it.week == week }
 
     /** Приключение этой недели уже пройдено. */
     val adventureDoneThisWeek: Boolean get() = adventureResults.any { it.week == week }

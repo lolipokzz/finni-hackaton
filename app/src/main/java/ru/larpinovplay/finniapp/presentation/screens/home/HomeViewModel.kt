@@ -147,6 +147,7 @@ class HomeViewModel(
             activeTask = activeTask?.let { HomeUiState.ActiveTask(title = it.title, reward = it.reward) },
             tip = when {
                 !settings.tipsEnabled -> null
+                game.currentTrip != null -> HomeUiState.Tip.OnTrip
                 game.goal == null -> HomeUiState.Tip.ChooseGoal
                 else -> HomeUiState.Tip.SaveFor(game.goal.name)
             },

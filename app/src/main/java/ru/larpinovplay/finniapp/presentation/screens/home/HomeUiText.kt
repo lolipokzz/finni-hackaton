@@ -22,6 +22,7 @@ fun HomeUiState.Tip.text(): String {
     val feedback = LocalFeedback.current
     return when (this) {
         HomeUiState.Tip.ChooseGoal -> feedback.text(FeedbackKey.TIP_CHOOSE_GOAL)
+        HomeUiState.Tip.OnTrip -> feedback.text(FeedbackKey.TIP_ON_TRIP)
         is HomeUiState.Tip.SaveFor -> feedback.text(FeedbackKey.TIP_SAVE_FOR, "goal" to goalName)
     }
 }

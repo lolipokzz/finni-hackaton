@@ -7,6 +7,7 @@ import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
 import ru.larpinovplay.finniapp.domain.game.model.TaskResult
+import ru.larpinovplay.finniapp.domain.game.model.Trip
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
@@ -34,6 +35,7 @@ private fun GameState.toDto() = GameStateDto(
     wardrobe = wardrobe.map { it.toDto() },
     goal = goal?.toDto(),
     completedGoals = completedGoals.map { it.toDto() },
+    trip = trip?.let { TripDto(it.goalId, it.week) },
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
     withdrawalsThisWeek = withdrawalsThisWeek,
@@ -56,6 +58,7 @@ private fun GameStateDto.toDomain() = GameState(
     wardrobe = wardrobe.map { it.toDomain() },
     goal = goal?.toDomain(),
     completedGoals = completedGoals.map { it.toDomain() },
+    trip = trip?.let { Trip(it.goalId, it.week) },
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
     withdrawalsThisWeek = withdrawalsThisWeek,
@@ -128,9 +131,9 @@ private fun ShopItem.toDto() = ShopItemDto(id, name, price, category, satiety, m
 
 private fun ShopItemDto.toDomain() = ShopItem(id, name, price, category, satiety, mood, hint, slot)
 
-private fun SavingsGoal.toDto() = SavingsGoalDto(id, name, cost, hint)
+private fun SavingsGoal.toDto() = SavingsGoalDto(id, name, cost, hint, trip)
 
-private fun SavingsGoalDto.toDomain() = SavingsGoal(id, name, cost, hint)
+private fun SavingsGoalDto.toDomain() = SavingsGoal(id, name, cost, hint, trip)
 
 private fun TaskResult.toDto() = TaskResultDto(taskId, week, success, reward)
 

@@ -15,6 +15,7 @@ import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
+import ru.larpinovplay.finniapp.domain.game.model.Trip
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.game.model.weekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
@@ -110,7 +111,7 @@ object GameEngine {
         return Transition(game.copy(state = state), WithdrawResult.Success)
     }
 
-    /** Достигнутая цель или null, если цели нет или на неё ещё не накоплено. */
+    /** Достигнутая цель или null, если цели нет или на неё ещё не накоплено. Цель-поездка отправляет питомца в поездку на эту неделю. */
     fun reachGoal(game: GameSnapshot): Transition<SavingsGoal?> {
         val s = game.state
         val goal = s.goal
@@ -118,6 +119,7 @@ object GameEngine {
         val state = s.post(LedgerReason.GoalReached(goal.name), 0, -goal.cost).copy(
             completedGoals = s.completedGoals + goal,
             goal = null,
+            trip = if (goal.trip) Trip(goal.id, s.week) else s.trip,
         )
         val pet = game.pet.changeMood(GameRules.GOAL_MOOD_BONUS)
         return Transition(GameSnapshot(state, pet), goal)

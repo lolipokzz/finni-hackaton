@@ -10,7 +10,6 @@ val SavingsGoal.icon: Int
         "room" -> R.drawable.ic_goal_room
         "bed" -> R.drawable.ic_bed
         "bike" -> R.drawable.ic_goal_bike
-        "console" -> R.drawable.ic_goal_console
-        "house" -> R.drawable.ic_goal_house
+        "sea" -> R.drawable.ic_goal_sea
         else -> R.drawable.ic_pig
     }

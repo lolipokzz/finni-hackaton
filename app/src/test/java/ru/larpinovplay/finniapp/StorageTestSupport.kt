@@ -44,7 +44,8 @@ internal object SampleGames {
         val content = defaultContent()
         val food = content.shopItems.first { it.category == ShopCategory.MANDATORY }
         val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
-        val cheapGoal = SavingsGoal(id = "test-ball", name = "Мяч", cost = 10, hint = "Копить недолго")
+        // Недорогая поездка: в примере сохраняется и поездка
+        val cheapGoal = SavingsGoal(id = "test-trip", name = "Поход", cost = 10, hint = "Копить недолго", trip = true)
         val choice = content.tasks.first { it.payload is TaskPayload.Choice }
         val correct = (choice.payload as TaskPayload.Choice).options.first { it.correct }
 

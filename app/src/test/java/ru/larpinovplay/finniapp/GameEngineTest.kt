@@ -20,6 +20,7 @@ import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
+import ru.larpinovplay.finniapp.domain.game.model.Trip
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.pet.model.MoodLevel
 import ru.larpinovplay.finniapp.domain.pet.model.PetMood
@@ -173,6 +174,27 @@ class GameEngineTest {
 
         val remaining = goal.cost - 30
         assertEquals((remaining + 29) / 30, saved.state.weeksToGoal())
+    }
+
+    @Test
+    fun tripGoalSendsPetAwayOnlyForThatWeek() {
+        val sea = content.goals.first { it.trip }
+        val saved = newGame(startBalance = 200).then { GameEngine.chooseGoal(it, sea) }.then { GameEngine.deposit(it, sea.cost) }
+        assertNull(saved.state.currentTrip)
+
+        val away = saved.then { GameEngine.reachGoal(it) }
+        assertEquals(Trip(sea.id, away.state.week), away.state.currentTrip)
+
+        val back = away.planned().finish().first
+        assertNull(back.state.currentTrip)
+        assertEquals(listOf(sea), back.state.completedGoals)
+    }
+
+    @Test
+    fun ordinaryGoalIsNotATrip() {
+        val game = newGame(startBalance = 200).then { GameEngine.chooseGoal(it, goal) }
+            .then { GameEngine.deposit(it, goal.cost) }.then { GameEngine.reachGoal(it) }
+        assertNull(game.state.currentTrip)
     }
 
     @Test

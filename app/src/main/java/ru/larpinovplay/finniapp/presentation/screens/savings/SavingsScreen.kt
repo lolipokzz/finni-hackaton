@@ -44,7 +44,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
-import ru.larpinovplay.finniapp.presentation.components.isRoomDecor
+import ru.larpinovplay.finniapp.presentation.components.changesRoom
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
@@ -145,9 +145,14 @@ fun SavingsScreenContent(
             icon = { Image(painterResource(goal.icon), null, Modifier.size(64.dp)) },
             title = { Text("Ура! Цель достигнута", style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center) },
             text = {
-                val where = if (isRoomDecor(goal.id)) "теперь в комнате Финни — загляни на главный экран" else "теперь у Финни"
+                val done = when {
+                    goal.id == "room" -> "«${goal.name}» готов: загляни на главный экран, какая теперь комната у Финни!"
+                    goal.trip -> "«${goal.name}»: Финни уехал на целую неделю — загляни на главный экран! Когда неделя закончится, он вернётся домой с сувенирами."
+                    changesRoom(goal.id) -> "«${goal.name}» теперь в комнате Финни — загляни на главный экран."
+                    else -> "«${goal.name}» теперь у Финни."
+                }
                 Text(
-                    "«${goal.name}» $where. Ты откладывал каждую неделю — и получилось. Настроение +30. Выбери новую цель!",
+                    "$done Ты откладывал каждую неделю — и получилось. Настроение +30. Выбери новую цель!",
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center
                 )

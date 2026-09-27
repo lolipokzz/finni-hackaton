@@ -3,6 +3,7 @@ package ru.larpinovplay.finniapp.presentation.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
@@ -38,15 +39,30 @@ import kotlin.math.tan
  * Где слот, фон узнаёт из [anchor] (экран отмечает слот питомца и себя, см. [roomPetSlot] и [roomOrigin]).
  * Экраны без питомца передают null: комната ставится так, будто питомец стоит посередине экрана.
  *
- * Вещи для комнаты ([LocalRoomDecor]) — прозрачные слои, снятые той же камерой с тенью на полу и стене.
+ * После цели копилки «Ремонт в комнате» ([RENOVATION_GOAL]) фон — другая комната: та же камера и та же планировка
+ * (пол, стена, кресло слева, тумба справа), поэтому питомец и вещи для комнаты встают в неё так же.
+ *
+ * Пока питомец в поездке (цель-поездка, см. Trip), вместо комнаты — место поездки ([TRIP_BACKGROUNDS]), снятое
+ * той же камерой: питомец так же стоит на земле. Вещей комнаты там нет; после поездки в комнате остаётся сувенир.
+ *
+ * Вещи для комнаты ([LocalRoom]) — прозрачные слои, снятые той же камерой с тенью на полу и стене.
  * Каждый слой — вырезанный кусок кадра, поэтому он ставится в свою долю того же кадра и встаёт точно на место.
  * Питомец (вид поверх окна) всегда перед ними; сами вещи стоят там, где их не закрывает ни он, ни мебель.
  */
 @Composable
 fun RoomBackground(modifier: Modifier = Modifier, anchor: RoomAnchor? = null) {
-    val image = ImageBitmap.imageResource(R.drawable.room_background)
-    val owned = LocalRoomDecor.current
-    val decor = RoomDecor.entries.filter { it.goalId in owned }.map { it to ImageBitmap.imageResource(it.image) }
+    val room = LocalRoom.current
+    val trip = room.tripGoal?.let(TRIP_BACKGROUNDS::get)
+    val image = ImageBitmap.imageResource(
+        when {
+            trip != null -> trip
+            RENOVATION_GOAL in room.goals -> R.drawable.room_background_renovated
+            else -> R.drawable.room_background
+        }
+    )
+    val decor = if (trip != null) emptyList() else {
+        RoomDecor.entries.filter { it.goalId in room.goals }.map { it to ImageBitmap.imageResource(it.image) }
+    }
     Canvas(modifier.fillMaxSize()) {
         val slot = anchor?.slot?.takeIf { it.width > 0f } ?: defaultSlot(size)
         val (topLeft, frame) = placeFrame(slot, size)
@@ -70,10 +86,14 @@ fun RoomBackground(modifier: Modifier = Modifier, anchor: RoomAnchor? = null) {
 }
 
 /**
- * id достигнутых целей копилки. Цели-вещи для комнаты ([isRoomDecor]) появляются в ней навсегда.
- * Задаётся один раз на всё приложение из игры.
+ * Что видно в комнате: [goals] — id достигнутых целей копилки (вещи для комнаты и ремонт, см. [changesRoom]),
+ * [tripGoal] — id цели-поездки, в которой питомец сейчас, или null, если он дома.
  */
-val LocalRoomDecor = compositionLocalOf<Set<String>> { emptySet() }
+@Immutable
+data class RoomLook(val goals: Set<String> = emptySet(), val tripGoal: String? = null)
+
+/** Задаётся один раз на всё приложение из игры. */
+val LocalRoom = compositionLocalOf { RoomLook() }
 
 /**
  * Вещи для комнаты: id цели копилки, слой и где он в кадре room_background (доли ширины и высоты кадра).
@@ -85,10 +105,19 @@ private enum class RoomDecor(val goalId: String, @DrawableRes val image: Int, va
 
     /** Детский велосипед вдоль стены справа, под тумбой. */
     BIKE("bike", R.drawable.room_bike, Rect(0.6225f, 0.52042f, 0.7775f, 0.5725f)),
+
+    /** Сувениры с моря справа, между питомцем и велосипедом: пляжный мяч, ракушка и морская звезда. */
+    SEA("sea", R.drawable.room_sea, Rect(0.60583f, 0.55667f, 0.76667f, 0.63042f)),
 }
 
-/** Цель копилки с id [goalId] после покупки появляется в комнате. */
-fun isRoomDecor(goalId: String): Boolean = RoomDecor.entries.any { it.goalId == goalId }
+/** Цель копилки с id [goalId] после покупки видна в комнате: вещь в ней, ремонт или сувенир из поездки. */
+fun changesRoom(goalId: String): Boolean = goalId == RENOVATION_GOAL || RoomDecor.entries.any { it.goalId == goalId }
+
+/** Места поездок по id цели-поездки: кадр снят той же камерой, что и комната. */
+private val TRIP_BACKGROUNDS = mapOf("sea" to R.drawable.trip_sea)
+
+/** Цель копилки «Ремонт в комнате»: после неё фон — room_background_renovated. */
+private const val RENOVATION_GOAL = "room"
 
 /** Где на экране слот питомца. Экран с питомцем создаёт его, отмечает им себя и слот и отдаёт фону. */
 @Stable

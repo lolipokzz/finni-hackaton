@@ -58,6 +58,7 @@ enum class FeedbackKey(val id: String) {
     MOOD_DEFAULT("mood.default"),
     TIP_CHOOSE_GOAL("tip.choose_goal"),
     TIP_SAVE_FOR("tip.save_for"),
+    TIP_ON_TRIP("tip.on_trip"),
 
     DEPOSIT_REJECTED("deposit.rejected"),
 

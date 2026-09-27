@@ -455,7 +455,7 @@ private fun NotEnoughDialog(
     )
 }
 
-/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Домика» не хватит 60». */
+/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Кроватки» не хватит 60». */
 private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     val after = fb.savings - fb.missing
     val goal = fb.goal ?: return "В копилке ${fb.savings} → станет $after"
