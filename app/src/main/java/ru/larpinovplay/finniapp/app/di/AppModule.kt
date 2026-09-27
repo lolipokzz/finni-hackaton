@@ -2,8 +2,10 @@ package ru.larpinovplay.finniapp.app.di
 
 import org.koin.core.module.dsl.viewModel
 import ru.larpinovplay.finniapp.presentation.screens.adult.AdultViewModel
+import ru.larpinovplay.finniapp.presentation.screens.adventure.AdventureViewModel
 import org.koin.dsl.module
 import ru.larpinovplay.finniapp.data.content.defaultContent
+import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeViewModel
@@ -19,13 +21,14 @@ import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksViewModel
 val appModule = module {
     // Репозитории и справочники — общие для экранов и живут, пока жив процесс.
     // Хранилища (GameStore, SettingsRepository) приходят из storageModule; справочники пока в коде.
-    single<GameRepository> { GameRepositoryImpl(get()) }
     single { defaultContent() }
+    single<GameRepository> { GameRepositoryImpl(get(), adventures = get<Content>().adventures) }
 
     viewModel { PetCreationViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { TasksViewModel(get(), get()) }
     viewModel { (taskId: String) -> TaskPlayViewModel(taskId, get(), get()) }
+    viewModel { (adventureId: String) -> AdventureViewModel(adventureId, get(), get()) }
     viewModel { ShopViewModel(get(), get()) }
     viewModel { WardrobeViewModel(get()) }
     viewModel { SavingsViewModel(get(), get()) }

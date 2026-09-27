@@ -15,7 +15,11 @@ import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
 import ru.larpinovplay.finniapp.data.game.store.InMemoryGameStore
 import ru.larpinovplay.finniapp.data.settings.InMemorySettingsRepository
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.pet.model.*
+import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.presentation.screens.adult.*
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.*
@@ -98,13 +102,15 @@ class AdultViewModelTest {
             vm.confirm {}
             val snapshot = checkNotNull(game.snapshot.value)
             assertTrue(snapshot.state.demoMode)
-            assertEquals(100, snapshot.state.balance)
+            assertEquals(GameRules.START_BALANCE, snapshot.state.balance)
             assertEquals(1, snapshot.state.week)
             assertEquals(0, snapshot.state.savings)
             assertTrue(snapshot.state.history.isEmpty())
             assertTrue(snapshot.state.taskResults.isEmpty())
             assertEquals(PetGrowthStage.BABY, snapshot.pet.growthStage)
-            game.finishWeek()
+            game.confirmPlan(BudgetPlan(optional = snapshot.state.balance))
+            // В демо неделю можно закончить в тот же день
+            assertTrue(game.finishWeek().dataOrNull() is FinishWeekResult.Finished)
             assertTrue(checkNotNull(game.snapshot.value).state.demoMode)
         }
     }

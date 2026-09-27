@@ -22,3 +22,14 @@ fun WeekSummary.savedText(): String =
 /** Поздравление, если питомец перешёл на следующую стадию (см. [WeekSummary.grew]). */
 @Composable
 fun WeekSummary.grewText(): String = LocalFeedback.current.text(FeedbackKey.STAGE_UP)
+
+/** Что с планом: критерий B итога недели. Если план нарушен, объясняем, в чём и что попробовать. */
+@Composable
+fun WeekSummary.planText(): String {
+    val feedback = LocalFeedback.current
+    return when {
+        planKept -> feedback.text(FeedbackKey.PERIOD_PLAN_OK)
+        optionalOverPlan -> feedback.text(FeedbackKey.PERIOD_PLAN_OPTIONAL_OVER, "spent" to spentOptional, "plan" to plan.optional)
+        else -> feedback.text(FeedbackKey.PERIOD_PLAN_SAVINGS_UNDER, "withdrawn" to withdrawn, "plan" to plan.savings)
+    }
+}

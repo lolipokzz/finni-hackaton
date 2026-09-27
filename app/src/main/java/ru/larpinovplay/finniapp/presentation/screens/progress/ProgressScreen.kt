@@ -41,6 +41,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.game.foodText
 import ru.larpinovplay.finniapp.presentation.game.grewText
+import ru.larpinovplay.finniapp.presentation.game.planText
 import ru.larpinovplay.finniapp.presentation.game.savedText
 import ru.larpinovplay.finniapp.presentation.game.text
 import ru.larpinovplay.finniapp.presentation.pet.title
@@ -167,7 +168,7 @@ private fun GoalCard(state: ProgressUiState) {
     }
 }
 
-/** Итоги последней недели: два критерия словами и значками, траты, настроение. */
+/** Итоги последней недели: три критерия словами и значками, траты, настроение. */
 @Composable
 private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
     WhiteCard {
@@ -187,12 +188,13 @@ private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
             }
             CriterionLine(summary.foodCovered, summary.foodText())
             CriterionLine(summary.savedSomething, summary.savedText())
+            CriterionLine(summary.planKept, summary.planText())
             Spacer(Modifier.height(8.dp))
             StatLine("Потрачено на нужное", "${summary.spentMandatory}")
             StatLine("Потрачено на желаемое", "${summary.spentOptional}")
             StatLine("Отложено", "${summary.saved}")
             StatLine("Настроение", if (summary.moodDelta >= 0) "+${summary.moodDelta}" else "${summary.moodDelta}")
-            StatLine("Оценка недели", "${summary.score} из 2")
+            StatLine("Звёзды недели", "${summary.score} из ${WeekSummary.MAX_SCORE}")
             if (summary.stageAfter != summary.stageBefore) {
                 Spacer(Modifier.height(6.dp))
                 Text("★ ${summary.grewText()}", style = MaterialTheme.typography.bodyLarge, color = FinniColors.Blue)

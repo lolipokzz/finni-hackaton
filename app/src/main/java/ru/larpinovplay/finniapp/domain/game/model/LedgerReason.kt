@@ -8,7 +8,14 @@ sealed interface LedgerReason {
     data object StartCoins : LedgerReason
     data class Purchase(val itemName: String) : LedgerReason
     data object Deposit : LedgerReason
+
+    /** Строка «Копилка» из плана недели, переведённая при его подтверждении. */
+    data object PlannedDeposit : LedgerReason
+
+    /** Ребёнок забрал монеты из копилки обратно в кошелёк. */
+    data object Withdraw : LedgerReason
     data class GoalReached(val goalName: String) : LedgerReason
     data class TaskReward(val taskTitle: String) : LedgerReason
+    data class AdventureReward(val adventureTitle: String) : LedgerReason
     data object WeekIncome : LedgerReason
 }

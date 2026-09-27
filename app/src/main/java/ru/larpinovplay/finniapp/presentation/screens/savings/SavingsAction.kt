@@ -9,4 +9,10 @@ sealed interface SavingsAction {
     data class Deposit(val amount: Int) : SavingsAction
     data object ReachGoalClicked : SavingsAction
     data object DismissReached : SavingsAction
+
+    // Забрать из копилки: окно с суммой и последствиями
+    data object WithdrawClicked : SavingsAction
+    data class ChangeWithdraw(val increase: Boolean) : SavingsAction
+    data object ConfirmWithdraw : SavingsAction
+    data object DismissWithdraw : SavingsAction
 }

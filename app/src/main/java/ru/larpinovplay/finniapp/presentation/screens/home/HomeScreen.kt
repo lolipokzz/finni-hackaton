@@ -60,6 +60,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.content.Feedback
 import ru.larpinovplay.finniapp.domain.content.FeedbackKey
+import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
@@ -155,7 +156,7 @@ fun HomeScreenContent(
             }
 
             Spacer(Modifier.height(6.dp))
-            FinishWeekButton { onAction(HomeAction.FinishWeek) }
+            FinishWeekButton(state.finishBlock) { onAction(HomeAction.FinishWeek) }
             Spacer(Modifier.height(6.dp))
             BottomMenu(petName = state.pet.name, selected = state.suggestedSection, onOpen = { onAction(HomeAction.OpenSection(it)) })
             Spacer(Modifier.height(6.dp))
@@ -169,7 +170,18 @@ fun HomeScreenContent(
             onDismiss = { onAction(HomeAction.DismissInfo) }
         )
     }
-    state.weekSummary?.let { WeekSummaryDialog(it, onDismiss = { onAction(HomeAction.DismissWeekSummary) }) }
+    state.finishNotice?.let { FinishNoticeDialog(it, onDismiss = { onAction(HomeAction.DismissFinishNotice) }) }
+    // Сначала итоги прошлой недели, потом план новой
+    val summary = state.weekSummary
+    val draft = state.planDraft
+    when {
+        summary != null -> WeekSummaryDialog(summary, onDismiss = { onAction(HomeAction.DismissWeekSummary) })
+        draft != null -> WeekPlanDialog(
+            draft = draft,
+            onChange = { direction, increase -> onAction(HomeAction.ChangePlan(direction, increase)) },
+            onConfirm = { onAction(HomeAction.ConfirmPlan) },
+        )
+    }
 }
 
 // ---------- Общие элементы ----------
@@ -436,8 +448,18 @@ private fun TipBubble(text: String, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Кнопка конца недели. Когда закончить пока нельзя, она не прячется и не выключается: подпись говорит,
+ * что ждёт, а нажатие объясняет подробнее (см. [FinishNoticeDialog]).
+ */
 @Composable
-private fun FinishWeekButton(onClick: () -> Unit) {
+private fun FinishWeekButton(block: FinishBlock?, onClick: () -> Unit) {
+    val (label, container, content) = when (block) {
+        null -> Triple("Завершить неделю", FinniColors.Green, Color.White)
+        FinishBlock.SAME_DAY -> Triple("Новая неделя — завтра", FinniColors.Lavender, FinniColors.Navy)
+        FinishBlock.PLAN_NOT_CONFIRMED -> Triple("Сначала план недели", FinniColors.Lavender, FinniColors.Navy)
+        FinishBlock.ADVENTURE_NOT_PLAYED -> Triple("Сначала приключение недели", FinniColors.Lavender, FinniColors.Navy)
+    }
     Button(
         onClick = onClick,
         modifier = Modifier
@@ -445,8 +467,8 @@ private fun FinishWeekButton(onClick: () -> Unit) {
             .padding(top = 6.dp)
             .height(44.dp),
         shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = FinniColors.Green, contentColor = Color.White)
-    ) { Text("Завершить неделю", fontSize = 16.sp) }
+        colors = ButtonDefaults.buttonColors(containerColor = container, contentColor = content)
+    ) { Text(label, fontSize = 16.sp) }
 }
 
 // ---------- Нижняя панель ----------
@@ -512,6 +534,7 @@ private fun HomeScreenPreview() {
         goal = HomeUiState.Goal(name = "Поход в парк", cost = 60),
         week = 1,
         activeTask = HomeUiState.ActiveTask(title = "Раздели 60 монет", reward = 20),
+        finishBlock = FinishBlock.SAME_DAY,
         tip = HomeUiState.Tip.ChooseGoal,
         suggestedSection = HomeSection.TASKS,
     )

@@ -13,8 +13,11 @@ fun LedgerReason.text(): String {
         LedgerReason.StartCoins -> feedback.text(FeedbackKey.LEDGER_START)
         is LedgerReason.Purchase -> itemName
         LedgerReason.Deposit -> feedback.text(FeedbackKey.LEDGER_DEPOSIT)
+        LedgerReason.PlannedDeposit -> feedback.text(FeedbackKey.LEDGER_PLANNED_DEPOSIT)
+        LedgerReason.Withdraw -> feedback.text(FeedbackKey.LEDGER_WITHDRAW)
         is LedgerReason.GoalReached -> feedback.text(FeedbackKey.LEDGER_GOAL, "goal" to goalName)
         is LedgerReason.TaskReward -> feedback.text(FeedbackKey.LEDGER_TASK, "task" to taskTitle)
+        is LedgerReason.AdventureReward -> feedback.text(FeedbackKey.LEDGER_ADVENTURE, "adventure" to adventureTitle)
         LedgerReason.WeekIncome -> feedback.text(FeedbackKey.LEDGER_WEEK_INCOME)
     }
 }

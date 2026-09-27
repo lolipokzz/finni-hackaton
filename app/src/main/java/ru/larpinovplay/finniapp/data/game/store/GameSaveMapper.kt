@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.data.game.store
 
+import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
@@ -12,15 +14,20 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetMood
 import ru.larpinovplay.finniapp.domain.pet.model.PetSatiety
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
+import java.time.LocalDate
 
 internal fun GameSnapshot.toDto() = GameSnapshotDto(state = state.toDto(), pet = pet.toDto())
 
 internal fun GameSnapshotDto.toDomain() = GameSnapshot(state = state.toDomain(), pet = pet.toDomain())
 
 private fun GameState.toDto() = GameStateDto(
+    demoMode = demoMode,
     balance = balance,
     savings = savings,
     week = week,
+    phase = phase,
+    plan = plan?.toDto(),
+    periodStartedOn = periodStartedOn?.toEpochDay(),
     ledger = ledger.map { it.toDto() },
     purchases = purchases.map { it.toDto() },
     wardrobe = wardrobe.map { it.toDto() },
@@ -28,15 +35,21 @@ private fun GameState.toDto() = GameStateDto(
     completedGoals = completedGoals.map { it.toDto() },
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
+    withdrawalsThisWeek = withdrawalsThisWeek,
     taskResults = taskResults.map { it.toDto() },
     tasksDoneThisWeek = tasksDoneThisWeek,
+    adventureResults = adventureResults.map { it.toDto() },
     history = history.map { it.toDto() },
 )
 
 private fun GameStateDto.toDomain() = GameState(
+    demoMode = demoMode,
     balance = balance,
     savings = savings,
     week = week,
+    phase = phase,
+    plan = plan?.toDomain(),
+    periodStartedOn = periodStartedOn?.let(LocalDate::ofEpochDay),
     ledger = ledger.map { it.toDomain() },
     purchases = purchases.map { it.toDomain() },
     wardrobe = wardrobe.map { it.toDomain() },
@@ -44,8 +57,10 @@ private fun GameStateDto.toDomain() = GameState(
     completedGoals = completedGoals.map { it.toDomain() },
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
+    withdrawalsThisWeek = withdrawalsThisWeek,
     taskResults = taskResults.map { it.toDomain() },
     tasksDoneThisWeek = tasksDoneThisWeek,
+    adventureResults = adventureResults.map { it.toDomain() },
     history = history.map { it.toDomain() },
 )
 
@@ -86,8 +101,11 @@ private fun LedgerReason.toDto(): LedgerReasonDto = when (this) {
     LedgerReason.StartCoins -> LedgerReasonDto.StartCoins
     is LedgerReason.Purchase -> LedgerReasonDto.Purchase(itemName)
     LedgerReason.Deposit -> LedgerReasonDto.Deposit
+    LedgerReason.PlannedDeposit -> LedgerReasonDto.PlannedDeposit
+    LedgerReason.Withdraw -> LedgerReasonDto.Withdraw
     is LedgerReason.GoalReached -> LedgerReasonDto.GoalReached(goalName)
     is LedgerReason.TaskReward -> LedgerReasonDto.TaskReward(taskTitle)
+    is LedgerReason.AdventureReward -> LedgerReasonDto.AdventureReward(adventureTitle)
     LedgerReason.WeekIncome -> LedgerReasonDto.WeekIncome
 }
 
@@ -95,8 +113,11 @@ private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
     LedgerReasonDto.StartCoins -> LedgerReason.StartCoins
     is LedgerReasonDto.Purchase -> LedgerReason.Purchase(itemName)
     LedgerReasonDto.Deposit -> LedgerReason.Deposit
+    LedgerReasonDto.PlannedDeposit -> LedgerReason.PlannedDeposit
+    LedgerReasonDto.Withdraw -> LedgerReason.Withdraw
     is LedgerReasonDto.GoalReached -> LedgerReason.GoalReached(goalName)
     is LedgerReasonDto.TaskReward -> LedgerReason.TaskReward(taskTitle)
+    is LedgerReasonDto.AdventureReward -> LedgerReason.AdventureReward(adventureTitle)
     LedgerReasonDto.WeekIncome -> LedgerReason.WeekIncome
 }
 
@@ -114,26 +135,42 @@ private fun TaskResultDto.toDomain() = TaskResult(taskId, week, success, reward)
 
 private fun WeekSummary.toDto() = WeekSummaryDto(
     week = week,
+    plan = plan.toDto(),
     foodCovered = foodCovered,
     savedSomething = savedSomething,
+    planKept = planKept,
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
+    withdrawn = withdrawn,
     score = score,
     moodDelta = moodDelta,
     stageBefore = stageBefore,
     stageAfter = stageAfter,
+    nextIncome = nextIncome,
 )
 
 private fun WeekSummaryDto.toDomain() = WeekSummary(
     week = week,
+    plan = plan.toDomain(),
     foodCovered = foodCovered,
     savedSomething = savedSomething,
+    planKept = planKept,
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
+    withdrawn = withdrawn,
     score = score,
     moodDelta = moodDelta,
     stageBefore = stageBefore,
     stageAfter = stageAfter,
+    nextIncome = nextIncome,
 )
+
+private fun BudgetPlan.toDto() = BudgetPlanDto(mandatory, optional, savings)
+
+private fun BudgetPlanDto.toDomain() = BudgetPlan(mandatory, optional, savings)
+
+private fun AdventureResult.toDto() = AdventureResultDto(adventureId, week, perfect, reward)
+
+private fun AdventureResultDto.toDomain() = AdventureResult(adventureId, week, perfect, reward)

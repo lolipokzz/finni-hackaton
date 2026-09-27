@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.domain.content
 
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.task.model.Task
@@ -12,4 +13,5 @@ data class Content(
     val shopItems: List<ShopItem>,
     val goals: List<SavingsGoal>,
     val tasks: List<Task>,
+    val adventures: List<Adventure>,   // по порядку: одно приключение за неделю
 )

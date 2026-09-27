@@ -8,8 +8,11 @@ enum class FeedbackKey(val id: String) {
     // Причины движений в журнале монет
     LEDGER_START("ledger.start"),
     LEDGER_DEPOSIT("ledger.deposit"),
+    LEDGER_PLANNED_DEPOSIT("ledger.planned_deposit"),
+    LEDGER_WITHDRAW("ledger.withdraw"),
     LEDGER_GOAL("ledger.goal"),
     LEDGER_TASK("ledger.task"),
+    LEDGER_ADVENTURE("ledger.adventure"),
     LEDGER_WEEK_INCOME("ledger.week_income"),
 
     // Объяснение итога недели
@@ -17,7 +20,27 @@ enum class FeedbackKey(val id: String) {
     PERIOD_FOOD_FAIL("period.a_fail"),
     PERIOD_SAVED_OK("period.c_ok"),
     PERIOD_SAVED_FAIL("period.c_fail"),
+    PERIOD_PLAN_OK("period.b_ok"),
+    PERIOD_PLAN_OPTIONAL_OVER("period.b_optional_over"),
+    PERIOD_PLAN_SAVINGS_UNDER("period.b_savings_under"),
     STAGE_UP("stage.up"),
+
+    // Почему неделю пока нельзя закончить
+    FINISH_NO_PLAN("finish.no_plan"),
+    FINISH_NO_ADVENTURE("finish.no_adventure"),
+    FINISH_SAME_DAY("finish.same_day"),
+
+    // Окно плана недели
+    PLAN_NEED("plan.need"),
+    PLAN_NEED_LOW("plan.need_low"),
+    PLAN_UNALLOCATED("plan.unallocated"),
+    PLAN_DONE("plan.done"),
+    PLAN_SAVINGS_NOW("plan.savings_now"),
+
+    // Окно «Забрать из копилки»
+    WITHDRAW_GOAL_FURTHER("withdraw.goal_further"),
+    WITHDRAW_WEEKS("withdraw.weeks"),
+    WITHDRAW_NO_GOAL("withdraw.no_goal"),
 
     // Фраза под питомцем и подсказка в облачке
     MOOD_HUNGRY("mood.hungry"),
@@ -34,6 +57,21 @@ enum class FeedbackKey(val id: String) {
     STORAGE_WRITE_FAILED("storage.write_failed"),
     STORAGE_CORRUPTED("storage.corrupted"),
     STORAGE_INCOMPATIBLE("storage.incompatible"),
+
+    // Приключение недели: разбор каждого шага
+    ADVENTURE_PAY_EXACT("adventure.pay_exact"),
+    ADVENTURE_PAY_CHANGE("adventure.pay_change"),
+    ADVENTURE_PAY_NOT_ENOUGH("adventure.pay_not_enough"),
+    ADVENTURE_PAY_EXTRA("adventure.pay_extra"),
+    ADVENTURE_CHANGE_OK("adventure.change_ok"),
+    ADVENTURE_CHANGE_WRONG("adventure.change_wrong"),
+    ADVENTURE_CHANGE_NONE("adventure.change_none"),
+    ADVENTURE_BASKET_FITS("adventure.basket_fits"),
+    ADVENTURE_BASKET_OVER("adventure.basket_over"),
+    ADVENTURE_BASKET_MISSING("adventure.basket_missing"),
+    ADVENTURE_DONE_PERFECT("adventure.done_perfect"),
+    ADVENTURE_DONE_MISTAKES("adventure.done_mistakes"),
+    ADVENTURE_REPLAY("adventure.replay"),
 
     // Темы заданий
     TOPIC_BUDGET("topic.budget"),

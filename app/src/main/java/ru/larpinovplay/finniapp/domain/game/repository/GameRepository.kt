@@ -1,10 +1,16 @@
 package ru.larpinovplay.finniapp.domain.game.repository
 
 import kotlinx.coroutines.flow.StateFlow
+import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
+import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.model.ConfirmPlanResult
 import ru.larpinovplay.finniapp.domain.game.model.DepositResult
+import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
+import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
-import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
@@ -58,13 +64,23 @@ interface GameRepository {
 
     suspend fun deposit(amount: Int): Result<DepositResult, StorageError>
 
+    suspend fun withdraw(amount: Int): Result<WithdrawResult, StorageError>
+
     /** Достигнутая цель или null, если цели нет или на неё ещё не накоплено. */
     suspend fun reachGoal(): Result<SavingsGoal?, StorageError>
 
     /** Итог ответа или null, если задание сейчас недоступно. */
     suspend fun answerTask(task: Task, answer: TaskAnswer): Result<TaskOutcome?, StorageError>
 
-    suspend fun finishWeek(): Result<WeekSummary, StorageError>
+    /** Результат приключения или null, если оно сейчас не приключение недели (тогда проходится без награды). */
+    suspend fun completeAdventure(adventure: Adventure, mistakes: Int): Result<AdventureResult?, StorageError>
+
+    suspend fun confirmPlan(plan: BudgetPlan): Result<ConfirmPlanResult, StorageError>
+
+    /** Почему неделю сейчас нельзя закончить (по сегодняшней дате), или null, если можно. */
+    fun finishBlock(): FinishBlock?
+
+    suspend fun finishWeek(): Result<FinishWeekResult, StorageError>
 
     /** Удаляет игру целиком; настройки управляются отдельно. */
     suspend fun resetProfile(): EmptyResult<StorageError>

@@ -2,6 +2,7 @@ package ru.larpinovplay.finniapp.data.game.store
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
@@ -35,9 +36,15 @@ internal data class GameSnapshotDto(
 
 @Serializable
 internal data class GameStateDto(
+    val demoMode: Boolean = false,
     val balance: Int = 0,
     val savings: Int = 0,
     val week: Int = 1,
+    /** Сохранение без фазы — из версии без плана: начинаем неделю с плана. */
+    val phase: PeriodPhase = PeriodPhase.PLANNING,
+    val plan: BudgetPlanDto? = null,
+    /** День начала недели как `LocalDate.toEpochDay()`; null — день неизвестен. */
+    val periodStartedOn: Long? = null,
     val ledger: List<LedgerEntryDto> = emptyList(),
     val purchases: List<ShopItemDto> = emptyList(),
     val wardrobe: List<ShopItemDto> = emptyList(),
@@ -45,8 +52,10 @@ internal data class GameStateDto(
     val completedGoals: List<SavingsGoalDto> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
     val depositsByWeek: List<Int> = emptyList(),
+    val withdrawalsThisWeek: List<Int> = emptyList(),
     val taskResults: List<TaskResultDto> = emptyList(),
     val tasksDoneThisWeek: Int = 0,
+    val adventureResults: List<AdventureResultDto> = emptyList(),
     val history: List<WeekSummaryDto> = emptyList(),
 )
 
@@ -81,11 +90,20 @@ internal sealed interface LedgerReasonDto {
     @Serializable @SerialName("deposit")
     data object Deposit : LedgerReasonDto
 
+    @Serializable @SerialName("planned_deposit")
+    data object PlannedDeposit : LedgerReasonDto
+
+    @Serializable @SerialName("withdraw")
+    data object Withdraw : LedgerReasonDto
+
     @Serializable @SerialName("goal_reached")
     data class GoalReached(val goalName: String) : LedgerReasonDto
 
     @Serializable @SerialName("task_reward")
     data class TaskReward(val taskTitle: String) : LedgerReasonDto
+
+    @Serializable @SerialName("adventure_reward")
+    data class AdventureReward(val adventureTitle: String) : LedgerReasonDto
 
     @Serializable @SerialName("week_income")
     data object WeekIncome : LedgerReasonDto
@@ -120,15 +138,34 @@ internal data class TaskResultDto(
 )
 
 @Serializable
+internal data class AdventureResultDto(
+    val adventureId: String,
+    val week: Int,
+    val perfect: Boolean,
+    val reward: Int,
+)
+
+@Serializable
+internal data class BudgetPlanDto(
+    val mandatory: Int = 0,
+    val optional: Int = 0,
+    val savings: Int = 0,
+)
+
+@Serializable
 internal data class WeekSummaryDto(
     val week: Int,
+    val plan: BudgetPlanDto = BudgetPlanDto(),
     val foodCovered: Boolean,
     val savedSomething: Boolean,
+    val planKept: Boolean = false,
     val spentMandatory: Int,
     val spentOptional: Int,
     val saved: Int,
+    val withdrawn: Int = 0,
     val score: Int,
     val moodDelta: Int,
     val stageBefore: PetGrowthStage,
     val stageAfter: PetGrowthStage,
+    val nextIncome: Int = 0,
 )

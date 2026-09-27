@@ -36,4 +36,8 @@ object FinniColors {
     val Coral = Color(0xFFFF6F61)
     val Warning = Color(0xFFFF5A5F)
     val Sunny = Color(0xFFFFE7A3)
+
+    // Прилавок в приключениях: тёплое дерево
+    val Counter = Color(0xFFF6E3C1)
+    val CounterEdge = Color(0xFFEBCF9F)
 }

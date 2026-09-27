@@ -11,6 +11,9 @@ import org.junit.Assert.fail
 import org.junit.Test
 import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
+import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
@@ -28,7 +31,9 @@ class GameRepositoryImplTest {
     private val food = defaultContent().shopItems.first { it.category == ShopCategory.MANDATORY }
     private val newborn = SampleGames.newborn
     private val store = FakeGameStore()
-    private val game = GameRepositoryImpl(store, startBalance = 100)
+    private val clock = TestClock()
+    private val game = GameRepositoryImpl(store, startBalance = 100, clock = clock)
+    private val plan = BudgetPlan(mandatory = food.price, optional = 100 - food.price)
 
     @Test
     fun gameDoesNotExistUntilPetIsCreated() {
@@ -106,15 +111,36 @@ class GameRepositoryImplTest {
     @Test
     fun finishingWeekStoresGrownPetAndAdvancesWeek() = runBlocking {
         game.createPet(newborn)
+        game.confirmPlan(plan)
         game.buy(food)
+        clock.nextDay()
 
-        val summary = game.finishWeek().dataOrNull()
+        val result = game.finishWeek().dataOrNull()
 
-        assertEquals(1, checkNotNull(summary).score)
+        assertEquals(2, (result as FinishWeekResult.Finished).summary.score)   // забота и план
         val snapshot = game.requireSnapshot()
         assertEquals(2, snapshot.state.week)
-        assertEquals(1, snapshot.pet.growthPoints)
+        assertEquals(2, snapshot.pet.growthPoints)
+        assertEquals(clock.date, snapshot.state.periodStartedOn)
         assertEquals(snapshot, store.saved)
+    }
+
+    @Test
+    fun weekStartedTodayIsNotFinishedAndNotSaved() = runBlocking {
+        game.createPet(newborn)
+        assertEquals(FinishBlock.PLAN_NOT_CONFIRMED, game.finishBlock())
+        game.confirmPlan(plan)
+        val before = game.requireSnapshot()
+        val savesBefore = store.saves.size
+
+        val result = game.finishWeek()
+
+        assertEquals(Result.Success(FinishWeekResult.Blocked(FinishBlock.SAME_DAY)), result)
+        assertEquals(FinishBlock.SAME_DAY, game.finishBlock())
+        assertEquals(before, game.requireSnapshot())
+        assertEquals(savesBefore, store.saves.size)
+        clock.nextDay()
+        assertNull(game.finishBlock())
     }
 
     // ---------- Сбои хранения ----------
@@ -191,13 +217,15 @@ class GameRepositoryImplTest {
     @Test
     fun gameContinuesAfterRestart() = runBlocking {
         game.createPet(newborn)
+        game.confirmPlan(plan)
         game.buy(food)
-        val restarted = GameRepositoryImpl(store)   // тот же «диск», новый экземпляр — как после перезапуска
+        val restarted = GameRepositoryImpl(store, clock = clock)   // тот же «диск», новый экземпляр — как после перезапуска
+        clock.nextDay()
 
         restarted.load()
-        val summary = restarted.finishWeek().dataOrNull()
+        val result = restarted.finishWeek().dataOrNull()
 
-        assertEquals(1, checkNotNull(summary).score)
+        assertEquals(2, (result as FinishWeekResult.Finished).summary.score)
         assertEquals(2, restarted.requireSnapshot().state.week)
     }
 
