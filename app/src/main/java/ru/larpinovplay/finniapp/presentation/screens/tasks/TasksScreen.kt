@@ -242,7 +242,7 @@ private fun AdventureDone() {
 
 // ---------- Задания ----------
 
-private val TaskTopic.sticker: Pair<Int, Color>
+internal val TaskTopic.sticker: Pair<Int, Color>
     get() = when (this) {
         TaskTopic.BUDGET -> R.drawable.ic_deed_plan to Color(0xFFE6EEFF)
         TaskTopic.SAVINGS -> R.drawable.ic_deed_pig to FinniColors.DreamTint

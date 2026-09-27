@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,7 +18,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -29,37 +29,57 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.DashedDivider
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
+import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /** Три карточки знакомства с игрой (ТЗ 2.5.1): показываются при первом запуске и здесь по запросу. */
-private data class IntroCard(val icon: Int, val title: String, val text: String)
+private data class IntroCard(val icon: Int, val tint: Color, val title: String, val text: String)
 
 private val introCards = listOf(
-    IntroCard(R.drawable.ic_pig, "Это Финни", "Ему нужна твоя помощь. Ты решаешь, на что тратить монеты, и от этого зависит его настроение и рост."),
-    IntroCard(R.drawable.ic_cart, "Три решения", "Потратить на нужное — еда. Потратить на желаемое — игрушки. Отложить — в копилку на цель."),
-    IntroCard(R.drawable.ic_star, "Финни растёт", "Каждую неделю покупай еду и откладывай хоть немного. Так Финни станет Подростком, а потом Взрослым."),
+    IntroCard(
+        R.drawable.ic_meter_smile, Color(0xFFFFF5C9), "Это Финни",
+        "Ему нужна твоя помощь. Ты решаешь, на что тратить монеты, и от этого зависят его сытость, настроение и рост.",
+    ),
+    IntroCard(
+        R.drawable.ic_deed_plan, Color(0xFFE6EEFF), "Три решения",
+        "Обязательное — еда. Необязательное — радости: лимонад, мыло, щётка. Копилка — откладываешь на мечту.",
+    ),
+    IntroCard(
+        R.drawable.ic_sun_small, Color(0xFFFFF0E6), "Финни растёт",
+        "Каждое дело недели — шаг роста: Финни сыт, не скучает, копилка и траты по плану. Так он станет подростком, а потом взрослым.",
+    ),
 )
 
-/** Словарик простыми словами (ТЗ 2.5.11). */
+/** Словарик простыми словами (ТЗ 2.5.11). Слова те же, что на экранах игры. */
 private val glossary = listOf(
-    "Монеты" to "Игровые деньги. Их дают за задания и каждую новую неделю.",
-    "Нужное" to "Без этого Финни плохо: еда.",
-    "Желаемое" to "Приятно, но можно подождать: лимонад, чипсы.",
-    "Копилка" to "Монеты, которые ты откладываешь на цель. Тратить их нельзя, пока не решишь сам.",
-    "Цель" to "То, на что ты копишь. У цели есть цена.",
-    "Неделя" to "Игровой период. В конце недели Финни получает оценку за твои решения.",
-    "Сытость" to "Показывает, поел ли Финни. Падает каждую неделю, растёт от еды.",
-    "Настроение" to "Как Финни себя чувствует. Растёт от радости и хороших недель.",
+    "Монеты" to "Игровые деньги. Каждую неделю приходят карманные, немного — за задания и приключения.",
+    "Обязательное" to "Без этого Финни плохо: еда.",
+    "Необязательное" to "Приятно, но можно подождать: лимонад, чипсы, мыло.",
+    "Копилка" to "Монеты, которые ты откладываешь на мечту. Забрать их можно, но мечта отодвинется.",
+    "Мечта" to "То, на что ты копишь. У мечты есть цена.",
+    "План недели" to "В начале недели ты раскладываешь монеты: на обязательное, необязательное и в копилку.",
+    "Неделя" to "Игровой период. В конце — итоги: какие из четырёх дел получились.",
+    "Сытость" to "Поел ли Финни. Падает каждую неделю, растёт от еды.",
+    "Настроение" to "Как Финни себя чувствует. Растёт от радостей, падает понемногу каждую неделю.",
 )
 
 @Composable
@@ -93,189 +113,196 @@ fun SettingsScreenContent(
 
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            item { Header(onBack) }
-
-            item {
-                Card {
-                    Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        ToggleRow("Звуки", "Сигналы при покупках и наградах", settings.soundEnabled) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
+            Spacer(Modifier.height(10.dp))
+            ScreenHeader("Настройки", onBack)
+            Spacer(Modifier.height(14.dp))
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(bottom = 20.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                item {
+                    Column(
+                        Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp).padding(horizontal = 14.dp, vertical = 6.dp),
+                    ) {
+                        ToggleRow(R.drawable.ic_sound, Color(0xFFE6EEFF), "Звуки", "Сигналы при покупках и наградах", settings.soundEnabled) {
                             onSettingsChange(settings.copy(soundEnabled = it))
                         }
-                        ToggleRow("Анимации", "Финни двигается и машет", settings.animationsEnabled) {
+                        DashedDivider()
+                        ToggleRow(R.drawable.ic_sparkles, Color(0xFFFFF5C9), "Анимации", "Финни двигается и машет", settings.animationsEnabled) {
                             onSettingsChange(settings.copy(animationsEnabled = it))
                         }
-                        ToggleRow("Подсказки", "Облачко с советом на главном экране", settings.tipsEnabled) {
+                        DashedDivider()
+                        ToggleRow(R.drawable.ic_bulb, Color(0xFFFFF0E6), "Подсказки", "Финни говорит, что сделать дальше", settings.tipsEnabled) {
                             onSettingsChange(settings.copy(tipsEnabled = it))
                         }
                     }
                 }
-            }
 
-            item {
-                ExpandableCard(
-                    icon = R.drawable.ic_bulb,
-                    title = "Как играть",
-                    subtitle = "Три карточки, которые ты видел в начале",
-                    open = introOpen,
-                    onToggle = { introOpen = !introOpen }
-                ) {
-                    introCards.forEach { card ->
-                        Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.Top) {
-                            Box(
-                                Modifier
-                                    .size(44.dp)
-                                    .background(FinniColors.BlueLight, RoundedCornerShape(14.dp)),
-                                contentAlignment = Alignment.Center
-                            ) { Image(painterResource(card.icon), null, Modifier.size(28.dp)) }
-                            Column(Modifier.padding(start = 12.dp)) {
-                                Text(card.title, style = MaterialTheme.typography.titleMedium)
-                                Text(card.text, style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
+                item {
+                    ExpandableCard(
+                        icon = R.drawable.ic_scene_story,
+                        tint = Color(0xFFE6F8F2),
+                        title = "Как играть",
+                        subtitle = "Три карточки, которые ты видел в начале",
+                        open = introOpen,
+                        onToggle = { introOpen = !introOpen },
+                    ) {
+                        introCards.forEach { card ->
+                            Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                CardSticker(card.icon, card.tint, size = 44.dp, iconScale = 0.6f)
+                                Column(Modifier.weight(1f)) {
+                                    Text(card.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+                                    Text(card.text, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            item {
-                ExpandableCard(
-                    icon = R.drawable.ic_clipboard,
-                    title = "Словарик",
-                    subtitle = "Что значат слова в игре",
-                    open = glossaryOpen,
-                    onToggle = { glossaryOpen = !glossaryOpen }
-                ) {
-                    glossary.forEach { (term, text) ->
-                        Column(Modifier.padding(vertical = 6.dp)) {
-                            Text(term, style = MaterialTheme.typography.titleMedium)
-                            Text(text, style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
+                item {
+                    ExpandableCard(
+                        icon = R.drawable.ic_scene_question,
+                        tint = Color(0xFFFFF5C9),
+                        title = "Словарик",
+                        subtitle = "Что значат слова в игре",
+                        open = glossaryOpen,
+                        onToggle = { glossaryOpen = !glossaryOpen },
+                    ) {
+                        glossary.forEach { (term, text) ->
+                            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    term, fontSize = 14.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
+                                    modifier = Modifier.clip(CircleShape).background(FinniColors.CardMint).padding(horizontal = 10.dp, vertical = 3.dp),
+                                )
+                                Text(text, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Row(
+                        Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp).background(FinniColors.CardMint).padding(16.dp),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CardSticker(R.drawable.ic_coin, Color.White, size = 44.dp, iconScale = 0.62f)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("О приложении", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+                            Text(
+                                "«Питомец Финни» учит планировать монеты, отличать обязательное от необязательного и копить на мечту. " +
+                                    "Здесь нет настоящих денег, рекламы и покупок. Все данные хранятся только на этом устройстве.",
+                                fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0B5E4F),
+                            )
+                        }
+                    }
+                }
+
+                // Вход для взрослых спрятан здесь, а не на главном экране: дальше — арифметический барьер
+                item {
+                    Surface(
+                        onClick = onOpenAdult,
+                        shape = RoundedCornerShape(28.dp),
+                        color = Color.Transparent,
+                        modifier = Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp),
+                    ) {
+                        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            CardSticker(R.drawable.ic_lock, FinniColors.Pebble, size = 48.dp, iconScale = 0.58f)
+                            Column(Modifier.weight(1f)) {
+                                Text("Для взрослых", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+                                Text("Прогресс ребёнка, сброс профиля, демо-режим", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                            }
+                            Image(painterResource(R.drawable.ic_arrow_right), null, Modifier.size(18.dp), colorFilter = ColorFilter.tint(FinniColors.InkMuted))
                         }
                     }
                 }
             }
-
-            item {
-                Card(color = FinniColors.CardMint) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("О приложении", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "«Питомец Финни» учит планировать монеты, отличать нужное от желаемого и копить на цель. " +
-                                "Здесь нет настоящих денег, рекламы и покупок. Все данные хранятся только на этом устройстве.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = FinniColors.NavyMuted
-                        )
-                        Spacer(Modifier.height(6.dp))
-                    }
-                }
-            }
-
-            // Вход для взрослых спрятан здесь, а не на главном экране: дальше — арифметический барьер
-            item {
-                Card(onClick = onOpenAdult) {
-                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Image(painterResource(R.drawable.ic_lock), null, Modifier.size(32.dp))
-                        Column(Modifier.padding(start = 12.dp)) {
-                            Text("Для взрослых", style = MaterialTheme.typography.titleMedium)
-                            Text("Прогресс ребёнка, сброс профиля, демо-режим", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
-                        }
-                    }
-                }
-            }
-            item { Spacer(Modifier.height(12.dp)) }
         }
     }
 }
 
 // ---------- Элементы ----------
 
+/** Настройка: наклейка, что это и зачем, переключатель. Вся строка — одна большая цель для пальца. */
 @Composable
-private fun Header(onBack: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Surface(onClick = onBack, shape = CircleShape, color = FinniColors.Lavender, modifier = Modifier.size(48.dp)) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("‹", style = MaterialTheme.typography.headlineMedium, color = FinniColors.Navy)
-            }
-        }
-        Text("Настройки", style = MaterialTheme.typography.headlineSmall)
-    }
-}
-
-@Composable
-private fun ToggleRow(title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    // Вся строка переключает настройку: крупная цель для детского пальца
+private fun ToggleRow(icon: Int, tint: Color, title: String, subtitle: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
-            .padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .semantics { stateDescription = if (checked) "Включено" else "Выключено" }
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        CardSticker(icon, tint, size = 44.dp, iconScale = 0.6f)
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(subtitle, style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)
+            Text(title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+            Text(subtitle, fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
         // Состояние продублировано словом: цвет не единственный носитель смысла (ТЗ 3.6)
-        Text(if (checked) "Вкл" else "Выкл", style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted, modifier = Modifier.padding(end = 8.dp))
+        Text(
+            if (checked) "Вкл" else "Выкл", fontSize = 13.sp, fontWeight = FontWeight.Black,
+            color = if (checked) FinniColors.Teal else FinniColors.InkMuted,
+        )
         Switch(
             checked = checked,
             onCheckedChange = null,
-            colors = SwitchDefaults.colors(checkedTrackColor = FinniColors.Blue, checkedThumbColor = Color.White)
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = FinniColors.Teal,
+                checkedThumbColor = Color.White,
+                uncheckedTrackColor = FinniColors.Pebble,
+                uncheckedThumbColor = FinniColors.InkMuted,
+                uncheckedBorderColor = FinniColors.Dashed,
+            ),
         )
     }
 }
 
+/** Карточка, которая раскрывается по нажатию: наклейка, заголовок, стрелка вниз или вверх. */
 @Composable
 private fun ExpandableCard(
     icon: Int,
+    tint: Color,
     title: String,
     subtitle: String,
     open: Boolean,
     onToggle: () -> Unit,
     content: @Composable () -> Unit,
 ) {
-    Card(onClick = onToggle) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(48.dp)
-                        .background(FinniColors.BlueLight, RoundedCornerShape(16.dp)),
-                    contentAlignment = Alignment.Center
-                ) { Image(painterResource(icon), null, Modifier.size(30.dp)) }
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .padding(start = 12.dp)
-                ) {
-                    Text(title, style = MaterialTheme.typography.titleMedium)
-                    Text(subtitle, style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)
+    val shape = RoundedCornerShape(28.dp)
+    Surface(
+        onClick = onToggle,
+        shape = shape,
+        color = Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .creamCard(shape, elevation = 8.dp)
+            .semantics { stateDescription = if (open) "Открыто" else "Свёрнуто" },
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CardSticker(icon, tint, size = 48.dp, iconScale = 0.6f)
+                Column(Modifier.weight(1f)) {
+                    Text(title, fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+                    Text(subtitle, fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                 }
-                Text(if (open) "Свернуть" else "Открыть", style = MaterialTheme.typography.labelMedium, color = FinniColors.Blue)
+                Box(Modifier.size(36.dp).clip(CircleShape).background(FinniColors.Pebble), contentAlignment = Alignment.Center) {
+                    Image(
+                        painterResource(R.drawable.ic_arrow_right), null,
+                        Modifier.size(16.dp).rotate(if (open) -90f else 90f),
+                        colorFilter = ColorFilter.tint(FinniColors.Ink),
+                    )
+                }
             }
             AnimatedVisibility(visible = open) {
-                Column(Modifier.padding(top = 8.dp)) { content() }
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DashedDivider()
+                    content()
+                }
             }
         }
     }
-}
-
-@Composable
-private fun Card(color: Color = FinniColors.Card, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
-    val shape = RoundedCornerShape(24.dp)
-    val base = Modifier
-        .fillMaxWidth()
-        .shadow(6.dp, shape, ambientColor = FinniColors.Navy.copy(alpha = 0.15f), spotColor = FinniColors.Navy.copy(alpha = 0.15f))
-    if (onClick != null) Surface(onClick = onClick, modifier = base, shape = shape, color = color, content = content)
-    else Surface(modifier = base, shape = shape, color = color, content = content)
 }

@@ -60,7 +60,7 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
  * где это делается), лапки роста и конец недели: кнопка, если можно, или спокойное «почему пока нельзя».
  */
 
-private val Deed.short: String
+internal val Deed.short: String
     get() = when (this) {
         Deed.FED -> "Еда"
         Deed.NOT_BORED -> "Радость"

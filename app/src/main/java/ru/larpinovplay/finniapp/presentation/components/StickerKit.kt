@@ -384,3 +384,31 @@ fun StatRow(label: String, value: String, coin: Boolean = false, warn: Boolean =
         }
     }
 }
+
+/** Шапка раздела поверх комнаты: «назад», белый заголовок с тенью и, справа, что-то своё раздела. */
+@Composable
+fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, trailing: @Composable () -> Unit = {}) {
+    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        BackButton(onBack)
+        Text(title, style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
+        trailing()
+    }
+}
+
+/** Шкала на кремовом: пунктирно-бежевая дорожка и цветная часть; [fraction] 0–1. */
+@Composable
+fun MeterBar(fraction: Float, color: Color, modifier: Modifier = Modifier, height: Dp = 10.dp) {
+    Box(modifier.fillMaxWidth().height(height).clip(CircleShape).background(FinniColors.Dashed)) {
+        val f = fraction.coerceIn(0f, 1f)
+        if (f > 0f) Box(Modifier.fillMaxWidth(f).height(height).clip(CircleShape).background(color))
+    }
+}
+
+/** Бирюзовый кружок с галочкой в белой обводке: «сделано» на наклейках. */
+@Composable
+fun DoneBadge(modifier: Modifier = Modifier, size: Dp = 24.dp) {
+    Box(
+        modifier.size(size).clip(CircleShape).background(FinniColors.Teal).border(if (size >= 28.dp) 3.dp else 2.dp, Color.White, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(size * 0.46f)) }
+}
