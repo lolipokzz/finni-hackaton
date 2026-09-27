@@ -386,7 +386,6 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit
     val explanation = when {
         item.category == ShopCategory.MANDATORY -> "${item.name} — это нужное. Финни поел и доволен!"
         item.isWearable -> "${item.name} теперь в гардеробе навсегда. Надень это Финни! Помни: это желаемое, а не еда"
-        item.decor -> "${item.name} теперь в комнате Финни навсегда. Загляни на главный экран! Помни: это желаемое, а не еда"
         else -> "${item.name} порадовал Финни. Помни: это желаемое, а не еда"
     }
     AlertDialog(
@@ -456,7 +455,7 @@ private fun NotEnoughDialog(
     )
 }
 
-/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Домика» не хватит 60». */
+/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Кроватки» не хватит 60». */
 private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     val after = fb.savings - fb.missing
     val goal = fb.goal ?: return "В копилке ${fb.savings} → станет $after"

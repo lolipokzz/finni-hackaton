@@ -16,7 +16,8 @@ import androidx.compose.ui.Modifier
 import org.koin.compose.koinInject
 import ru.larpinovplay.finniapp.domain.content.Feedback
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
-import ru.larpinovplay.finniapp.presentation.components.LocalRoomDecor
+import ru.larpinovplay.finniapp.presentation.components.LocalRoom
+import ru.larpinovplay.finniapp.presentation.components.RoomLook
 import ru.larpinovplay.finniapp.presentation.components.PetHost
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
@@ -30,11 +31,16 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FinniAppTheme {
-                // Вещи, купленные в комнату, видны на всех экранах с фоном-комнатой
+                // Достигнутые цели копилки (кроватка, велосипед, ремонт, поездка) видны в комнате на всех экранах с фоном-комнатой
                 val game = koinInject<GameRepository>()
                 val snapshot by game.snapshot.collectAsState()
-                val roomDecor = remember(snapshot?.state?.room) { snapshot?.state?.room?.mapTo(mutableSetOf()) { it.id }.orEmpty() }
-                CompositionLocalProvider(LocalFeedback provides koinInject<Feedback>(), LocalRoomDecor provides roomDecor) {
+                val state = snapshot?.state
+                val completedGoals = state?.completedGoals
+                val tripGoal = state?.currentTrip?.goalId
+                val room = remember(completedGoals, tripGoal) {
+                    RoomLook(goals = completedGoals?.mapTo(mutableSetOf()) { it.id }.orEmpty(), tripGoal = tripGoal)
+                }
+                CompositionLocalProvider(LocalFeedback provides koinInject<Feedback>(), LocalRoom provides room) {
                     // Питомец рисуется поверх всего и создаётся заранее: см. PetHost
                     val petHost = remember { PetHostState(warmUp = PetWarmUpSpec) }
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->

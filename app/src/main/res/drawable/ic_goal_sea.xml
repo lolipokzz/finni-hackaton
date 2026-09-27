@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Солнце над морем, две волны и парус -->
+    <path android:fillColor="#FFC24A" android:pathData="M31,15 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0Z"/>
+    <path android:fillColor="#FF6F61" android:pathData="M15,8 L15,26 L6,26 Z"/>
+    <path android:fillColor="#5B7BFF" android:pathData="M17,11 L17,26 L24,26 Z"/>
+    <path android:strokeColor="#2E3A6E" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M16,7 L16,27"/>
+    <path android:fillColor="#FFFFFF" android:strokeColor="#2E3A6E" android:strokeWidth="2" android:strokeLineJoin="round" android:pathData="M7,27 L25,27 L22,31 L10,31 Z"/>
+    <path android:strokeColor="#3EC6C0" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M4,35 q5,-4 10,0 t10,0 t10,0 t10,0"/>
+    <path android:strokeColor="#5B7BFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M4,42 q5,-4 10,0 t10,0 t10,0 t10,0"/>
+</vector>

@@ -20,8 +20,6 @@ val ShopItem.icon: Int
         "cap" -> R.drawable.ic_cap
         "glasses" -> R.drawable.ic_glasses
         "bowtie" -> R.drawable.ic_bowtie
-        "bed" -> R.drawable.ic_bed
-        "bike" -> R.drawable.ic_bike
         else -> R.drawable.ic_cart
     }
 
@@ -40,7 +38,7 @@ val ShopCategory.title: String
 
 /** Подпись категории на карточке; у одежды ещё и то, что она остаётся навсегда. */
 val ShopItem.categoryText: String
-    get() = if (isPermanent) "${category.title} · навсегда" else category.title
+    get() = if (isWearable) "${category.title} · навсегда" else category.title
 
 val WearableSlot.title: String
     get() = when (this) {

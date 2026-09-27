@@ -93,7 +93,7 @@ class ShopViewModel(
         return content.shopItems.filter { it.category == category && (wardrobe || !it.isWearable) }
     }
 
-    private fun ownedIds(): Set<String> = game.requireSnapshot().state.let { it.wardrobe + it.room }.mapTo(mutableSetOf()) { it.id }
+    private fun ownedIds(): Set<String> = game.requireSnapshot().state.wardrobe.mapTo(mutableSetOf()) { it.id }
 
     /** Берёт из копилки ровно недостающее (не весь остаток) и сразу покупает. */
     private fun buyWithSavings() {

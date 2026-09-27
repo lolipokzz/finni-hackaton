@@ -67,6 +67,7 @@ data class HomeUiState(
     /** Подсказка в облачке. */
     sealed interface Tip {
         data object ChooseGoal : Tip
+        data object OnTrip : Tip
         data class SaveFor(val goalName: String) : Tip
     }
 }
