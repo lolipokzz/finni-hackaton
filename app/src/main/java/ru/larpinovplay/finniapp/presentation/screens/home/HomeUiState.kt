@@ -2,6 +2,7 @@ package ru.larpinovplay.finniapp.presentation.screens.home
 
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
+import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 
@@ -29,10 +30,13 @@ data class HomeUiState(
     val finishBlock: FinishBlock? = null,     // почему неделю пока нельзя закончить; null — можно
     val finishNotice: FinishBlock? = null,    // открытое окно «почему нельзя закончить»
     val planDraft: PlanDraft? = null,         // окно плана недели; null — план уже подтверждён
+    val deeds: WeekDeeds = WeekDeeds(fed = false, notBored = false, savingsOnPlan = false, spendingOnPlan = false),   // дела недели сейчас
+    val weekSatiety: Int = 0,                 // сколько сытости куплено за неделю: для подсказки «Финни сыт»
+    val deedsOpen: Boolean = false,           // открыто окно «Дела недели»
 ) {
     /**
      * Черновик плана в окне начала недели: монеты недели ([income] + [carried]) и как ребёнок их раскладывает.
-     * [need] — сколько стоит самая дешёвая еда: подсказка для строки «Обязательное».
+     * [need] — сколько минимум стоит еда на неделю: подсказка для строки «Обязательное».
      */
     data class PlanDraft(
         val week: Int,

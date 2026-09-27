@@ -134,7 +134,7 @@ class DataStoreGameStoreTest {
     @Test
     fun incompatibleVersionIsNotMistakenForCorruptionEvenIfFormatChanged() = runBlocking {
         // Другая версия могла поменять поля так, что старый разбор не сработал бы: версия читается первой
-        file.writeText("{\"version\": 2, \"game\": {\"totallyNewShape\": true}}")
+        file.writeText("{\"version\": 99, \"game\": {\"totallyNewShape\": true}}")
 
         assertEquals(Result.Error(StorageError.INCOMPATIBLE_VERSION), openStore().load())
     }

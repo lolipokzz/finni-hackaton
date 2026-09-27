@@ -15,12 +15,16 @@ import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
+import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
+import ru.larpinovplay.finniapp.domain.game.model.weekDeeds
+import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
+import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
@@ -71,6 +75,8 @@ class HomeViewModel(
             }
             is HomeAction.ShowInfo -> _state.update { it?.copy(info = action.info) }
             HomeAction.DismissInfo -> _state.update { it?.copy(info = null) }
+            HomeAction.ShowDeeds -> _state.update { it?.copy(deedsOpen = true) }
+            HomeAction.DismissDeeds -> _state.update { it?.copy(deedsOpen = false) }
             HomeAction.PetTapped -> Unit       // TODO: реакция питомца
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
@@ -106,7 +112,8 @@ class HomeViewModel(
             income = income,
             carried = game.balance - income,
             plan = start,
-            need = content.shopItems.filter { it.category == ShopCategory.MANDATORY }.minOfOrNull { it.price } ?: 0,
+            // Цена еды на неделю, а не самой дешёвой еды: одной порции овощей на неделю не хватит
+            need = cheapestFoodFor(GameRules.WEEKLY_HUNGER, content.shopItems.filter { it.category == ShopCategory.MANDATORY }) ?: 0,
         )
     }
 
@@ -151,6 +158,9 @@ class HomeViewModel(
             weekSummary = current?.weekSummary,
             finishBlock = finishBlock,
             finishNotice = current?.finishNotice,
+            deeds = GameSnapshot(game, pet).weekDeeds,
+            weekSatiety = game.weekSatiety,
+            deedsOpen = current?.deedsOpen ?: false,
             planDraft = planDraft,
         )
     }

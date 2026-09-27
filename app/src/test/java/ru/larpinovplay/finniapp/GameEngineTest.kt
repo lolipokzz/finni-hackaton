@@ -21,6 +21,11 @@ import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.domain.pet.model.MoodLevel
+import ru.larpinovplay.finniapp.domain.pet.model.PetMood
+import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
+import ru.larpinovplay.finniapp.domain.game.model.weekDeeds
+import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
@@ -37,7 +42,8 @@ import java.time.LocalDate
 class GameEngineTest {
 
     private val content = defaultContent()
-    private val food = content.shopItems.first { it.category == ShopCategory.MANDATORY }
+    /** Еда, которой хватает на неделю: одна покупка закрывает дело «Финни сыт». */
+    private val food = content.shopItems.first { it.category == ShopCategory.MANDATORY && it.satiety >= GameRules.WEEKLY_HUNGER }
     private val goal = content.goals.first()
 
     private val day1 = LocalDate.of(2026, 9, 1)
@@ -126,9 +132,9 @@ class GameEngineTest {
 
         assertEquals(PurchaseResult.Success(food, balanceAfter = 100 - food.price), result)
         assertEquals(100 - food.price, game.state.balance)
-        assertTrue(game.state.foodCovered)
+        assertEquals(food.satiety, game.state.weekSatiety)
         assertEquals(2, game.state.ledger.size)
-        assertEquals(before.pet.satiety.value + food.satiety, game.pet.satiety.value)
+        assertEquals((before.pet.satiety.value + food.satiety).coerceAtMost(100), game.pet.satiety.value)
         assertEquals(before.pet.mood.value + food.mood, game.pet.mood.value)
     }
 
@@ -181,7 +187,7 @@ class GameEngineTest {
         assertNull(game.state.goal)
         assertEquals(0, game.state.savings)
         assertEquals(listOf(goal), game.state.completedGoals)
-        assertEquals(saved.pet.mood.value + 30, game.pet.mood.value)
+        assertEquals(saved.pet.mood.value + GameRules.GOAL_MOOD_BONUS, game.pet.mood.value)
     }
 
     @Test
@@ -328,64 +334,85 @@ class GameEngineTest {
     }
 
     @Test
-    fun finishingGoodWeekGivesThreeStarsGrowsPetAndStartsNewWeek() {
+    fun goodWeekMakesAllFourDeedsPaysSavingsBonusAndStartsNewWeek() {
         val week = newGame()
             .planned(mandatory = food.price, savings = 10)
             .then { GameEngine.buy(it, food) }
 
         val (game, summary) = week.finish()
 
-        assertEquals(3, summary.score)
-        assertTrue(summary.foodCovered && summary.savedSomething && summary.planKept)
+        assertTrue(summary.deeds.all)
+        assertEquals(4, summary.steps)
         assertEquals(BudgetPlan(food.price, 100 - food.price - 10, 10), summary.plan)
         assertEquals(food.price, summary.fact(BudgetDirection.MANDATORY))
-        assertEquals(GameRules.WEEK_INCOME, summary.nextIncome)
+        assertEquals(GameRules.SAVINGS_BONUS, summary.savingsBonus)
+        assertEquals(GameRules.weekIncome(PetGrowthStage.BABY), summary.nextIncome)
+        assertEquals(PetGrowthStage.TEEN.minGrowthPoints - 4, summary.stepsToNextStage)
         with(game.state) {
             assertEquals(2, this.week)
             assertEquals(PeriodPhase.PLANNING, phase)
             assertNull(plan)
             assertEquals(day2, periodStartedOn)
-            assertEquals(GameRules.WEEK_INCOME, weekIncome)
-            assertEquals(100 - food.price - 10 + GameRules.WEEK_INCOME, balance)
+            assertEquals(GameRules.weekIncome(PetGrowthStage.BABY), weekIncome)
+            assertEquals(100 - food.price - 10 + GameRules.weekIncome(PetGrowthStage.BABY), balance)
+            assertEquals(10 + GameRules.SAVINGS_BONUS, savings)
+            assertTrue(ledger.any { it.reason == LedgerReason.SavingsBonus })
             assertTrue(purchases.isEmpty())
             assertTrue(depositsThisWeek.isEmpty())
-            assertEquals(listOf(10), depositsByWeek)
+            assertEquals(listOf(10 + GameRules.SAVINGS_BONUS), depositsByWeek)
             assertEquals(listOf(summary), history)
         }
-        assertEquals(3, game.pet.growthPoints)
-        assertEquals(week.pet.satiety.value - 35, game.pet.satiety.value)
-        assertEquals(-10 + 20, summary.moodDelta)
-        assertEquals(week.pet.mood.value + summary.moodDelta, game.pet.mood.value)
+        assertEquals(4, game.pet.growthPoints)
+        assertEquals(week.pet.satiety.value - GameRules.WEEKLY_HUNGER, game.pet.satiety.value)
+        // Настроение от дел не зависит: неделя просто снижает его
+        assertEquals(-GameRules.WEEKLY_MOOD_DECAY, summary.moodDelta)
+        assertEquals(week.pet.mood.value - GameRules.WEEKLY_MOOD_DECAY, game.pet.mood.value)
     }
 
     @Test
-    fun buyingMoreOptionalThanPlannedBreaksPlan() {
-        val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
+    fun deedsAreVisibleDuringTheWeek() {
+        val fruits = content.shopItems.first { it.id == "fruits" }
+        val vegetables = content.shopItems.first { it.id == "vegetables" }
+        val start = newGame()
+        assertEquals(WeekDeeds(fed = false, notBored = true, savingsOnPlan = false, spendingOnPlan = false), start.weekDeeds)
+
+        val planned = start.planned(savings = 10)
+        val fruitOnly = planned.then { GameEngine.buy(it, fruits) }
+        val fullWeek = fruitOnly.then { GameEngine.buy(it, vegetables) }
+
+        assertTrue(planned.weekDeeds.savingsOnPlan && planned.weekDeeds.spendingOnPlan)
+        assertFalse(fruitOnly.weekDeeds.fed)   // 30 сытости из 35 — на неделю не хватит
+        assertTrue(fullWeek.weekDeeds.fed)
+    }
+
+    @Test
+    fun buyingMoreOptionalThanPlannedCostsOnlyThatDeed() {
+        val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL && !it.isWearable }
         val (_, summary) = newGame()
             .then { GameEngine.confirmPlan(it, BudgetPlan(mandatory = 90, optional = 0, savings = 10)) }
             .then { GameEngine.buy(it, food) }
             .then { GameEngine.buy(it, treat) }
             .finish()
 
-        assertFalse(summary.planKept)
+        assertFalse(summary.deeds.spendingOnPlan)
         assertTrue(summary.optionalOverPlan)
-        assertEquals(2, summary.score)
+        assertEquals(3, summary.steps)
     }
 
     @Test
-    fun withdrawingBelowPromiseBreaksPlanButKeepsSavingsStarIfSomethingStays() {
+    fun withdrawingBelowPromiseCostsSavingsDeedAndBonus() {
         val (_, summary) = newGame()
             .planned(mandatory = food.price, savings = 20)
             .then { GameEngine.buy(it, food) }
             .then { GameEngine.withdraw(it, 15) }
             .finish()
 
-        assertFalse(summary.planKept)
+        assertFalse(summary.deeds.savingsOnPlan)
         assertTrue(summary.savingsUnderPlan)
-        assertTrue(summary.savedSomething)
         assertEquals(5, summary.saved)
         assertEquals(15, summary.withdrawn)
-        assertEquals(2, summary.score)
+        assertEquals(0, summary.savingsBonus)   // отложено 5, меньше 10
+        assertEquals(3, summary.steps)
     }
 
     @Test
@@ -397,8 +424,8 @@ class GameEngineTest {
             .then { GameEngine.buy(it, food) }
             .finish()
 
-        assertTrue(summary.planKept)
-        assertEquals(3, summary.score)
+        assertTrue(summary.deeds.savingsOnPlan)
+        assertEquals(4, summary.steps)
     }
 
     @Test
@@ -411,12 +438,12 @@ class GameEngineTest {
             .then { GameEngine.buy(it, food) }
             .finish()
 
-        assertTrue(summary.savedSomething && summary.planKept)
+        assertTrue(summary.deeds.savingsOnPlan)
         assertEquals(0, summary.withdrawn)
     }
 
     @Test
-    fun petGrowsToTeenAfterTwoGoodWeeks() {
+    fun twoWeeksWithAllDeedsGrowPetToTeenAndRaisePocketMoney() {
         var game = newGame(startBalance = 1_000)
         var day = day1
 
@@ -429,30 +456,49 @@ class GameEngineTest {
         }
 
         assertEquals(PetGrowthStage.TEEN, game.pet.growthStage)
-        assertEquals(10 - 6, game.pet.pointsToNextStage)
+        assertEquals(PetGrowthStage.ADULT.minGrowthPoints - 8, game.pet.pointsToNextStage)
+        assertEquals(GameRules.weekIncome(PetGrowthStage.TEEN), game.state.weekIncome)
     }
 
     @Test
     fun summaryReportsStageChange() {
         val start = newGame(startBalance = 1_000)
-        val nearTeen = start.copy(pet = start.pet.grow(4))   // на очко до подростка
+        val nearTeen = start.copy(pet = start.pet.grow(PetGrowthStage.TEEN.minGrowthPoints - 1))
 
         val (_, summary) = nearTeen.planned(mandatory = food.price).then { GameEngine.buy(it, food) }.finish()
 
         assertEquals(PetGrowthStage.BABY, summary.stageBefore)
         assertEquals(PetGrowthStage.TEEN, summary.stageAfter)
+        assertEquals(GameRules.weekIncome(PetGrowthStage.TEEN), summary.nextIncome)
     }
 
     @Test
-    fun weekWithBrokenPromiseAndNoFoodScoresZeroAndLowersMood() {
-        val before = newGame().planned(savings = 10).then { GameEngine.withdraw(it, 10) }
+    fun boredHungryWeekGivesFewStepsAndMoodStopsAtBored() {
+        val start = newGame()
+        val bored = start.copy(pet = start.pet.copy(mood = PetMood(30)))
+            .planned(savings = 10)
+            .then { GameEngine.withdraw(it, 10) }
 
-        val (game, summary) = before.finish()
+        val (game, summary) = bored.finish()
 
-        assertEquals(0, summary.score)
-        assertEquals(-25, summary.moodDelta)
-        assertEquals(before.pet.mood.value - 25, game.pet.mood.value)
-        assertEquals(0, game.pet.growthPoints)
+        assertEquals(WeekDeeds(fed = false, notBored = false, savingsOnPlan = false, spendingOnPlan = true), summary.deeds)
+        assertEquals(1, game.pet.growthPoints)
+        assertEquals(PetMood.MIN, game.pet.mood.value)   // ниже «скучает» не опускается
+        assertEquals(MoodLevel.BORED, game.pet.mood.level)
+    }
+
+    @Test
+    fun clothesAndReachedGoalsSoftenWeeklyMoodDrop() {
+        val bowtie = content.shopItems.first { it.id == "bowtie" }
+        val glasses = content.shopItems.first { it.id == "glasses" }
+        val dressed = newGame(startBalance = 1_000)
+            .then { GameEngine.buy(it, bowtie) }
+            .then { GameEngine.buy(it, glasses) }
+            .planned(mandatory = food.price)
+
+        val (_, summary) = dressed.finish()
+
+        assertEquals(2 * GameRules.LASTING_MOOD_PER_ITEM - GameRules.WEEKLY_MOOD_DECAY, summary.moodDelta)
     }
 
     @Test

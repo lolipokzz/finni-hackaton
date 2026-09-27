@@ -33,17 +33,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
+import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
 import ru.larpinovplay.finniapp.domain.game.model.TopicProgress
+import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
-import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
-import ru.larpinovplay.finniapp.presentation.game.foodText
+import ru.larpinovplay.finniapp.presentation.game.deedText
 import ru.larpinovplay.finniapp.presentation.game.grewText
-import ru.larpinovplay.finniapp.presentation.game.planText
-import ru.larpinovplay.finniapp.presentation.game.savedText
 import ru.larpinovplay.finniapp.presentation.game.text
+import ru.larpinovplay.finniapp.presentation.pet.nextStageTitle
 import ru.larpinovplay.finniapp.presentation.pet.title
 import ru.larpinovplay.finniapp.presentation.screens.savings.icon
 import ru.larpinovplay.finniapp.presentation.task.title
@@ -101,7 +101,7 @@ private fun Header(onBack: () -> Unit) {
     }
 }
 
-/** Стадия развития и очки роста до следующей (ТЗ 2.5.10). */
+/** Стадия развития и шаги роста до следующей (ТЗ 2.5.10). */
 @Composable
 private fun PetStageCard(state: ProgressUiState) {
     WhiteCard(color = FinniColors.CardMint) {
@@ -123,13 +123,14 @@ private fun PetStageCard(state: ProgressUiState) {
                 Bar(pet.growthPoints, target, FinniColors.Mood)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Очки роста: ${pet.growthPoints} из $target. Ещё $next — и Финни станет ${nextStageTitle(pet.growthStage)}",
+                    "Шаги роста: ${pet.growthPoints} из $target. Ещё $next — и Финни станет ${nextStageTitle(pet.growthStage)}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                "Очки даются за неделю: купил еду +1, отложил в копилку +1. Стадия никогда не падает",
+                "Каждое дело недели — шаг: Финни сыт, не скучает, копилка и траты по плану. Шаги не пропадают, " +
+                    "а новая стадия даёт больше карманных",
                 style = MaterialTheme.typography.labelSmall,
                 color = FinniColors.NavyMuted
             )
@@ -137,11 +138,6 @@ private fun PetStageCard(state: ProgressUiState) {
     }
 }
 
-private fun nextStageTitle(stage: PetGrowthStage) = when (stage) {
-    PetGrowthStage.BABY -> "Подростком"
-    PetGrowthStage.TEEN -> "Взрослым"
-    PetGrowthStage.ADULT -> ""
-}
 
 @Composable
 private fun GoalCard(state: ProgressUiState) {
@@ -168,7 +164,7 @@ private fun GoalCard(state: ProgressUiState) {
     }
 }
 
-/** Итоги последней недели: три критерия словами и значками, траты, настроение. */
+/** Итоги последней недели: четыре дела словами и значками, траты, настроение. */
 @Composable
 private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
     WhiteCard {
@@ -186,15 +182,13 @@ private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
                 )
                 return@Column
             }
-            CriterionLine(summary.foodCovered, summary.foodText())
-            CriterionLine(summary.savedSomething, summary.savedText())
-            CriterionLine(summary.planKept, summary.planText())
+            Deed.entries.forEach { CriterionLine(summary.deeds[it], summary.deedText(it)) }
             Spacer(Modifier.height(8.dp))
-            StatLine("Потрачено на нужное", "${summary.spentMandatory}")
-            StatLine("Потрачено на желаемое", "${summary.spentOptional}")
+            StatLine("Потрачено на обязательное", "${summary.spentMandatory}")
+            StatLine("Потрачено на необязательное", "${summary.spentOptional}")
             StatLine("Отложено", "${summary.saved}")
             StatLine("Настроение", if (summary.moodDelta >= 0) "+${summary.moodDelta}" else "${summary.moodDelta}")
-            StatLine("Звёзды недели", "${summary.score} из ${WeekSummary.MAX_SCORE}")
+            StatLine("Дела недели", "${summary.steps} из ${WeekDeeds.MAX_STEPS}")
             if (summary.stageAfter != summary.stageBefore) {
                 Spacer(Modifier.height(6.dp))
                 Text("★ ${summary.grewText()}", style = MaterialTheme.typography.bodyLarge, color = FinniColors.Blue)

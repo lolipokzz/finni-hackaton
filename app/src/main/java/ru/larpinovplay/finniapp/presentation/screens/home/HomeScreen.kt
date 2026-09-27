@@ -139,6 +139,8 @@ fun HomeScreenContent(
             ) {
                 Column(horizontalAlignment = Alignment.Start) {
                     WeekLine(state)
+                    Spacer(Modifier.height(6.dp))
+                    DeedsStrip(state.deeds, onClick = { onAction(HomeAction.ShowDeeds) })
                     Spacer(Modifier.height(8.dp))
                     StatusIcon(
                         icon = R.drawable.ic_coin,
@@ -171,6 +173,7 @@ fun HomeScreenContent(
         )
     }
     state.finishNotice?.let { FinishNoticeDialog(it, onDismiss = { onAction(HomeAction.DismissFinishNotice) }) }
+    if (state.deedsOpen) DeedsDialog(state.deeds, state.weekSatiety, onDismiss = { onAction(HomeAction.DismissDeeds) })
     // Сначала итоги прошлой недели, потом план новой
     val summary = state.weekSummary
     val draft = state.planDraft

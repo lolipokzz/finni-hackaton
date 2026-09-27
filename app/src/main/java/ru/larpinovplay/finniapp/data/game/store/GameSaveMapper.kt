@@ -7,6 +7,7 @@ import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
 import ru.larpinovplay.finniapp.domain.game.model.TaskResult
+import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
@@ -103,6 +104,7 @@ private fun LedgerReason.toDto(): LedgerReasonDto = when (this) {
     LedgerReason.Deposit -> LedgerReasonDto.Deposit
     LedgerReason.PlannedDeposit -> LedgerReasonDto.PlannedDeposit
     LedgerReason.Withdraw -> LedgerReasonDto.Withdraw
+    LedgerReason.SavingsBonus -> LedgerReasonDto.SavingsBonus
     is LedgerReason.GoalReached -> LedgerReasonDto.GoalReached(goalName)
     is LedgerReason.TaskReward -> LedgerReasonDto.TaskReward(taskTitle)
     is LedgerReason.AdventureReward -> LedgerReasonDto.AdventureReward(adventureTitle)
@@ -115,6 +117,7 @@ private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
     LedgerReasonDto.Deposit -> LedgerReason.Deposit
     LedgerReasonDto.PlannedDeposit -> LedgerReason.PlannedDeposit
     LedgerReasonDto.Withdraw -> LedgerReason.Withdraw
+    LedgerReasonDto.SavingsBonus -> LedgerReason.SavingsBonus
     is LedgerReasonDto.GoalReached -> LedgerReason.GoalReached(goalName)
     is LedgerReasonDto.TaskReward -> LedgerReason.TaskReward(taskTitle)
     is LedgerReasonDto.AdventureReward -> LedgerReason.AdventureReward(adventureTitle)
@@ -136,34 +139,32 @@ private fun TaskResultDto.toDomain() = TaskResult(taskId, week, success, reward)
 private fun WeekSummary.toDto() = WeekSummaryDto(
     week = week,
     plan = plan.toDto(),
-    foodCovered = foodCovered,
-    savedSomething = savedSomething,
-    planKept = planKept,
+    deeds = WeekDeedsDto(deeds.fed, deeds.notBored, deeds.savingsOnPlan, deeds.spendingOnPlan),
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
     withdrawn = withdrawn,
-    score = score,
+    savingsBonus = savingsBonus,
     moodDelta = moodDelta,
     stageBefore = stageBefore,
     stageAfter = stageAfter,
+    stepsToNextStage = stepsToNextStage,
     nextIncome = nextIncome,
 )
 
 private fun WeekSummaryDto.toDomain() = WeekSummary(
     week = week,
     plan = plan.toDomain(),
-    foodCovered = foodCovered,
-    savedSomething = savedSomething,
-    planKept = planKept,
+    deeds = WeekDeeds(deeds.fed, deeds.notBored, deeds.savingsOnPlan, deeds.spendingOnPlan),
     spentMandatory = spentMandatory,
     spentOptional = spentOptional,
     saved = saved,
     withdrawn = withdrawn,
-    score = score,
+    savingsBonus = savingsBonus,
     moodDelta = moodDelta,
     stageBefore = stageBefore,
     stageAfter = stageAfter,
+    stepsToNextStage = stepsToNextStage,
     nextIncome = nextIncome,
 )
 

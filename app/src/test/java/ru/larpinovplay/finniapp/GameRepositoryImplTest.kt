@@ -117,7 +117,7 @@ class GameRepositoryImplTest {
 
         val result = game.finishWeek().dataOrNull()
 
-        assertEquals(2, (result as FinishWeekResult.Finished).summary.score)   // забота и план
+        assertEquals(2, (result as FinishWeekResult.Finished).summary.steps)   // не скучает и траты по плану
         val snapshot = game.requireSnapshot()
         assertEquals(2, snapshot.state.week)
         assertEquals(2, snapshot.pet.growthPoints)
@@ -225,7 +225,7 @@ class GameRepositoryImplTest {
         restarted.load()
         val result = restarted.finishWeek().dataOrNull()
 
-        assertEquals(2, (result as FinishWeekResult.Finished).summary.score)
+        assertEquals(2, (result as FinishWeekResult.Finished).summary.steps)
         assertEquals(2, restarted.requireSnapshot().state.week)
     }
 
