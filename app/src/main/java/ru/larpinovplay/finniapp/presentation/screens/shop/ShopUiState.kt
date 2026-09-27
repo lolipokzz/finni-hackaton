@@ -6,7 +6,7 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 
 data class ShopUiState(
     val balance: Int,
-    val foodCovered: Boolean,
+    val weekSatiety: Int,                         // сколько сытости куплено за неделю: дело «Финни сыт»
     val tab: ShopCategory,
     val items: List<ShopItem>,                    // товары выбранной вкладки
     val owned: Set<String> = emptySet(),          // id одежды, которая уже в гардеробе

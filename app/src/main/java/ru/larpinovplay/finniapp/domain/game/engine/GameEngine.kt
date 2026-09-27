@@ -16,6 +16,7 @@ import ru.larpinovplay.finniapp.domain.game.model.TaskResult
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
+import ru.larpinovplay.finniapp.domain.game.model.weekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
@@ -33,7 +34,7 @@ import java.time.LocalDate
  * поэтому проверяется обычными юнит-тестами. Хранение и последовательность команд — дело GameRepository.
  *
  * Правила — из docs/04-rules-and-formulas.md. Неделя идёт так: приходят монеты → ребёнок делит их планом
- * ([confirmPlan]) → покупает и копит → закрывает неделю ([finishWeek]) и получает до трёх звёзд.
+ * ([confirmPlan]) → покупает и копит → закрывает неделю ([finishWeek]): каждое сделанное дело недели — шаг роста.
  * Дата приходит параметром, поэтому движок не зависит от часов устройства.
  */
 object GameEngine {
@@ -102,7 +103,7 @@ object GameEngine {
 
     /**
      * Забирает [amount] из копилки в кошелёк. Можно всё, до нуля: это деньги ребёнка. Снятое вычитается
-     * из отложенного за неделю, поэтому звёзды «Копилка» и «План» считаются уже после него.
+     * из отложенного за неделю, поэтому дело «Копилка по плану» и бонус копилки считаются уже после него.
      */
     fun withdraw(game: GameSnapshot, amount: Int): Transition<WithdrawResult> {
         val s = game.state
@@ -156,46 +157,46 @@ object GameEngine {
     }
 
     /**
-     * Закрывает неделю, если [GameState.finishBlock] не мешает: считает звёзды, меняет питомца,
-     * начинает новую неделю в фазе плана и зачисляет карманные деньги.
+     * Закрывает неделю, если [GameState.finishBlock] не мешает: засчитывает дела недели шагами роста,
+     * платит бонус копилки, меняет питомца, начинает новую неделю в фазе плана и зачисляет карманные
+     * по новой стадии питомца (docs/11-economy.md).
      */
     fun finishWeek(game: GameSnapshot, today: LocalDate, adventures: List<Adventure> = emptyList()): Transition<FinishWeekResult> {
         val s = game.state
         s.finishBlock(today, adventures)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
 
         val plan = s.plan ?: BudgetPlan()
-        val spentMandatory = s.spentThisWeek(ShopCategory.MANDATORY)
-        val spentOptional = s.spentThisWeek(ShopCategory.OPTIONAL)
         val saved = s.savedThisWeek
-        val foodCovered = s.foodCovered
-        val savedSomething = saved > 0
-        // Перерасход на нужное не нарушает план: ребёнок не должен бояться накормить питомца
-        val planKept = spentOptional <= plan.optional && saved >= plan.savings
-        val score = listOf(foodCovered, savedSomething, planKept).count { it }
-        val moodDelta = -GameRules.WEEKLY_MOOD_DECAY + GameRules.MOOD_DELTA_BY_SCORE[score]
+        // Дела считаются до недельного падения настроения: засчитывается то, что было к закрытию недели
+        val deeds = game.weekDeeds
+        val bonus = if (saved >= GameRules.SAVINGS_BONUS_MIN) GameRules.SAVINGS_BONUS else 0
+        // Настроение от дел не зависит: неделя его снижает, а вещи и цели немного поддерживают
+        val lasting = minOf(s.lastingJoys * GameRules.LASTING_MOOD_PER_ITEM, GameRules.LASTING_MOOD_CAP)
+        val moodDelta = lasting - GameRules.WEEKLY_MOOD_DECAY
 
         val before = game.pet
-        val pet = before.changeSatiety(-GameRules.WEEKLY_HUNGER).changeMood(moodDelta).grow(score)
+        val pet = before.changeSatiety(-GameRules.WEEKLY_HUNGER).changeMood(moodDelta).grow(deeds.steps)
+        val income = GameRules.weekIncome(pet.growthStage)
 
         val summary = WeekSummary(
             week = s.week,
             plan = plan,
-            foodCovered = foodCovered,
-            savedSomething = savedSomething,
-            planKept = planKept,
-            spentMandatory = spentMandatory,
-            spentOptional = spentOptional,
+            deeds = deeds,
+            spentMandatory = s.spentThisWeek(ShopCategory.MANDATORY),
+            spentOptional = s.spentThisWeek(ShopCategory.OPTIONAL),
             saved = saved,
             withdrawn = s.withdrawalsThisWeek.sum(),
-            score = score,
-            moodDelta = moodDelta,
+            savingsBonus = bonus,
+            moodDelta = pet.mood.value - before.mood.value,
             stageBefore = before.growthStage,
             stageAfter = pet.growthStage,
-            nextIncome = GameRules.WEEK_INCOME,
+            stepsToNextStage = pet.pointsToNextStage,
+            nextIncome = income,
         )
-        val state = s.copy(
+        val withBonus = if (bonus > 0) s.post(LedgerReason.SavingsBonus, 0, +bonus) else s
+        val state = withBonus.copy(
             history = s.history + summary,
-            depositsByWeek = s.depositsByWeek + saved,
+            depositsByWeek = s.depositsByWeek + (saved + bonus),
             depositsThisWeek = emptyList(),
             withdrawalsThisWeek = emptyList(),
             purchases = emptyList(),
@@ -204,7 +205,7 @@ object GameEngine {
             phase = PeriodPhase.PLANNING,
             plan = null,
             periodStartedOn = today,
-        ).post(LedgerReason.WeekIncome, +GameRules.WEEK_INCOME)
+        ).post(LedgerReason.WeekIncome, +income)
         return Transition(GameSnapshot(state, pet), FinishWeekResult.Finished(summary))
     }
 

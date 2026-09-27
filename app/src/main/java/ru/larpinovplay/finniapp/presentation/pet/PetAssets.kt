@@ -65,7 +65,7 @@ val PetGrowthStage.modelScale: Float
     }
 
 /** Эмоция, которую показывает 3D-питомец. Голод важнее настроения (docs/04-rules-and-formulas.md). */
-enum class PetEmotion { HAPPY, CALM, SAD, HUNGRY }
+enum class PetEmotion { HAPPY, CALM, BORED, HUNGRY }
 
 val Pet.emotion: PetEmotion
     get() = when {
@@ -73,7 +73,7 @@ val Pet.emotion: PetEmotion
         else -> when (mood.level) {
             MoodLevel.HAPPY -> PetEmotion.HAPPY
             MoodLevel.NEUTRAL -> PetEmotion.CALM
-            MoodLevel.SAD -> PetEmotion.SAD
+            MoodLevel.BORED -> PetEmotion.BORED
         }
     }
 
@@ -85,7 +85,7 @@ val Pet.idleAnimation: String?
     get() = if (look.species != PetSpecies.CAT) "Idle" else when (emotion) {
         PetEmotion.HAPPY -> "IdleHappy"
         PetEmotion.CALM -> "Idle"
-        PetEmotion.SAD -> "IdleSad"
+        PetEmotion.BORED -> "IdleSad"   // клип в модели называется так, показываем его как «скучает»
         PetEmotion.HUNGRY -> "IdleHungry"
     }
 

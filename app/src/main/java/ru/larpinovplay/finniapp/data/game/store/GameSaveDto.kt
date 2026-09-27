@@ -15,7 +15,8 @@ import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
  * Переименование или удаление поля, смена смысла, переименование констант enum — это уже новая
  * [GAME_SAVE_VERSION]: старые сохранения при загрузке сбрасываются.
  */
-internal const val GAME_SAVE_VERSION = 1
+// 2 — звёзды недели заменены делами недели, шаги роста считаются иначе: старые итоги и рост не переносятся
+internal const val GAME_SAVE_VERSION = 2
 
 @Serializable
 internal data class GameSaveFile(
@@ -97,6 +98,9 @@ internal sealed interface LedgerReasonDto {
     @Serializable @SerialName("withdraw")
     data object Withdraw : LedgerReasonDto
 
+    @Serializable @SerialName("savings_bonus")
+    data object SavingsBonus : LedgerReasonDto
+
     @Serializable @SerialName("goal_reached")
     data class GoalReached(val goalName: String) : LedgerReasonDto
 
@@ -158,16 +162,23 @@ internal data class BudgetPlanDto(
 internal data class WeekSummaryDto(
     val week: Int,
     val plan: BudgetPlanDto = BudgetPlanDto(),
-    val foodCovered: Boolean,
-    val savedSomething: Boolean,
-    val planKept: Boolean = false,
+    val deeds: WeekDeedsDto,
     val spentMandatory: Int,
     val spentOptional: Int,
     val saved: Int,
     val withdrawn: Int = 0,
-    val score: Int,
+    val savingsBonus: Int = 0,
     val moodDelta: Int,
     val stageBefore: PetGrowthStage,
     val stageAfter: PetGrowthStage,
+    val stepsToNextStage: Int? = null,
     val nextIncome: Int = 0,
+)
+
+@Serializable
+internal data class WeekDeedsDto(
+    val fed: Boolean,
+    val notBored: Boolean,
+    val savingsOnPlan: Boolean,
+    val spendingOnPlan: Boolean,
 )

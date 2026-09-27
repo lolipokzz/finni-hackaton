@@ -23,6 +23,7 @@ class GameSaveMapperTest {
             setOf(
                 LedgerReason.StartCoins::class, LedgerReason.Purchase::class, LedgerReason.Deposit::class,
                 LedgerReason.PlannedDeposit::class, LedgerReason.Withdraw::class, LedgerReason.AdventureReward::class,
+                LedgerReason.SavingsBonus::class,
                 LedgerReason.GoalReached::class, LedgerReason.TaskReward::class, LedgerReason.WeekIncome::class,
             ),
             reasons,
@@ -55,7 +56,7 @@ class GameSaveMapperTest {
     fun ledgerReasonNamesInFileAreStable() {
         val json = StorageJson.encodeToString(GameSaveFile.serializer(), GameSaveFile(game = game.toDto()))
 
-        listOf("start_coins", "purchase", "deposit", "planned_deposit", "withdraw", "adventure_reward", "goal_reached", "task_reward", "week_income").forEach { name ->
+        listOf("start_coins", "purchase", "deposit", "planned_deposit", "withdraw", "savings_bonus", "adventure_reward", "goal_reached", "task_reward", "week_income").forEach { name ->
             assertTrue("В файле нет причины $name", json.contains("\"$name\""))
         }
     }

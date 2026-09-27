@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.game.model.GameState
+import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.game.model.budgetDirection
@@ -28,7 +29,7 @@ class ShopViewModel(
     private val _state = MutableStateFlow(
         ShopUiState(
             balance = game.requireSnapshot().state.balance,
-            foodCovered = game.requireSnapshot().state.foodCovered,
+            weekSatiety = game.requireSnapshot().state.weekSatiety,
             tab = ShopCategory.MANDATORY,
             items = itemsOf(ShopCategory.MANDATORY),
             owned = ownedIds(),
@@ -42,7 +43,7 @@ class ShopViewModel(
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { snapshot ->
                 val g = snapshot.state
-                _state.update { it.copy(balance = g.balance, foodCovered = g.foodCovered, owned = ownedIds(), budgets = budgetsOf(g)) }
+                _state.update { it.copy(balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g)) }
             }
         }
     }

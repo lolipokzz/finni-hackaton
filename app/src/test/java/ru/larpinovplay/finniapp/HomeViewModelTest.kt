@@ -21,7 +21,8 @@ import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
-import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
+import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
+import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeAction
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeUiState
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeViewModel
@@ -58,7 +59,9 @@ class HomeViewModelTest {
         assertEquals(GameRules.START_BALANCE, draft.budget)
         assertEquals(0, draft.carried)
         assertEquals(BudgetPlan(), draft.plan)
-        assertEquals(content.shopItems.filter { it.category == ShopCategory.MANDATORY }.minOf { it.price }, draft.need)
+        // Цена еды на неделю (две порции овощей), а не самой дешёвой порции
+        assertEquals(cheapestFoodFor(GameRules.WEEKLY_HUNGER, content.shopItems), draft.need)
+        assertEquals(20, draft.need)
         assertEquals(FinishBlock.PLAN_NOT_CONFIRMED, vm.state.value?.finishBlock)
     }
 
@@ -118,10 +121,10 @@ class HomeViewModelTest {
         val summary = checkNotNull(vm.state.value?.weekSummary)
         assertEquals(BudgetPlan(10, 20, 20), summary.plan)
         // 20 ушли в копилку сразу, остальное не потрачено и переходит на новую неделю; план начинается с прошлого
-        assertEquals(20, game.requireSnapshot().state.savings)
+        assertEquals(20 + GameRules.SAVINGS_BONUS, game.requireSnapshot().state.savings)   // и бонус копилки
         val draft = vm.draft
         assertEquals(2, draft.week)
-        assertEquals(GameRules.WEEK_INCOME, draft.income)
+        assertEquals(GameRules.weekIncome(PetGrowthStage.BABY), draft.income)
         assertEquals(GameRules.START_BALANCE - 20, draft.carried)
         assertEquals(BudgetPlan(10, 20, 20), draft.plan)
         assertEquals(draft.budget - 50, draft.unallocated)

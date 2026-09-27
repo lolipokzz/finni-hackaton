@@ -38,7 +38,7 @@ data class Pet(
     fun takeOff(slot: WearableSlot): Pet = copy(outfit = outfit - slot)
 
     fun grow(points: Int): Pet {
-        require(points >= 0) { "Очки роста только растут: $points" }
+        require(points >= 0) { "Шаги роста только прибавляются: $points" }
         return copy(growthPoints = growthPoints + points)
     }
 

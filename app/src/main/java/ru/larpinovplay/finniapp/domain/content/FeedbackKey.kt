@@ -10,20 +10,29 @@ enum class FeedbackKey(val id: String) {
     LEDGER_DEPOSIT("ledger.deposit"),
     LEDGER_PLANNED_DEPOSIT("ledger.planned_deposit"),
     LEDGER_WITHDRAW("ledger.withdraw"),
+    LEDGER_SAVINGS_BONUS("ledger.savings_bonus"),
     LEDGER_GOAL("ledger.goal"),
     LEDGER_TASK("ledger.task"),
     LEDGER_ADVENTURE("ledger.adventure"),
     LEDGER_WEEK_INCOME("ledger.week_income"),
 
-    // Объяснение итога недели
+    // Итоги недели: что вышло с каждым делом
     PERIOD_FOOD_OK("period.a_ok"),
     PERIOD_FOOD_FAIL("period.a_fail"),
     PERIOD_SAVED_OK("period.c_ok"),
     PERIOD_SAVED_FAIL("period.c_fail"),
+    PERIOD_BORED_OK("period.bored_ok"),
+    PERIOD_BORED_FAIL("period.bored_fail"),
     PERIOD_PLAN_OK("period.b_ok"),
     PERIOD_PLAN_OPTIONAL_OVER("period.b_optional_over"),
     PERIOD_PLAN_SAVINGS_UNDER("period.b_savings_under"),
     STAGE_UP("stage.up"),
+
+    // Дела недели: что сделать (окно на главном экране)
+    DEED_FED_TODO("deed.fed_todo"),
+    DEED_NOT_BORED_TODO("deed.not_bored_todo"),
+    DEED_SAVINGS_TODO("deed.savings_todo"),
+    DEED_SPENDING_TODO("deed.spending_todo"),
 
     // Почему неделю пока нельзя закончить
     FINISH_NO_PLAN("finish.no_plan"),

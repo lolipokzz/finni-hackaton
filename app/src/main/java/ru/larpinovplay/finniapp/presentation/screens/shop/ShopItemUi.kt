@@ -14,6 +14,9 @@ val ShopItem.icon: Int
         "meat" -> R.drawable.ic_meat
         "lemonade" -> R.drawable.ic_lemonade
         "chips" -> R.drawable.ic_chips
+        "soap" -> R.drawable.ic_soap
+        "shampoo" -> R.drawable.ic_shampoo
+        "brush" -> R.drawable.ic_brush
         "cap" -> R.drawable.ic_cap
         "glasses" -> R.drawable.ic_glasses
         "bowtie" -> R.drawable.ic_bowtie
