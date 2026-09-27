@@ -128,7 +128,7 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
 
                 entry<Progress> { ProgressScreen(onBack = backStack::goBack) }
 
-                entry<Settings> { SettingsScreen(onBack = backStack::goBack) }
+                entry<Settings> { SettingsScreen(onBack = backStack::goBack, onOpenAdult = { backStack.goTo(Adult) }) }
 
                 entry<Adult> {
                     AdultScreen(onBack = backStack::goBack)

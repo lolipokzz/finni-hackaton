@@ -65,6 +65,7 @@ private val glossary = listOf(
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onOpenAdult: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -73,6 +74,7 @@ fun SettingsScreen(
         settings = settings,
         onSettingsChange = viewModel::onSettingsChange,
         onBack = onBack,
+        onOpenAdult = onOpenAdult,
         modifier = modifier,
     )
 }
@@ -82,6 +84,7 @@ fun SettingsScreenContent(
     settings: AppSettings,
     onSettingsChange: (AppSettings) -> Unit,
     onBack: () -> Unit,
+    onOpenAdult: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Раскрытие карточек «Как играть» и «Словарик» — вид одного экрана, в ViewModel ему делать нечего
@@ -167,7 +170,19 @@ fun SettingsScreenContent(
                             color = FinniColors.NavyMuted
                         )
                         Spacer(Modifier.height(6.dp))
-                        Text("Сброс или удаление профиля — в разделе «Для взрослых» (замок на главном экране).", style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
+                    }
+                }
+            }
+
+            // Вход для взрослых спрятан здесь, а не на главном экране: дальше — арифметический барьер
+            item {
+                Card(onClick = onOpenAdult) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Image(painterResource(R.drawable.ic_lock), null, Modifier.size(32.dp))
+                        Column(Modifier.padding(start = 12.dp)) {
+                            Text("Для взрослых", style = MaterialTheme.typography.titleMedium)
+                            Text("Прогресс ребёнка, сброс профиля, демо-режим", style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted)
+                        }
                     }
                 }
             }

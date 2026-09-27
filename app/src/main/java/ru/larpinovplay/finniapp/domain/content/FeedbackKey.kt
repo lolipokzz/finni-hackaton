@@ -51,13 +51,14 @@ enum class FeedbackKey(val id: String) {
     WITHDRAW_WEEKS("withdraw.weeks"),
     WITHDRAW_NO_GOAL("withdraw.no_goal"),
 
-    // Фраза под питомцем и подсказка в облачке
-    MOOD_HUNGRY("mood.hungry"),
-    MOOD_GREW("mood.grew"),
-    MOOD_PURCHASE("mood.purchase"),
-    MOOD_DEFAULT("mood.default"),
-    TIP_CHOOSE_GOAL("tip.choose_goal"),
-    TIP_SAVE_FOR("tip.save_for"),
+    // Реплика Финни на главном экране: одно самое важное дело сейчас
+    SAY_WEEK_READY("say.week_ready"),
+    SAY_HUNGRY("say.hungry"),
+    SAY_ADVENTURE("say.adventure"),
+    SAY_CHOOSE_GOAL("say.choose_goal"),
+    SAY_BORED("say.bored"),
+    SAY_NEW_TASK("say.new_task"),
+    SAY_TOMORROW("say.tomorrow"),
 
     DEPOSIT_REJECTED("deposit.rejected"),
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Меню: задания. -->
+    <path android:fillColor="#5FD3B0"
+        android:pathData="M17,8 h14 a8,8 0 0,1 8,8 v20 a8,8 0 0,1 -8,8 h-14 a8,8 0 0,1 -8,-8 v-20 a8,8 0 0,1 8,-8Z"/>
+    <path android:fillColor="#EAFBF5"
+        android:pathData="M17,11 h14 a5,5 0 0,1 5,5 v20 a5,5 0 0,1 -5,5 h-14 a5,5 0 0,1 -5,-5 v-20 a5,5 0 0,1 5,-5Z"/>
+    <path android:fillColor="#2FA888"
+        android:pathData="M21.5,4 h5 a4.5,4.5 0 0,1 4.5,4.5 v0 a4.5,4.5 0 0,1 -4.5,4.5 h-5 a4.5,4.5 0 0,1 -4.5,-4.5 v-0 a4.5,4.5 0 0,1 4.5,-4.5Z"/>
+    <path android:strokeColor="#2FA888" android:strokeWidth="4" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M17 27l5 5 9-10"/>
+</vector>

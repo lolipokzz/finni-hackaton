@@ -40,4 +40,26 @@ object FinniColors {
     // Прилавок в приключениях: тёплое дерево
     val Counter = Color(0xFFF6E3C1)
     val CounterEdge = Color(0xFFEBCF9F)
+
+    // Карточки-наклейки главного экрана и его окон: кремовая поверхность, толстая белая обводка
+    val Cream = Color(0xFFFFFDF6)
+    val Ink = Color(0xFF1F3B4D)          // текст на кремовом
+    val InkMuted = Color(0xFF3D5566)
+    val Teal = Color(0xFF0F7F6A)         // «сделано», стадия, главная кнопка
+    val TealBright = Color(0xFF2EC4A6)
+    val Dashed = Color(0xFFEDE7DA)       // пунктир и разделители на кремовом
+    val Pebble = Color(0xFFF2EFE6)       // круглые служебные кнопки: закрыть, настройки
+    val ActionPeach = Color(0xFFFFB48F)  // кнопка действия в реплике Финни
+    val ActionPeachInk = Color(0xFF5A2410)
+    val CoinPill = Color(0xFFFFF1C7)
+    val CoinInk = Color(0xFF7A4B00)
+    val SatietyRing = Color(0xFFFFA24C)
+    val SatietyTrack = Color(0xFFFFF3E2)
+    val MoodRing = Color(0xFF2EC4A6)
+    val MoodTrack = Color(0xFFE2F7F1)
+    val DreamRing = Color(0xFFFF6FA8)
+    val DreamTrack = Color(0xFFFBD9E8)
+    val PawNew = Color(0xFFFFB020)       // шаг роста, заработанный на этой неделе
+    val PawEmpty = Color(0xFFD6ECE6)
+    val DeedPending = Color(0xFFFF9A62)
 }
