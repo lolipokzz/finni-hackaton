@@ -113,7 +113,8 @@ class GameRepositoryImpl(
     override suspend fun resetToDemo(): EmptyResult<StorageError> = mutex.withLock {
         val demo = GameSnapshot(
             GameEngine.newGame(today(), startBalance).copy(demoMode = true),
-            Pet.newborn("Финни Демо", PetLook(PetSpecies.BUNNY, PetColor.MINT)),
+            // Кот: у него весь функционал — удары, поглаживание, эмоции, гардероб, голос
+            Pet.newborn("Финни Демо", PetLook(PetSpecies.CAT, PetColor.CORAL)),
         )
         persist(demo)
     }

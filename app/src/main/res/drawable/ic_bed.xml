@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <!-- Кошачья лежанка: розовый бортик, светлая подушка, жёлтая подушечка -->
+    <path android:fillColor="#D4538B" android:pathData="M12,19.5c-5.2,0 -9.5,-1.9 -9.5,-4.8 0,-1.2 0.6,-2.2 1.6,-3 0.2,2.1 3.6,3.6 7.9,3.6s7.7,-1.5 7.9,-3.6c1,0.8 1.6,1.8 1.6,3 0,2.9 -4.3,4.8 -9.5,4.8z"/>
+    <path android:fillColor="#F2E6FF" android:pathData="M12,14.4c-4.1,0 -7.3,-1.3 -7.3,-3.1S7.9,8.2 12,8.2s7.3,1.3 7.3,3.1 -3.2,3.1 -7.3,3.1z"/>
+    <path android:fillColor="#E0548F" android:pathData="M12,8.2c4.1,0 7.3,1.3 7.3,3.1 0,0.2 0,0.3 -0.1,0.5 1.2,-0.5 1.9,-1.2 1.9,-2 0,-2 -4,-3.6 -9.1,-3.6S2.9,7.8 2.9,9.8c0,0.8 0.7,1.5 1.9,2 -0.1,-0.2 -0.1,-0.3 -0.1,-0.5 0,-1.8 3.2,-3.1 7.3,-3.1z"/>
+    <path android:fillColor="#F6BC68" android:pathData="M15.5,11.2m-2.4,0a2.4,1.3 0,1 1,4.8 0a2.4,1.3 0,1 1,-4.8 0"/>
+    <path android:fillColor="#A582E8" android:pathData="M7,10.2l4.6,-0.6 1,2.8 -4.8,0.6z"/>
+</vector>

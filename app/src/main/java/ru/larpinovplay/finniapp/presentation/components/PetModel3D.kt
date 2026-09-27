@@ -10,7 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.filament.IndirectLight
+import android.graphics.BitmapFactory
 import com.google.android.filament.Renderer
+import com.google.android.filament.Texture
+import com.google.android.filament.TextureSampler
+import com.google.android.filament.android.TextureHelper
 import com.google.android.filament.View
 import com.google.android.filament.android.UiHelper
 import com.google.android.filament.gltfio.Animator
@@ -31,6 +35,8 @@ import java.nio.ByteBuffer
  * - Если провести по питомцу пальцем, по кругу играет [pettingAnimation] — пока палец двигается; потом клип
  *   доигрывает цикл и питомец возвращается в idle. Нажатием такое касание не считается.
  * - [soundEnabled]: мурчание, пока гладят, и звуки ударов (см. [PetSounds]).
+ * - [skin] — раскраска: текстура из assets, которая подменяет текстуру шерсти материала [SKIN_MATERIAL]
+ *   (развёртка та же, перекрашена только шерсть); null — текстура из самой модели.
  * - [voiceEnabled]: питомец всё время слушает и повторяет услышанное своим голосом (см. [PetVoice]); пока
  *   ребёнок говорит, прислушивается (голова набок, уши торчком), а повторяя, открывает рот в такт.
  * - [onShadow] каждый кадр получает, где на экране пол под лапами (см. [PetShadow]): тень рисует тот, кто
@@ -61,6 +67,8 @@ fun PetModel3D(
     assetName: String?,
     modifier: Modifier = Modifier,
     tintArgb: Long? = null,
+    modelScale: Float = 1f,
+    skin: String? = null,
     tintMaterial: String = "Main",
     idleAnimation: String? = "Idle",
     tapAnimation: String = "Wave",
@@ -99,7 +107,8 @@ fun PetModel3D(
         },
         update = {
             controller.setAnimations(idleAnimation, tapAnimation, hitAnimations, pettingAnimation)
-            controller.setModel(assetName, tintArgb)
+            controller.setModel(assetName, tintArgb, modelScale)
+            controller.setSkin(skin)
             controller.setAccessories(accessories)
             controller.setActive(active)
         },
@@ -160,6 +169,12 @@ private class PetModelController(
 
     private var loadedAsset: String? = null
     private var loadedTintArgb: Long? = null
+    private var loadedScale = 1f
+
+    /** Какая раскраска нужна и какая сейчас на модели (null — родная текстура модели). */
+    private var wantedSkin: String? = null
+    private var appliedSkin: String? = null
+    private var skinTexture: Texture? = null
     private var accessories: Set<String> = emptySet()
 
     private var idleIndex = -1
@@ -230,10 +245,10 @@ private class PetModelController(
      * Ставит в вид модель [assetName] с окрасом [tintArgb]; null убирает модель. Если такая уже стоит, ничего
      * не делает, поэтому вызывать можно при каждой перекомпоновке.
      */
-    fun setModel(assetName: String?, tintArgb: Long?) {
+    fun setModel(assetName: String?, tintArgb: Long?, scale: Float = 1f) {
         val viewer = modelViewer ?: return
-        if (assetName == loadedAsset && tintArgb == loadedTintArgb) return
-        if (assetName != null && assetName == loadedAsset && tintArgb != null) {
+        if (assetName == loadedAsset && tintArgb == loadedTintArgb && scale == loadedScale) return
+        if (assetName != null && assetName == loadedAsset && scale == loadedScale && tintArgb != null) {
             // Та же модель, другой окрас: перекрашиваем материал, перезагружать файл не нужно
             loadedTintArgb = tintArgb
             applyTint(viewer, tintArgb)
@@ -241,7 +256,9 @@ private class PetModelController(
         }
         loadedAsset = assetName
         loadedTintArgb = tintArgb
+        loadedScale = scale
 
+        dropSkin(viewer)
         if (assetName == null) {
             viewer.destroyModel()
             idleIndex = -1
@@ -254,8 +271,10 @@ private class PetModelController(
         val bytes = appContext.assets.open(assetName).use { it.readBytes() }
         viewer.loadModelGlb(ByteBuffer.wrap(bytes))   // прежняя модель уничтожается внутри
         viewer.transformToUnitCube()
+        applyScale(viewer, scale)
         applyTint(viewer, tintArgb)
         applyAccessories(viewer)
+        applySkin()
         measureFloor(viewer)
         resolveAnimations(viewer.animator)
         switchTo(idleIndex, System.nanoTime())
@@ -267,6 +286,61 @@ private class PetModelController(
         if (!active) pausedAtNanos = System.nanoTime()
         warmFrames = WARM_FRAMES
         requestFrame()
+    }
+
+    /** Раскраска питомца; вызывать можно при каждой перекомпоновке. */
+    fun setSkin(skin: String?) {
+        wantedSkin = skin
+        applySkin()
+    }
+
+    /** Ставит на материал шерсти текстуру раскраски, если она ещё не та. */
+    private fun applySkin() {
+        val viewer = modelViewer ?: return
+        if (viewer.asset == null || wantedSkin == appliedSkin) return
+        val skin = wantedSkin
+        if (skin == null) {
+            // Вернуть родную текстуру проще всего, загрузив модель заново (бывает только при смене питомца)
+            val asset = loadedAsset
+            loadedAsset = null
+            setModel(asset, loadedTintArgb, loadedScale)
+            return
+        }
+        val instance = viewer.asset?.instance?.materialInstances?.firstOrNull { it.name == SKIN_MATERIAL } ?: return
+        val bitmap = appContext.assets.open(skin).use { BitmapFactory.decodeStream(it) } ?: return
+        val engine = viewer.engine
+        val levels = 1 + kotlin.math.floor(kotlin.math.log2(maxOf(bitmap.width, bitmap.height).toFloat())).toInt()
+        val texture = Texture.Builder()
+            .width(bitmap.width)
+            .height(bitmap.height)
+            .levels(levels)
+            .sampler(Texture.Sampler.SAMPLER_2D)
+            .format(Texture.InternalFormat.SRGB8_A8)   // цвет в sRGB, как текстура цвета в самой модели
+            // Загружаем картинку, читаем в шейдере и строим уменьшенные копии (без флага generateMipmaps падает)
+            .usage(Texture.Usage.UPLOADABLE or Texture.Usage.SAMPLEABLE or Texture.Usage.GEN_MIPMAPPABLE)
+            .build(engine)
+        TextureHelper.setBitmap(engine, texture, 0, bitmap)
+        texture.generateMipmaps(engine)
+        bitmap.recycle()
+        instance.setParameter(
+            "baseColorMap",
+            texture,
+            TextureSampler(TextureSampler.MinFilter.LINEAR_MIPMAP_LINEAR, TextureSampler.MagFilter.LINEAR, TextureSampler.WrapMode.CLAMP_TO_EDGE),
+        )
+        skinTexture?.let(engine::destroyTexture)
+        skinTexture = texture
+        appliedSkin = skin
+        requestFrame()
+    }
+
+    /** Модель меняется: её материалы уходят, текстура раскраски больше не нужна. */
+    private fun dropSkin(viewer: ModelViewer) {
+        skinTexture?.let { texture ->
+            viewer.destroyModel()
+            viewer.engine.destroyTexture(texture)
+        }
+        skinTexture = null
+        appliedSkin = null
     }
 
     /** Какие вещи показать; вызывать можно при каждой перекомпоновке. */
@@ -409,6 +483,34 @@ private class PetModelController(
         val ndcX = clip[0] / clip[3]
         val ndcY = clip[1] / clip[3]
         return floatArrayOf(((ndcX + 1) / 2 * width).toFloat(), ((1 - ndcY) / 2 * height).toFloat())
+    }
+
+    /**
+     * Рост питомца ([scale] от вписанного в куб размера). Уменьшаем от точки пола под центром модели: подошвы
+     * остаются на полу, а питомец становится ниже. Всё остальное (тень, зоны ударов, голос) считается по костям
+     * в мировых координатах и подстраивается само.
+     */
+    private fun applyScale(viewer: ModelViewer, scale: Float) {
+        if (scale == 1f) return
+        val asset = viewer.asset ?: return
+        val transforms = viewer.engine.transformManager
+        val rootInstance = transforms.getInstance(asset.root)
+        val root = transforms.getTransform(rootInstance, FloatArray(16))
+        val box = asset.boundingBox
+        val bottom = box.center[1] - box.halfExtent[1]
+        val floor = root[1] * box.center[0] + root[5] * bottom + root[9] * box.center[2] + root[13]
+        // Масштаб вокруг (0, floor, MODEL_Z): T · S · T⁻¹ · root, по столбцам
+        val pivot = floatArrayOf(0f, floor, MODEL_Z)
+        val scaled = FloatArray(16) { i ->
+            val col = i / 4
+            val row = i % 4
+            when {
+                row == 3 -> root[i]
+                col == 3 -> pivot[row] + (root[i] - pivot[row]) * scale
+                else -> root[i] * scale
+            }
+        }
+        transforms.setTransform(rootInstance, scaled)
     }
 
     /**
@@ -715,6 +817,9 @@ private class PetModelController(
 
         /** Кости, которые двигает голос (голова берётся из [PetHitAnimations.headJoint]). */
         const val JAW_JOINT = "Jaw"
+
+        /** Материал модели кота с текстурой шерсти, её подменяет раскраска. */
+        const val SKIN_MATERIAL = "Kitten_Opaque"
         const val EAR_LEFT_JOINT = "Ear.L"
         const val EAR_RIGHT_JOINT = "Ear.R"
 
@@ -766,7 +871,7 @@ data class PetHitAnimations(
 
 private enum class TapZone { HEAD, FOOT_LEFT, FOOT_RIGHT }
 
-/** Узлы модели с этим префиксом — вещи гардероба (Acc_Cap, Acc_Glasses, Acc_BowTie в cat.glb). */
+/** Узлы модели с этим префиксом — вещи гардероба (Acc_Cap, Acc_Glasses, Acc_BowTie в моделях кота). */
 const val ACCESSORY_PREFIX = "Acc_"
 
 private const val ALL_LAYERS = 0xFF

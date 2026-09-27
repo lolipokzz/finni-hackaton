@@ -12,14 +12,16 @@ import ru.larpinovplay.finniapp.presentation.components.PetSpec
 /**
  * Сопоставление вида питомца и стадии роста с 3D-моделью в assets.
  * Модели лежат в папке по виду: assets/<species>/{baby,teen,adult}.glb.
- * Кот временно использует cat.glb на всех стадиях роста.
- * Цвет питомца в файл не входит: материал "Main" перекрашивается программно в PetColor.
+ * У кота на каждой стадии своя модель с тем же скелетом и анимациями: малыш крупноголовый и коротколапый,
+ * подросток вытянутый, взрослый — исходный. Рост на экране задаёт [modelScale].
+ * Цвет питомца в файл не входит: у кота подменяется текстура шерсти ([skinAsset]), у остальных материал "Main"
+ * перекрашивается программно в PetColor.
  * Возвращает null, если для вида модели пока нет — тогда UI рисует запасной вариант.
  */
 fun PetLook.modelAsset(stage: PetGrowthStage): String? {
     val folder = when (species) {
         PetSpecies.BUNNY -> "bunny"
-        PetSpecies.CAT -> return "cat/cat.glb"
+        PetSpecies.CAT -> "cat"
         PetSpecies.DRAGON -> return null
     }
     val file = when (stage) {
@@ -29,6 +31,38 @@ fun PetLook.modelAsset(stage: PetGrowthStage): String? {
     }
     return "$folder/$file.glb"
 }
+
+/** Название раскраски для ребёнка. */
+val PetColor.title: String
+    get() = when (this) {
+        PetColor.CORAL -> "Обычный"
+        PetColor.GRAY -> "Серый"
+        PetColor.BLACK -> "Чёрный"
+        PetColor.CREAM -> "Кремовый"
+        PetColor.CHOCOLATE -> "Шоколадный"
+        PetColor.SKY -> "Голубой"
+        PetColor.MINT -> "Мятный"
+        PetColor.PINK -> "Розовый"
+        PetColor.LAVENDER -> "Лавандовый"
+    }
+
+/**
+ * Текстура шерсти кота для раскраски (assets/cat/skins): та же развёртка, что в модели, перекрашена только
+ * рыжая шерсть с полосками — футболка, глаза, нос остаются. null — обычная раскраска, текстура из модели.
+ */
+val PetLook.skinAsset: String?
+    get() = if (species != PetSpecies.CAT || color == PetColor.CORAL) null else "cat/skins/${color.name.lowercase()}.webp"
+
+/**
+ * Рост питомца на экране относительно взрослого: модель каждой стадии сама вписывается в одинаковый кадр,
+ * а малыш и подросток должны быть меньше. Питомец уменьшается от пола, поэтому стоит на нём.
+ */
+val PetGrowthStage.modelScale: Float
+    get() = when (this) {
+        PetGrowthStage.BABY -> 0.68f
+        PetGrowthStage.TEEN -> 0.85f
+        PetGrowthStage.ADULT -> 1f
+    }
 
 /** Эмоция, которую показывает 3D-питомец. Голод важнее настроения (docs/04-rules-and-formulas.md). */
 enum class PetEmotion { HAPPY, CALM, SAD, HUNGRY }
@@ -62,7 +96,7 @@ val PetLook.tapAnimation: String
 val PetLook.pettingAnimation: String?
     get() = if (species == PetSpecies.CAT) "Petting" else null
 
-/** Удары по голове и ногам: клипы есть только у кота (HitHead, HitFoot.L/R в cat.glb). */
+/** Удары по голове и ногам: клипы есть только у кота (HitHead, HitFoot.L/R в его моделях). */
 val PetLook.hitAnimations: PetHitAnimations
     get() = if (species == PetSpecies.CAT) {
         PetHitAnimations(head = "HitHead", footLeft = "HitFoot.L", footRight = "HitFoot.R")
@@ -74,7 +108,7 @@ val PetLook.hitAnimations: PetHitAnimations
 val PetLook.supportsWardrobe: Boolean
     get() = species == PetSpecies.CAT
 
-/** Узел вещи [itemId] в 3D-модели (cat.glb); null — на этой модели вещь не показывается. */
+/** Узел вещи [itemId] в 3D-модели кота (одинаковый на всех стадиях); null — на этой модели вещь не показывается. */
 fun PetLook.accessoryNode(itemId: String): String? =
     if (!supportsWardrobe) null else when (itemId) {
         "cap" -> "Acc_Cap"

@@ -1,7 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.petcreation
 
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 
 /**
@@ -16,7 +15,6 @@ sealed interface PetCreationUiState {
 
     data class Creation(
         val name: String = "",
-        val species: PetSpecies? = null,
         val color: PetColor? = null,
         val isCreating: Boolean = false,
         /** Почему начинаем заново или не удалось создать: сохранение повреждено, не записалось. */

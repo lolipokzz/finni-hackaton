@@ -48,6 +48,7 @@ internal data class GameStateDto(
     val ledger: List<LedgerEntryDto> = emptyList(),
     val purchases: List<ShopItemDto> = emptyList(),
     val wardrobe: List<ShopItemDto> = emptyList(),
+    val room: List<ShopItemDto> = emptyList(),
     val goal: SavingsGoalDto? = null,
     val completedGoals: List<SavingsGoalDto> = emptyList(),
     val depositsThisWeek: List<Int> = emptyList(),
@@ -119,6 +120,7 @@ internal data class ShopItemDto(
     val mood: Int = 0,
     val hint: String = "",
     val slot: WearableSlot? = null,
+    val decor: Boolean = false,
 )
 
 @Serializable
