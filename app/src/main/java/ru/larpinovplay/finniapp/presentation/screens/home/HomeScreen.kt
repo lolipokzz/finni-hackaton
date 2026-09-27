@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import androidx.compose.ui.layout.boundsInWindow
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -153,7 +155,12 @@ fun HomeScreenContent(
     if (petHost != null) {
         DisposableEffect(petHost) {
             petHost.onTap = { speechOpen = true }
-            onDispose { petHost.onTap = {} }
+            petHost.onShieldTap = { speechOpen = true }
+            onDispose {
+                petHost.onTap = {}
+                petHost.onShieldTap = {}
+                petHost.shield = null
+            }
         }
     }
     Box(modifier = modifier.fillMaxSize().roomOrigin(room)) {
@@ -178,7 +185,14 @@ fun HomeScreenContent(
                 )
             }
             Box(Modifier.fillMaxWidth().weight(1f)) {
-                PetArea(state, petHost, room, modifier = Modifier.align(Alignment.BottomCenter))
+                PetArea(
+                    state, petHost, room,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    // Финни молчит, но ему есть что сказать: маленькое облачко «…» у головы
+                    hint = state.speech?.takeIf { !speechOpen }?.let { speech ->
+                        { TypingBubble(important = speech.important, onClick = { speechOpen = true }) }
+                    },
+                )
             }
             BottomMenu(state, onAction)
             Spacer(Modifier.height(8.dp))
@@ -274,13 +288,13 @@ private const val SPEECH_SHOWN_MS = 6_000L
 /** Высота места под облачко: постоянная, чтобы Финни не менял размер, когда облачко прячется. */
 private val SpeechZoneHeight = 120.dp
 
-/** Где над облачком голова Финни: сюда смотрит хвостик и здесь сидит значок. */
+/** Где над облачком голова Финни: сюда смотрит хвостик. */
 private val SpeechTailStart = 80.dp
 
 /**
  * Реплика Финни. Сначала — облачко: он говорит от себя и зовёт к одному делу текстовой ссылкой.
- * Через [SPEECH_SHOWN_MS] или по нажатию на облачко оно садится в значок над головой: «!» — важное
- * (голоден, ждёт приключение, неделю можно завершить), «…» — остальное. Значок или сам Финни открывают его снова.
+ * Через [SPEECH_SHOWN_MS] или по нажатию на облачко оно прячется, а у головы остаётся маленькое «…»
+ * ([TypingBubble]); оно или сам Финни открывают реплику снова.
  */
 @Composable
 private fun SpeechZone(
@@ -307,14 +321,6 @@ private fun SpeechZone(
             modifier = Modifier.align(Alignment.BottomStart),
         ) {
             SpeechBubble(speech, onClose = { onOpenChange(false) }, onAction = onAction)
-        }
-        AnimatedVisibility(
-            visible = !open,
-            enter = if (animate) fadeIn() + scaleIn() else EnterTransition.None,
-            exit = if (animate) fadeOut() + scaleOut() else ExitTransition.None,
-            modifier = Modifier.align(Alignment.BottomStart).padding(start = SpeechTailStart - 8.dp, bottom = 4.dp),
-        ) {
-            SpeechBadge(important = speech.important, onClick = { onOpenChange(true) })
         }
     }
 }
@@ -357,28 +363,6 @@ private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onActi
     }
 }
 
-/** Значок над головой: Финни есть что сказать. Нажатие открывает облачко. */
-@Composable
-private fun SpeechBadge(important: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = Color.Transparent,
-        modifier = Modifier
-            .size(48.dp)
-            .creamCard(CircleShape, elevation = 6.dp, border = 3.dp)
-            .semantics { contentDescription = if (important) "Финни хочет сказать что-то важное" else "Финни хочет что-то сказать" },
-    ) {
-        Box(Modifier.background(if (important) FinniColors.ActionPeach else FinniColors.Cream), contentAlignment = Alignment.Center) {
-            Text(
-                if (important) "!" else "…",
-                fontSize = 22.sp, fontWeight = FontWeight.Black,
-                color = if (important) FinniColors.ActionPeachInk else FinniColors.Ink,
-            )
-        }
-    }
-}
-
 // ---------- Питомец ----------
 
 /**
@@ -386,7 +370,13 @@ private fun SpeechBadge(important: Boolean, onClick: () -> Unit) {
  * экран только резервирует под неё слот и сообщает хосту, какую модель показать.
  */
 @Composable
-private fun PetArea(state: HomeUiState, petHost: PetHostState?, room: RoomAnchor, modifier: Modifier = Modifier) {
+private fun PetArea(
+    state: HomeUiState,
+    petHost: PetHostState?,
+    room: RoomAnchor,
+    modifier: Modifier = Modifier,
+    hint: (@Composable () -> Unit)? = null,
+) {
     val pet = state.pet
     // Повторять слова можно, только если это разрешено взрослым, звук включён и есть доступ к микрофону.
     // Спрашиваем доступ лишь при живом питомце: в превью нет механизма разрешений
@@ -409,13 +399,61 @@ private fun PetArea(state: HomeUiState, petHost: PetHostState?, room: RoomAnchor
     SideEffect { petHost?.spec = spec }
 
     // Квадрат по высоте свободного места: 3D-питомец рисуется в квадратный буфер (см. PetModel3D)
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxHeight()
             .aspectRatio(1f, matchHeightConstraintsFirst = true)
             .onGloballyPositioned { petHost?.setSlot(PetHostOwner.HOME, it) }
             .roomPetSlot(room)
-    )
+    ) {
+        // Облачко справа от головы. Питомец уменьшается от пола, поэтому макушка тем ниже, чем он меньше.
+        // Слот накрыт видом питомца: нажатие приходит питомцу, а он и открывает реплику (PetHostState.onTap)
+        val side = maxHeight
+        val headTop = side * (1f - HEAD_TOP_FACTOR * pet.growthStage.modelScale).coerceAtLeast(0f)
+        AnimatedVisibility(
+            visible = hint != null,
+            enter = if (state.animationsEnabled) fadeIn() + scaleIn(initialScale = 0.5f, transformOrigin = TransformOrigin(0f, 1f)) else EnterTransition.None,
+            exit = if (state.animationsEnabled) fadeOut() else ExitTransition.None,
+            modifier = Modifier.align(Alignment.TopCenter).offset(x = side * 0.2f, y = headTop),
+        ) {
+            // Облачко «…» закрывает собой кусочек питомца: нажатие на него открывает реплику без его анимации
+            Box(Modifier.onGloballyPositioned { petHost?.shield = it.boundsInWindow() }) { hint?.invoke() }
+            DisposableEffect(Unit) { onDispose { petHost?.shield = null } }
+        }
+    }
+}
+
+/** Доля слота от макушки взрослого кота до пола (с ушами); подобрано по моделям assets/cat. */
+private const val HEAD_TOP_FACTOR = 1.03f
+
+/**
+ * Маленькое облачко «• • •» с хвостиком из двух кружков к голове: Финни есть что сказать.
+ * У важного дела точки тёплые. Точки не мигают: облачко лежит под прозрачным видом питомца, и постоянная
+ * перерисовка под ним затемняет весь слот.
+ */
+@Composable
+private fun TypingBubble(important: Boolean, onClick: () -> Unit) {
+    val dot = if (important) FinniColors.DeedPending else FinniColors.InkMuted
+    Box(
+        Modifier
+            .size(width = 64.dp, height = 44.dp)
+            .clickable(onClickLabel = "Послушать Финни", onClick = onClick)
+            .semantics { contentDescription = if (important) "Финни хочет сказать что-то важное" else "Финни хочет что-то сказать" },
+    ) {
+        // Хвостик: два кружка вниз-влево, к голове
+        Box(Modifier.align(Alignment.BottomStart).offset(x = 2.dp).size(7.dp).creamCard(CircleShape, elevation = 2.dp, border = 1.5.dp))
+        Box(Modifier.align(Alignment.BottomStart).offset(x = 9.dp, y = (-8).dp).size(10.dp).creamCard(CircleShape, elevation = 2.dp, border = 2.dp))
+        Row(
+            Modifier
+                .align(Alignment.TopEnd)
+                .size(width = 50.dp, height = 28.dp)
+                .creamCard(CircleShape, elevation = 4.dp, border = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            repeat(3) { Box(Modifier.size(6.dp).clip(CircleShape).background(dot)) }
+        }
+    }
 }
 
 /**

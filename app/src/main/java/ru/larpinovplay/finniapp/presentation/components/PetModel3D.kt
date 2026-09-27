@@ -85,8 +85,12 @@ fun PetModel3D(
     active: Boolean = true,
     contentDescription: String = "Питомец. Нажми, и он помашет, или погладь его",
     onTap: () -> Unit = {},
+    shield: (x: Float, y: Float) -> Boolean = { _, _ -> false },
+    onShieldTap: () -> Unit = {},
 ) {
     val currentOnTap by rememberUpdatedState(onTap)
+    val currentShield by rememberUpdatedState(shield)
+    val currentOnShieldTap by rememberUpdatedState(onShieldTap)
     val controller = remember {
         PetModelController(tintMaterial, idleAnimation, tapAnimation, hitAnimations, pettingAnimation, cameraDistance)
     }
@@ -102,7 +106,22 @@ fun PetModel3D(
                 // Клик не знает координат: запоминаем точку касания, а клик (в том числе от TalkBack) её забирает.
                 // Движение пальца дальше порога — это поглаживание, а не нажатие
                 val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-                setOnTouchListener { _, event ->
+                // Касание, начатое над элементом экрана, который лежит под питомцем ([shield], координаты окна),
+                // питомцу не достаётся: ни анимации, ни клика — только onShieldTap при отпускании
+                val location = IntArray(2)
+                var shielded = false
+                setOnTouchListener { view, event ->
+                    if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                        view.getLocationInWindow(location)
+                        shielded = currentShield(location[0] + event.x, location[1] + event.y)
+                    }
+                    if (shielded) {
+                        when (event.actionMasked) {
+                            MotionEvent.ACTION_UP -> { shielded = false; currentOnShieldTap() }
+                            MotionEvent.ACTION_CANCEL -> shielded = false
+                        }
+                        return@setOnTouchListener true
+                    }
                     controller.onTouch(event, touchSlop)
                     false
                 }
