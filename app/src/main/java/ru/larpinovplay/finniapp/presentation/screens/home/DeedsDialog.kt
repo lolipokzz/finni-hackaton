@@ -41,6 +41,15 @@ import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
+import ru.larpinovplay.finniapp.presentation.components.creamCard
+import ru.larpinovplay.finniapp.presentation.components.BubbleTail
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.Paws
+import ru.larpinovplay.finniapp.presentation.components.PebbleButton
+import ru.larpinovplay.finniapp.presentation.components.PillButton
+import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.components.growth
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.game.todoText
 import ru.larpinovplay.finniapp.presentation.pet.nextStageTitle

@@ -1,4 +1,4 @@
-package ru.larpinovplay.finniapp.presentation.screens.home
+package ru.larpinovplay.finniapp.presentation.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -45,8 +46,8 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /*
- * Общий язык главного экрана и его окон — «наклейки»: кремовая поверхность, толстая белая обводка,
- * мягкая нейтральная тень. Так выглядят верхние кольца, табличка Финни, реплика, меню, дела недели и план.
+ * Общий язык игровых экранов и их окон — «наклейки»: кремовая поверхность, толстая белая обводка,
+ * мягкая нейтральная тень. Так выглядят главный экран (кольца, реплика, меню), дела недели, план, итоги и магазин.
  */
 
 /** Кремовая карточка-наклейка. Тень нейтральная: цветная тень на фиолетовой комнате выглядит грязно. */
@@ -202,11 +203,11 @@ fun BubbleTail(modifier: Modifier = Modifier, pointsLeft: Boolean = true) {
 
 /** Наклейка-кружок в карточках: тонированный круг в белой обводке с мягкой тенью. */
 @Composable
-fun CardSticker(@DrawableRes icon: Int, tint: Color, modifier: Modifier = Modifier, size: Dp = 64.dp) {
+fun CardSticker(@DrawableRes icon: Int, tint: Color, modifier: Modifier = Modifier, size: Dp = 64.dp, iconScale: Float = 0.56f) {
     Box(
         modifier.size(size).creamCard(CircleShape, elevation = 5.dp, border = 3.dp).background(tint),
         contentAlignment = Alignment.Center,
-    ) { Image(painterResource(icon), null, Modifier.size(size * 0.56f)) }
+    ) { Image(painterResource(icon), null, Modifier.size(size * iconScale)) }
 }
 
 /** Главная кнопка карточки: бирюзовая, во всю ширину. Выключенная — серая, без тени. */
@@ -239,15 +240,18 @@ fun DashedDivider(modifier: Modifier = Modifier) {
 }
 
 /**
- * Окно-карточка по центру экрана (план недели, итоги): кремовая наклейка с прокруткой.
- * Закрывается только своей кнопкой — эти окна ведут ребёнка по шагам недели.
+ * Окно-карточка по центру экрана: кремовая наклейка с прокруткой. Без [onDismiss] закрывается только
+ * своей кнопкой — так план и итоги ведут ребёнка по шагам недели; с ним — ещё касанием мимо и «назад».
  */
 @Composable
-fun CardDialog(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+fun CardDialog(
+    onDismiss: (() -> Unit)? = null,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+) {
     androidx.compose.ui.window.Dialog(
-        onDismissRequest = {},
+        onDismissRequest = { onDismiss?.invoke() },
         properties = androidx.compose.ui.window.DialogProperties(
-            dismissOnBackPress = false, dismissOnClickOutside = false, usePlatformDefaultWidth = false,
+            dismissOnBackPress = onDismiss != null, dismissOnClickOutside = onDismiss != null, usePlatformDefaultWidth = false,
         ),
     ) {
         Box(
@@ -276,5 +280,69 @@ fun CardTitle(title: String, subtitle: String) {
             modifier = Modifier.semantics { heading() },
         )
         Text(subtitle, fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal)
+    }
+}
+
+/** Монеты: жёлтая плашка-наклейка с монетой и числом. Одна и та же на главном экране и в магазине. */
+@Composable
+fun CoinPill(coins: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+    val shape = CircleShape
+    val body: @Composable () -> Unit = {
+        Row(
+            Modifier.background(FinniColors.CoinPill).padding(start = 6.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Image(painterResource(R.drawable.ic_coin), null, Modifier.size(36.dp))
+            Text("$coins", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.CoinInk)
+        }
+    }
+    val base = modifier
+        .height(52.dp)
+        .creamCard(shape, elevation = 8.dp, border = 3.dp)
+        .semantics { contentDescription = "Монеты: $coins" }
+    if (onClick != null) Surface(onClick = onClick, shape = shape, color = Color.Transparent, modifier = base, content = body)
+    else Surface(shape = shape, color = Color.Transparent, modifier = base, content = body)
+}
+
+/** Назад: круглая кремовая наклейка со стрелкой, как шестерёнка на главном экране. */
+@Composable
+fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp).semantics { contentDescription = "Назад" },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Image(
+                painterResource(R.drawable.ic_arrow_right), null,
+                Modifier.size(22.dp).graphicsLayer(scaleX = -1f),
+                colorFilter = ColorFilter.tint(FinniColors.Ink),
+            )
+        }
+    }
+}
+
+/** Вторая кнопка карточки рядом с [TealButton]: спокойная, серо-кремовая, во всю ширину. */
+@Composable
+fun SoftButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(onClick = onClick, shape = CircleShape, color = FinniColors.Pebble, modifier = modifier.fillMaxWidth().height(52.dp)) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted)
+        }
+    }
+}
+
+/** Что даёт покупка: значок и число на тонированной пилюле — «🍎 +30». Число всегда словом-цифрой, не только цветом. */
+@Composable
+fun EffectChip(@DrawableRes icon: Int, value: Int, tint: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier.clip(CircleShape).background(tint).padding(start = 4.dp, end = 9.dp, top = 3.dp, bottom = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Image(painterResource(icon), null, Modifier.size(18.dp))
+        Text(if (value > 0) "+$value" else "$value", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
     }
 }

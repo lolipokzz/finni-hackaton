@@ -34,8 +34,9 @@ val ShopItem.effectText: String
 
 val ShopCategory.title: String
     get() = when (this) {
-        ShopCategory.MANDATORY -> "Обязательные"
-        ShopCategory.OPTIONAL -> "Необязательные"
+        // Те же слова, что в плане недели (PRODUCT.md: три слова решений одинаковы везде)
+        ShopCategory.MANDATORY -> "Обязательное"
+        ShopCategory.OPTIONAL -> "Необязательное"
     }
 
 /** Подпись категории на карточке; у одежды ещё и то, что она остаётся навсегда. */
