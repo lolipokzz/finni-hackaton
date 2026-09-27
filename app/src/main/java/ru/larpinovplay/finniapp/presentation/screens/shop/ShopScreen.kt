@@ -357,13 +357,13 @@ private fun Meter(fraction: Float, color: Color) {
 
 // ---------- Карточка товара ----------
 
-/** Что даёт вещь: наклейки-числа сытости и настроения; у одежды — ещё «навсегда». */
+/** Что даёт вещь: наклейки-числа сытости и настроения; у одежды и вещей для комнаты — ещё «навсегда». */
 @Composable
 private fun EffectChips(item: ShopItem, modifier: Modifier = Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (item.satiety != 0) EffectChip(R.drawable.ic_meter_apple, item.satiety, SatietyTint)
         if (item.mood != 0) EffectChip(R.drawable.ic_meter_smile, item.mood, MoodTint)
-        if (item.isWearable) {
+        if (item.isPermanent) {
             Text(
                 "навсегда", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
                 modifier = Modifier.clip(CircleShape).background(FinniColors.CardMint).padding(horizontal = 9.dp, vertical = 3.dp),
@@ -391,7 +391,7 @@ private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, on
             .clearAndSetSemantics {
                 role = Role.Button
                 contentDescription = when {
-                    owned -> "${item.name}: уже есть в гардеробе"
+                    owned -> "${item.name}: уже есть " + if (item.decor) "в комнате" else "в гардеробе"
                     affordable -> "${item.name}, ${item.price} монет. Купить"
                     else -> "${item.name}, ${item.price} монет. Монет не хватает"
                 }

@@ -79,9 +79,6 @@ val LocalRoomDecor = compositionLocalOf<Set<String>> { emptySet() }
 private enum class RoomDecor(val itemId: String, @DrawableRes val image: Int, val area: Rect) {
     /** Кошачья лежанка слева спереди, рядом с питомцем. */
     BED("bed", R.drawable.room_bed, Rect(0.21667f, 0.57458f, 0.46083f, 0.63083f)),
-
-    /** Детский велосипед вдоль стены справа, под тумбой. */
-    BIKE("bike", R.drawable.room_bike, Rect(0.6225f, 0.52042f, 0.7775f, 0.5725f)),
 }
 
 /** Где на экране слот питомца. Экран с питомцем создаёт его, отмечает им себя и слот и отдаёт фону. */

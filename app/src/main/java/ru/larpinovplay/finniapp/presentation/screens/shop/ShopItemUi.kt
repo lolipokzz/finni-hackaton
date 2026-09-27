@@ -21,7 +21,6 @@ val ShopItem.icon: Int
         "glasses" -> R.drawable.ic_glasses
         "bowtie" -> R.drawable.ic_bowtie
         "bed" -> R.drawable.ic_bed
-        "bike" -> R.drawable.ic_bike
         else -> R.drawable.ic_cart
     }
 
