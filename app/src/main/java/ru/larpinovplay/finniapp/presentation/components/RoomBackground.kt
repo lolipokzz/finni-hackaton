@@ -38,7 +38,7 @@ import kotlin.math.tan
  * Где слот, фон узнаёт из [anchor] (экран отмечает слот питомца и себя, см. [roomPetSlot] и [roomOrigin]).
  * Экраны без питомца передают null: комната ставится так, будто питомец стоит посередине экрана.
  *
- * Купленные вещи для комнаты ([LocalRoomDecor]) — прозрачные слои, снятые той же камерой с тенью на полу и стене.
+ * Вещи для комнаты ([LocalRoomDecor]) — прозрачные слои, снятые той же камерой с тенью на полу и стене.
  * Каждый слой — вырезанный кусок кадра, поэтому он ставится в свою долю того же кадра и встаёт точно на место.
  * Питомец (вид поверх окна) всегда перед ними; сами вещи стоят там, где их не закрывает ни он, ни мебель.
  */
@@ -46,7 +46,7 @@ import kotlin.math.tan
 fun RoomBackground(modifier: Modifier = Modifier, anchor: RoomAnchor? = null) {
     val image = ImageBitmap.imageResource(R.drawable.room_background)
     val owned = LocalRoomDecor.current
-    val decor = RoomDecor.entries.filter { it.itemId in owned }.map { it to ImageBitmap.imageResource(it.image) }
+    val decor = RoomDecor.entries.filter { it.goalId in owned }.map { it to ImageBitmap.imageResource(it.image) }
     Canvas(modifier.fillMaxSize()) {
         val slot = anchor?.slot?.takeIf { it.width > 0f } ?: defaultSlot(size)
         val (topLeft, frame) = placeFrame(slot, size)
@@ -69,20 +69,26 @@ fun RoomBackground(modifier: Modifier = Modifier, anchor: RoomAnchor? = null) {
     }
 }
 
-/** id купленных вещей для комнаты (ShopItem.decor). Задаётся один раз на всё приложение из игры. */
+/**
+ * id достигнутых целей копилки. Цели-вещи для комнаты ([isRoomDecor]) появляются в ней навсегда.
+ * Задаётся один раз на всё приложение из игры.
+ */
 val LocalRoomDecor = compositionLocalOf<Set<String>> { emptySet() }
 
 /**
- * Вещи для комнаты: id товара, слой и где он в кадре room_background (доли ширины и высоты кадра).
+ * Вещи для комнаты: id цели копилки, слой и где он в кадре room_background (доли ширины и высоты кадра).
  * Слои отрендерены той же камерой, что и фон; положение — то, куда их вырезали из полного кадра.
  */
-private enum class RoomDecor(val itemId: String, @DrawableRes val image: Int, val area: Rect) {
+private enum class RoomDecor(val goalId: String, @DrawableRes val image: Int, val area: Rect) {
     /** Кошачья лежанка слева спереди, рядом с питомцем. */
     BED("bed", R.drawable.room_bed, Rect(0.21667f, 0.57458f, 0.46083f, 0.63083f)),
 
     /** Детский велосипед вдоль стены справа, под тумбой. */
     BIKE("bike", R.drawable.room_bike, Rect(0.6225f, 0.52042f, 0.7775f, 0.5725f)),
 }
+
+/** Цель копилки с id [goalId] после покупки появляется в комнате. */
+fun isRoomDecor(goalId: String): Boolean = RoomDecor.entries.any { it.goalId == goalId }
 
 /** Где на экране слот питомца. Экран с питомцем создаёт его, отмечает им себя и слот и отдаёт фону. */
 @Stable

@@ -30,10 +30,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FinniAppTheme {
-                // Вещи, купленные в комнату, видны на всех экранах с фоном-комнатой
+                // Достигнутые цели копилки (кроватка, велосипед) видны в комнате на всех экранах с фоном-комнатой
                 val game = koinInject<GameRepository>()
                 val snapshot by game.snapshot.collectAsState()
-                val roomDecor = remember(snapshot?.state?.room) { snapshot?.state?.room?.mapTo(mutableSetOf()) { it.id }.orEmpty() }
+                val completedGoals = snapshot?.state?.completedGoals
+                val roomDecor = remember(completedGoals) { completedGoals?.mapTo(mutableSetOf()) { it.id }.orEmpty() }
                 CompositionLocalProvider(LocalFeedback provides koinInject<Feedback>(), LocalRoomDecor provides roomDecor) {
                     // Питомец рисуется поверх всего и создаётся заранее: см. PetHost
                     val petHost = remember { PetHostState(warmUp = PetWarmUpSpec) }

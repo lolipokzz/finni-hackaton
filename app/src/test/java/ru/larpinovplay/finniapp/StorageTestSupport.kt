@@ -16,7 +16,6 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
-import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
@@ -67,9 +66,6 @@ internal object SampleGames {
         val cap = content.shopItems.first { it.isWearable }
         game = GameEngine.buy(game, cap).game
         game = GameEngine.wear(game, cap).game
-        // Недорогая вещь для комнаты, чтобы в примере была и комната
-        val lamp = ShopItem("test-lamp", "Лампа", 5, ShopCategory.OPTIONAL, hint = "Для теста", decor = true)
-        game = GameEngine.buy(game, lamp).game
         return game
     }
 

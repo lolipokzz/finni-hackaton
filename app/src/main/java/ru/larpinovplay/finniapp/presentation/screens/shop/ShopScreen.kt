@@ -386,7 +386,6 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit
     val explanation = when {
         item.category == ShopCategory.MANDATORY -> "${item.name} — это нужное. Финни поел и доволен!"
         item.isWearable -> "${item.name} теперь в гардеробе навсегда. Надень это Финни! Помни: это желаемое, а не еда"
-        item.decor -> "${item.name} теперь в комнате Финни навсегда. Загляни на главный экран! Помни: это желаемое, а не еда"
         else -> "${item.name} порадовал Финни. Помни: это желаемое, а не еда"
     }
     AlertDialog(
