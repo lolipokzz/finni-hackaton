@@ -101,10 +101,22 @@ class HomeViewModelTest {
 
         vm.onAction(HomeAction.FinishWeek)
 
-        assertEquals(FinishBlock.SAME_DAY, vm.state.value?.finishNotice)
+        // Открывается карточка дел: она и объясняет, почему пока нельзя
+        assertEquals(FinishBlock.SAME_DAY, vm.state.value?.finishBlock)
+        assertEquals(true, vm.state.value?.deedsOpen)
         assertNull(vm.state.value?.weekSummary)
-        vm.onAction(HomeAction.DismissFinishNotice)
-        assertNull(vm.state.value?.finishNotice)
+        vm.onAction(HomeAction.DismissDeeds)
+        assertEquals(false, vm.state.value?.deedsOpen)
+    }
+
+    @Test
+    fun finniAsksForTheMostImportantThing() {
+        val vm = viewModel()
+        assertNull(vm.state.value?.speech)   // пока идёт план, Финни молчит
+
+        vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
+        vm.onAction(HomeAction.ConfirmPlan)
+        assertEquals(HomeUiState.Speech.HUNGRY, vm.state.value?.speech)   // еды на неделю ещё не куплено
     }
 
     @Test

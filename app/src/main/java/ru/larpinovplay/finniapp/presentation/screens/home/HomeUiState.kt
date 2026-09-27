@@ -9,30 +9,27 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 /**
  * Состояние главного экрана (ТЗ 2.5.3): всё, что ребёнок должен видеть одновременно.
  * Питомец приходит целиком из домена: имя, вид, сытость, настроение и стадия берутся у него, а не копируются.
- * Фразы здесь не хранятся: [MoodExplanation] и [Tip] описывают, что сказать, а текст подбирает экран.
+ * Фразы здесь не хранятся: [Speech] описывает, что сказать, а текст подбирает экран.
  */
 data class HomeUiState(
     val pet: Pet,
-    val moodExplanation: MoodExplanation,  // одна фраза под питомцем
     val balance: Int,                  // доступные монеты
     val savings: Int,                  // накоплено в копилке
     val goal: Goal?,                   // null — цель ещё не выбрана
     val week: Int,                     // номер игрового периода
-    val activeTask: ActiveTask?,       // первое доступное задание
-    val tip: Tip? = null,              // подсказка в облачке рядом с питомцем; null — не показывать
+    val speech: Speech? = null,        // что Финни говорит в облачке и куда зовёт; null — облачка нет
+    val tasksBadge: Int = 0,           // сколько заданий и приключений ждёт: значок на «Заданиях»
     val animationsEnabled: Boolean = true,
     val soundEnabled: Boolean = true,
     val voiceRepeatEnabled: Boolean = true,
-    val suggestedSection: HomeSection? = null, // раздел, куда стоит пойти сейчас; подсвечен в меню
     val demoMode: Boolean = false,
     val info: HomeInfo? = null,                          // открытое окно «что это значит» у монет/сытости/настроения
     val weekSummary: WeekSummary? = null,     // итог только что закрытой недели; null — окно не показывается
     val finishBlock: FinishBlock? = null,     // почему неделю пока нельзя закончить; null — можно
-    val finishNotice: FinishBlock? = null,    // открытое окно «почему нельзя закончить»
     val planDraft: PlanDraft? = null,         // окно плана недели; null — план уже подтверждён
     val deeds: WeekDeeds = WeekDeeds(fed = false, notBored = false, savingsOnPlan = false, spendingOnPlan = false),   // дела недели сейчас
     val weekSatiety: Int = 0,                 // сколько сытости куплено за неделю: для подсказки «Финни сыт»
-    val deedsOpen: Boolean = false,           // открыто окно «Дела недели»
+    val deedsOpen: Boolean = false,           // открыто окно «Дела недели» (там же — конец недели)
 ) {
     /**
      * Черновик плана в окне начала недели: монеты недели ([income] + [carried]) и как ребёнок их раскладывает.
@@ -53,20 +50,9 @@ data class HomeUiState(
     /** Цель копилки в том виде, в каком её показывает главный экран. */
     data class Goal(val name: String, val cost: Int)
 
-    /** Активное задание на карточке главного экрана. */
-    data class ActiveTask(val title: String, val reward: Int)
-
-    /** Почему питомец в таком настроении. */
-    sealed interface MoodExplanation {
-        data object Hungry : MoodExplanation
-        data object Grew : MoodExplanation
-        data class Purchased(val itemName: String) : MoodExplanation
-        data object Waiting : MoodExplanation
-    }
-
-    /** Подсказка в облачке. */
-    sealed interface Tip {
-        data object ChooseGoal : Tip
-        data class SaveFor(val goalName: String) : Tip
-    }
+    /**
+     * Реплика Финни: одно самое важное дело сейчас. Порядок выбора — в [HomeViewModel];
+     * куда ведёт кнопка реплики, решает экран (HomeUiText.kt).
+     */
+    enum class Speech { WEEK_READY, HUNGRY, ADVENTURE, CHOOSE_GOAL, BORED, NEW_TASK, TOMORROW }
 }

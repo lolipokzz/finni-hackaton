@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <!-- Меню: магазин. -->
+    <path android:strokeColor="#E0714A" android:strokeWidth="3.5" android:strokeLineCap="round"
+        android:pathData="M17 16v-3a7 7 0 0 1 14 0v3"/>
+    <path android:fillColor="#FF9F7A"
+        android:pathData="M9 17h30l-2 22a5 5 0 0 1-5 4.5H16A5 5 0 0 1 11 39z"/>
+    <path android:fillColor="#FFB899"
+        android:pathData="M11 17h26l-.6 5H11.6z"/>
+    <path android:fillColor="#B94E2C"
+        android:pathData="M17,27 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0Z"/>
+    <path android:fillColor="#B94E2C"
+        android:pathData="M27,27 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0Z"/>
+    <path android:strokeColor="#B94E2C" android:strokeWidth="2.6" android:strokeLineCap="round"
+        android:pathData="M20 32c1.2 1.6 2.4 2.2 4 2.2s2.8-.6 4-2.2"/>
+</vector>
