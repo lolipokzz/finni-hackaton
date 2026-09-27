@@ -1,6 +1,5 @@
 package ru.larpinovplay.finniapp.domain.pet.model
 
-enum class PetSpecies { CAT, DRAGON, BUNNY }          // 3 силуэта
 /**
  * Раскраска питомца; [argb] — цвет образца на экране выбора (и тинт для моделей с перекрашиваемым материалом).
  * Имена констант — часть файла сохранения: CORAL, MINT, SKY были раньше, их не переименовывать.
@@ -17,4 +16,5 @@ enum class PetColor(val argb: Long) {
     PINK(0xFFEA8FB7),
     LAVENDER(0xFFA895E3),
 }
-data class PetLook(val species: PetSpecies, val color: PetColor)
+/** Внешность питомца. Питомец в игре один — кот, поэтому выбирается только раскраска. */
+data class PetLook(val color: PetColor)

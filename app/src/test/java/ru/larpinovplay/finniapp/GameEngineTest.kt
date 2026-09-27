@@ -31,7 +31,6 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
@@ -51,7 +50,7 @@ class GameEngineTest {
 
     private fun newGame(startBalance: Int = 100) = GameSnapshot(
         state = GameEngine.newGame(day1, startBalance),
-        pet = Pet.newborn("Финни", PetLook(PetSpecies.BUNNY, PetColor.CORAL)),
+        pet = Pet.newborn("Финни", PetLook(PetColor.CORAL)),
     )
 
     /** Прогоняет цепочку команд, отдавая каждой снимок предыдущей. */

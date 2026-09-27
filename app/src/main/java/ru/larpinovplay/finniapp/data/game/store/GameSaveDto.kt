@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 
@@ -64,7 +63,6 @@ internal data class GameStateDto(
 @Serializable
 internal data class PetDto(
     val name: String,
-    val species: PetSpecies,
     val color: PetColor,
     val satiety: Int,
     val mood: Int,

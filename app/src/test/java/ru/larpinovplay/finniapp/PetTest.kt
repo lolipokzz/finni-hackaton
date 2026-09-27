@@ -12,11 +12,10 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.PetMood
 import ru.larpinovplay.finniapp.domain.pet.model.PetSatiety
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 
 class PetTest {
 
-    private val pet = Pet.newborn("Финни", PetLook(PetSpecies.CAT, PetColor.MINT))
+    private val pet = Pet.newborn("Финни", PetLook(PetColor.MINT))
 
     @Test
     fun newbornIsBabyWithNeutralStats() {

@@ -101,7 +101,6 @@ fun WardrobeScreenContent(
                 )
             }
             when {
-                !state.supported -> Hint("Одежда пока есть только у котика", button = null)
                 state.items.isEmpty() -> Hint(
                     "Здесь будут вещи ${state.petName}. Купи кепку, очки или бабочку в магазине — они останутся навсегда",
                     button = "В магазин" to onGoToShop,

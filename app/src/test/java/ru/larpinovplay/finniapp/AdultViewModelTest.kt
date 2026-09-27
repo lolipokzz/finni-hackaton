@@ -28,7 +28,7 @@ import ru.larpinovplay.finniapp.presentation.screens.petcreation.*
 class AdultViewModelTest {
     private val game = GameRepositoryImpl(InMemoryGameStore())
     private val settings = InMemorySettingsRepository()
-    private val pet = Pet.newborn("Кот", PetLook(PetSpecies.CAT, PetColor.MINT))
+    private val pet = Pet.newborn("Кот", PetLook(PetColor.MINT))
     private fun adult() = AdultViewModel(game, settings, defaultContent())
     private fun unlock(vm: AdultViewModel) {
         vm.changeAnswer((vm.state.value.first + vm.state.value.second).toString())

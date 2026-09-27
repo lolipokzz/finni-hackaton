@@ -14,7 +14,6 @@ import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.storage.StorageError
@@ -35,7 +34,7 @@ import java.time.ZoneOffset
 /** Примеры игр для тестов хранения. */
 internal object SampleGames {
 
-    val newborn: Pet = Pet.newborn("Финни", PetLook(PetSpecies.BUNNY, PetColor.CORAL))
+    val newborn: Pet = Pet.newborn("Финни", PetLook(PetColor.CORAL))
 
     /**
      * Игра после нескольких недель: в ней есть все виды записей журнала, покупки, цель, достигнутая цель,

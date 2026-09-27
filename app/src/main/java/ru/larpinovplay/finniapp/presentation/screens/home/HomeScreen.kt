@@ -72,7 +72,6 @@ import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.BubbleTail
 import ru.larpinovplay.finniapp.presentation.components.CoinPill
@@ -91,13 +90,13 @@ import ru.larpinovplay.finniapp.presentation.components.roomOrigin
 import ru.larpinovplay.finniapp.presentation.components.roomPetSlot
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.pet.accessoryNodes
-import ru.larpinovplay.finniapp.presentation.pet.hitAnimations
+import ru.larpinovplay.finniapp.presentation.pet.PetHits
 import ru.larpinovplay.finniapp.presentation.pet.idleAnimation
 import ru.larpinovplay.finniapp.presentation.pet.modelScale
 import ru.larpinovplay.finniapp.presentation.pet.skinAsset
 import ru.larpinovplay.finniapp.presentation.pet.modelAsset
-import ru.larpinovplay.finniapp.presentation.pet.pettingAnimation
-import ru.larpinovplay.finniapp.presentation.pet.tapAnimation
+import ru.larpinovplay.finniapp.presentation.pet.PetPettingAnimation
+import ru.larpinovplay.finniapp.presentation.pet.PetTapAnimation
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
@@ -272,55 +271,38 @@ private fun SpeechBubble(speech: HomeUiState.Speech, onAction: (HomeAction) -> U
 /**
  * Место питомца. Сама 3D-модель рисуется не здесь, а в PetHost поверх графа навигации:
  * экран только резервирует под неё слот и сообщает хосту, какую модель показать.
- * Если модели для вида нет, рисуется кружок-заглушка.
  */
 @Composable
 private fun PetArea(state: HomeUiState, petHost: PetHostState?, room: RoomAnchor, modifier: Modifier = Modifier) {
     val pet = state.pet
-    val asset = pet.look.modelAsset(pet.growthStage)
     // Повторять слова можно, только если это разрешено взрослым, звук включён и есть доступ к микрофону.
     // Спрашиваем доступ лишь при живом питомце: в превью нет механизма разрешений
     val wantsVoice = state.voiceRepeatEnabled && state.soundEnabled
-    val micGranted = petHost != null && asset != null && rememberMicrophone(ask = wantsVoice)
-    val spec = asset?.let {
-        PetSpec(
-            assetName = it,
-            tintArgb = pet.look.color.argb,
-            modelScale = pet.growthStage.modelScale,
-            skin = pet.look.skinAsset,
-            animationsEnabled = state.animationsEnabled,
-            soundEnabled = state.soundEnabled,
-            voiceEnabled = wantsVoice && micGranted,
-            idleAnimation = pet.idleAnimation,
-            tapAnimation = pet.look.tapAnimation,
-            hitAnimations = pet.look.hitAnimations,
-            pettingAnimation = pet.look.pettingAnimation,
-            accessories = pet.accessoryNodes,
-        )
-    }
+    val micGranted = petHost != null && rememberMicrophone(ask = wantsVoice)
+    val spec = PetSpec(
+        assetName = pet.growthStage.modelAsset,
+        tintArgb = pet.look.color.argb,
+        modelScale = pet.growthStage.modelScale,
+        skin = pet.look.skinAsset,
+        animationsEnabled = state.animationsEnabled,
+        soundEnabled = state.soundEnabled,
+        voiceEnabled = wantsVoice && micGranted,
+        idleAnimation = pet.idleAnimation,
+        tapAnimation = PetTapAnimation,
+        hitAnimations = PetHits,
+        pettingAnimation = PetPettingAnimation,
+        accessories = pet.accessoryNodes,
+    )
     SideEffect { petHost?.spec = spec }
 
-    if (spec != null) {
-        // Квадрат по высоте свободного места: 3D-питомец рисуется в квадратный буфер (см. PetModel3D)
-        Box(
-            modifier = modifier
-                .fillMaxHeight()
-                .aspectRatio(1f, matchHeightConstraintsFirst = true)
-                .onGloballyPositioned { petHost?.setSlot(PetHostOwner.HOME, it) }
-                .roomPetSlot(room)
-        )
-    } else {
-        Box(
-            modifier = modifier
-                .padding(bottom = 16.dp)
-                .size(180.dp)
-                .clip(CircleShape)
-                .background(Color(pet.look.color.argb)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(pet.name, style = MaterialTheme.typography.headlineSmall, color = Color.White)
-        }
-    }
+    // Квадрат по высоте свободного места: 3D-питомец рисуется в квадратный буфер (см. PetModel3D)
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .aspectRatio(1f, matchHeightConstraintsFirst = true)
+            .onGloballyPositioned { petHost?.setSlot(PetHostOwner.HOME, it) }
+            .roomPetSlot(room)
+    )
 }
 
 /**
@@ -508,7 +490,7 @@ private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, onClick: 
 @Composable
 private fun HomeScreenPreview() {
     val state = HomeUiState(
-        pet = Pet.newborn("Финни", PetLook(PetSpecies.CAT, PetColor.MINT)).grow(3),   // без 3D-модели, чтобы превью рисовалось
+        pet = Pet.newborn("Финни", PetLook(PetColor.MINT)).grow(3),   // в превью 3D-питомец не рисуется: petHost = null
         balance = 45,
         savings = 20,
         goal = HomeUiState.Goal(name = "Домик", cost = 60),

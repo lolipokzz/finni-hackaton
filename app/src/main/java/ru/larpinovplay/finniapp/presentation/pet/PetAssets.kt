@@ -5,32 +5,21 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
 import ru.larpinovplay.finniapp.presentation.components.PetHitAnimations
 import ru.larpinovplay.finniapp.presentation.components.PetSpec
 
 /**
- * Сопоставление вида питомца и стадии роста с 3D-моделью в assets.
- * Модели лежат в папке по виду: assets/<species>/{baby,teen,adult}.glb.
- * У кота на каждой стадии своя модель с тем же скелетом и анимациями: малыш крупноголовый и коротколапый,
+ * 3D-модель кота для стадии роста: assets/cat/{baby,teen,adult}.glb. Питомец в игре один — кот.
+ * На каждой стадии своя модель с тем же скелетом и анимациями: малыш крупноголовый и коротколапый,
  * подросток вытянутый, взрослый — исходный. Рост на экране задаёт [modelScale].
- * Цвет питомца в файл не входит: у кота подменяется текстура шерсти ([skinAsset]), у остальных материал "Main"
- * перекрашивается программно в PetColor.
- * Возвращает null, если для вида модели пока нет — тогда UI рисует запасной вариант.
+ * Цвет питомца в файл не входит: подменяется текстура шерсти ([skinAsset]).
  */
-fun PetLook.modelAsset(stage: PetGrowthStage): String? {
-    val folder = when (species) {
-        PetSpecies.BUNNY -> "bunny"
-        PetSpecies.CAT -> "cat"
-        PetSpecies.DRAGON -> return null
+val PetGrowthStage.modelAsset: String
+    get() = when (this) {
+        PetGrowthStage.BABY -> "cat/baby.glb"
+        PetGrowthStage.TEEN -> "cat/teen.glb"
+        PetGrowthStage.ADULT -> "cat/adult.glb"
     }
-    val file = when (stage) {
-        PetGrowthStage.BABY -> "baby"
-        PetGrowthStage.TEEN -> "teen"
-        PetGrowthStage.ADULT -> "adult"
-    }
-    return "$folder/$file.glb"
-}
 
 /** Название раскраски для ребёнка. */
 val PetColor.title: String
@@ -51,7 +40,7 @@ val PetColor.title: String
  * рыжая шерсть с полосками — футболка, глаза, нос остаются. null — обычная раскраска, текстура из модели.
  */
 val PetLook.skinAsset: String?
-    get() = if (species != PetSpecies.CAT || color == PetColor.CORAL) null else "cat/skins/${color.name.lowercase()}.webp"
+    get() = if (color == PetColor.CORAL) null else "cat/skins/${color.name.lowercase()}.webp"
 
 /**
  * Рост питомца на экране относительно взрослого: модель каждой стадии сама вписывается в одинаковый кадр,
@@ -78,60 +67,46 @@ val Pet.emotion: PetEmotion
     }
 
 /**
- * Имена клипов из GLB: ожидание зациклено и зависит от эмоции (у кота; у остальных один Idle),
- * приветствие запускается при появлении питомца и по нажатию.
+ * Имена клипов из GLB кота: ожидание зациклено и зависит от эмоции,
+ * приветствие ([PetTapAnimation]) запускается при появлении питомца и по нажатию.
  */
-val Pet.idleAnimation: String?
-    get() = if (look.species != PetSpecies.CAT) "Idle" else when (emotion) {
+val Pet.idleAnimation: String
+    get() = when (emotion) {
         PetEmotion.HAPPY -> "IdleHappy"
         PetEmotion.CALM -> "Idle"
         PetEmotion.BORED -> "IdleSad"   // клип в модели называется так, показываем его как «скучает»
         PetEmotion.HUNGRY -> "IdleHungry"
     }
 
-val PetLook.tapAnimation: String
-    get() = if (species == PetSpecies.CAT) "Greeting" else "Wave"
+const val PetTapAnimation = "Greeting"
 
-/** Поглаживание (водят пальцем по питомцу): клип есть только у кота. */
-val PetLook.pettingAnimation: String?
-    get() = if (species == PetSpecies.CAT) "Petting" else null
+/** Поглаживание: водят пальцем по питомцу. */
+const val PetPettingAnimation = "Petting"
 
-/** Удары по голове и ногам: клипы есть только у кота (HitHead, HitFoot.L/R в его моделях). */
-val PetLook.hitAnimations: PetHitAnimations
-    get() = if (species == PetSpecies.CAT) {
-        PetHitAnimations(head = "HitHead", footLeft = "HitFoot.L", footRight = "HitFoot.R")
-    } else {
-        PetHitAnimations()
-    }
+/** Удары по голове и ногам (HitHead, HitFoot.L/R в моделях кота). */
+val PetHits = PetHitAnimations(head = "HitHead", footLeft = "HitFoot.L", footRight = "HitFoot.R")
 
-/** Есть ли у модели этого вида вещи гардероба. Пока одеть можно только кота. */
-val PetLook.supportsWardrobe: Boolean
-    get() = species == PetSpecies.CAT
-
-/** Узел вещи [itemId] в 3D-модели кота (одинаковый на всех стадиях); null — на этой модели вещь не показывается. */
-fun PetLook.accessoryNode(itemId: String): String? =
-    if (!supportsWardrobe) null else when (itemId) {
-        "cap" -> "Acc_Cap"
-        "glasses" -> "Acc_Glasses"
-        "bowtie" -> "Acc_BowTie"
-        else -> null
-    }
+/** Узел вещи [itemId] в 3D-модели кота (одинаковый на всех стадиях); null — эта вещь на модели не показывается. */
+fun accessoryNode(itemId: String): String? = when (itemId) {
+    "cap" -> "Acc_Cap"
+    "glasses" -> "Acc_Glasses"
+    "bowtie" -> "Acc_BowTie"
+    else -> null
+}
 
 /** Узлы надетых вещей: что показать на модели. */
 val Pet.accessoryNodes: Set<String>
-    get() = outfit.values.mapNotNull(look::accessoryNode).toSet()
+    get() = outfit.values.mapNotNull(::accessoryNode).toSet()
 
 /**
- * Модель, которой прогревают отрисовку ещё до создания питомца (см. PetHostState.warmUp): вид питомца и стадия
- * не важны, лишь бы материалы были теми же, что у настоящих моделей. Кот со всеми вещами: у вещей свои материалы
- * (без текстуры, полупрозрачные стёкла), а тело — тот же текстурный материал, что у остальных моделей.
+ * Модель, которой прогревают отрисовку ещё до создания питомца (см. PetHostState.warmUp): стадия не важна,
+ * лишь бы материалы были теми же, что у настоящих моделей. Кот со всеми вещами: у вещей свои материалы
+ * (без текстуры, полупрозрачные стёкла), а тело — тот же текстурный материал, что у остальных стадий.
  */
-val PetWarmUpSpec: PetSpec = PetLook(PetSpecies.CAT, PetColor.CORAL).let { look ->
-    PetSpec(
-        assetName = checkNotNull(look.modelAsset(PetGrowthStage.BABY)),
-        tintArgb = null,
-        animationsEnabled = false,
-        soundEnabled = false,
-        accessories = listOf("cap", "glasses", "bowtie").mapNotNull(look::accessoryNode).toSet(),
-    )
-}
+val PetWarmUpSpec: PetSpec = PetSpec(
+    assetName = PetGrowthStage.BABY.modelAsset,
+    tintArgb = null,
+    animationsEnabled = false,
+    soundEnabled = false,
+    accessories = listOf("cap", "glasses", "bowtie").mapNotNull(::accessoryNode).toSet(),
+)
