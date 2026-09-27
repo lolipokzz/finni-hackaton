@@ -64,17 +64,19 @@ object GameEngine {
 
     /**
      * Покупка: списывает монеты и сразу действует на питомца. Одежда ещё и попадает в гардероб навсегда
-     * (надевается отдельно, см. [wear]) и считается тратой недели, как любая покупка.
+     * (надевается отдельно, см. [wear]), вещь для комнаты — в комнату. Обе считаются тратой недели, как любая
+     * покупка, и второй раз не продаются.
      */
     fun buy(game: GameSnapshot, item: ShopItem): Transition<PurchaseResult> {
         val s = game.state
-        if (item.isWearable && s.owns(item)) return Transition(game, PurchaseResult.AlreadyOwned)
+        if (item.isPermanent && s.owns(item)) return Transition(game, PurchaseResult.AlreadyOwned)
         if (item.price > s.balance) {
             return Transition(game, PurchaseResult.NotEnough(missing = item.price - s.balance))
         }
         val state = s.post(LedgerReason.Purchase(item.name), -item.price).copy(
             purchases = s.purchases + item,
             wardrobe = if (item.isWearable) s.wardrobe + item else s.wardrobe,
+            room = if (item.decor) s.room + item else s.room,
         )
         val pet = game.pet.changeSatiety(item.satiety).changeMood(item.mood)
         return Transition(GameSnapshot(state, pet), PurchaseResult.Success(item, balanceAfter = state.balance))

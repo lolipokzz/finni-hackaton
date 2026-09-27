@@ -31,6 +31,7 @@ class GameSaveMapperTest {
         assertTrue(game.state.purchases.isNotEmpty())
         assertTrue(game.state.wardrobe.isNotEmpty())
         assertTrue(game.pet.outfit.isNotEmpty())
+        assertTrue(game.state.room.isNotEmpty())
         assertTrue(game.state.completedGoals.isNotEmpty())
         assertTrue(game.state.taskResults.isNotEmpty())
         assertTrue(game.state.history.isNotEmpty())

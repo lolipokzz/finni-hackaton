@@ -14,6 +14,8 @@ import org.junit.Test
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetSpecies
+import ru.larpinovplay.finniapp.domain.pet.model.PetLook
+import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationAction
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationViewModel
@@ -37,7 +39,6 @@ class PetCreationViewModelTest {
     private fun viewModel() = PetCreationViewModel(GameRepositoryImpl(store))
 
     private fun PetCreationViewModel.createPet(name: String = "Финни") {
-        onAction(PetCreationAction.SpeciesSelected(PetSpecies.BUNNY))
         onAction(PetCreationAction.ColorSelected(PetColor.CORAL))
         onAction(PetCreationAction.NameChanged(name))
         onAction(PetCreationAction.CreatePetClicked)
@@ -63,7 +64,8 @@ class PetCreationViewModelTest {
         val restarted = viewModel()
 
         assertEquals(PetCreationUiState.Loaded, restarted.state.value)
-        assertEquals(SampleGames.newborn, store.saved?.pet)
+        // Вид не выбирается: питомец всегда кот, раскраска — выбранная
+        assertEquals(Pet.newborn("Финни", PetLook(PetSpecies.CAT, PetColor.CORAL)), store.saved?.pet)
     }
 
     @Test

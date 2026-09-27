@@ -92,6 +92,16 @@ class GameEngineTest {
     }
 
     @Test
+    fun roomItemsAreBoughtOnceAndStayInRoom() {
+        val bed = content.shopItems.first { it.decor }
+        val game = newGame().then { GameEngine.buy(it, bed) }
+
+        assertEquals(listOf(bed), game.state.room)
+        assertEquals(PurchaseResult.AlreadyOwned, GameEngine.buy(game, bed).result)
+        assertEquals(listOf(bed), game.planned().finish().first.state.room)
+    }
+
+    @Test
     fun clothesAreBoughtOnlyOnce() {
         val game = newGame().then { GameEngine.buy(it, cap) }
 

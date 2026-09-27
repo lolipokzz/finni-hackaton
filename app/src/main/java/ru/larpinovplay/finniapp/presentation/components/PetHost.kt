@@ -33,6 +33,10 @@ import kotlin.math.roundToInt
 data class PetSpec(
     val assetName: String,
     val tintArgb: Long?,
+    /** Рост на экране относительно взрослого (малыш и подросток меньше), см. PetAssets.modelScale. */
+    val modelScale: Float = 1f,
+    /** Раскраска: текстура шерсти из assets; null — как в модели (см. PetAssets.skinAsset). */
+    val skin: String? = null,
     val animationsEnabled: Boolean,
     val soundEnabled: Boolean = true,
     /** Слушать микрофон и повторять (настройка, звук и выданное разрешение вместе). */
@@ -166,6 +170,8 @@ fun PetHost(
         PetModel3D(
             assetName = spec?.assetName,
             tintArgb = spec?.tintArgb,
+            modelScale = spec?.modelScale ?: 1f,
+            skin = spec?.skin,
             cameraDistance = cameraDistance,
             animationsEnabled = spec?.animationsEnabled ?: true,
             soundEnabled = spec?.soundEnabled ?: false,

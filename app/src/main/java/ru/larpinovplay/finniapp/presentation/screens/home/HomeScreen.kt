@@ -77,6 +77,8 @@ import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.pet.accessoryNodes
 import ru.larpinovplay.finniapp.presentation.pet.hitAnimations
 import ru.larpinovplay.finniapp.presentation.pet.idleAnimation
+import ru.larpinovplay.finniapp.presentation.pet.modelScale
+import ru.larpinovplay.finniapp.presentation.pet.skinAsset
 import ru.larpinovplay.finniapp.presentation.pet.pettingAnimation
 import ru.larpinovplay.finniapp.presentation.pet.tapAnimation
 import ru.larpinovplay.finniapp.presentation.pet.modelAsset
@@ -370,6 +372,8 @@ private fun PetArea(state: HomeUiState, petHost: PetHostState?, room: RoomAnchor
         PetSpec(
             assetName = it,
             tintArgb = pet.look.color.argb,
+            modelScale = pet.growthStage.modelScale,
+            skin = pet.look.skinAsset,
             animationsEnabled = state.animationsEnabled,
             soundEnabled = state.soundEnabled,
             voiceEnabled = wantsVoice && micGranted,
