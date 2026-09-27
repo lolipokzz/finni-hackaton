@@ -7,6 +7,8 @@ import android.view.SurfaceView
 import android.view.ViewConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.filament.IndirectLight
@@ -82,7 +84,9 @@ fun PetModel3D(
     onShadow: (PetShadow?) -> Unit = {},
     active: Boolean = true,
     contentDescription: String = "Питомец. Нажми, и он помашет, или погладь его",
+    onTap: () -> Unit = {},
 ) {
+    val currentOnTap by rememberUpdatedState(onTap)
     val controller = remember {
         PetModelController(tintMaterial, idleAnimation, tapAnimation, hitAnimations, pettingAnimation, cameraDistance)
     }
@@ -102,7 +106,10 @@ fun PetModel3D(
                     controller.onTouch(event, touchSlop)
                     false
                 }
-                setOnClickListener { view -> controller.onTap(view.width, view.height) }
+                setOnClickListener { view ->
+                    controller.onTap(view.width, view.height)
+                    currentOnTap()
+                }
             }
         },
         update = {

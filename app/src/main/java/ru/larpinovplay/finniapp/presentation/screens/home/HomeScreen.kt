@@ -4,6 +4,13 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -26,12 +34,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +54,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -62,6 +71,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.content.Feedback
@@ -72,7 +82,6 @@ import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
-import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.BubbleTail
 import ru.larpinovplay.finniapp.presentation.components.CoinPill
 import ru.larpinovplay.finniapp.presentation.components.MeterRing
@@ -81,22 +90,22 @@ import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.PetHostOwner
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.components.PetSpec
-import ru.larpinovplay.finniapp.presentation.components.PillButton
 import ru.larpinovplay.finniapp.presentation.components.RoomAnchor
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.components.Sticker
+import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.rememberRoomAnchor
 import ru.larpinovplay.finniapp.presentation.components.roomOrigin
 import ru.larpinovplay.finniapp.presentation.components.roomPetSlot
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
-import ru.larpinovplay.finniapp.presentation.pet.accessoryNodes
 import ru.larpinovplay.finniapp.presentation.pet.PetHits
-import ru.larpinovplay.finniapp.presentation.pet.idleAnimation
-import ru.larpinovplay.finniapp.presentation.pet.modelScale
-import ru.larpinovplay.finniapp.presentation.pet.skinAsset
-import ru.larpinovplay.finniapp.presentation.pet.modelAsset
 import ru.larpinovplay.finniapp.presentation.pet.PetPettingAnimation
 import ru.larpinovplay.finniapp.presentation.pet.PetTapAnimation
+import ru.larpinovplay.finniapp.presentation.pet.accessoryNodes
+import ru.larpinovplay.finniapp.presentation.pet.idleAnimation
+import ru.larpinovplay.finniapp.presentation.pet.modelAsset
+import ru.larpinovplay.finniapp.presentation.pet.modelScale
+import ru.larpinovplay.finniapp.presentation.pet.skinAsset
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
@@ -139,6 +148,14 @@ fun HomeScreenContent(
     petHost: PetHostState? = null,   // null — превью и тесты: 3D-питомец не рисуется
 ) {
     val room = rememberRoomAnchor()
+    // Облачко открыто при входе на экран и при каждом новом деле; потом само садится в значок над Финни
+    var speechOpen by remember(state.speech) { mutableStateOf(true) }
+    if (petHost != null) {
+        DisposableEffect(petHost) {
+            petHost.onTap = { speechOpen = true }
+            onDispose { petHost.onTap = {} }
+        }
+    }
     Box(modifier = modifier.fillMaxSize().roomOrigin(room)) {
         RoomBackground(anchor = room)
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
@@ -151,9 +168,14 @@ fun HomeScreenContent(
                     PetButton(state.pet, onClick = { onAction(HomeAction.OpenSection(HomeSection.PROGRESS)) })
                     if (state.demoMode) DemoChip()
                 }
-                state.speech?.let { speech ->
-                    SpeechBubble(speech, onAction, Modifier.padding(start = 14.dp).weight(1f))
-                }
+                SpeechZone(
+                    speech = state.speech,
+                    open = speechOpen,
+                    onOpenChange = { speechOpen = it },
+                    animate = state.animationsEnabled,
+                    onAction = onAction,
+                    modifier = Modifier.padding(start = 14.dp).weight(1f),
+                )
             }
             Box(Modifier.fillMaxWidth().weight(1f)) {
                 PetArea(state, petHost, room, modifier = Modifier.align(Alignment.BottomCenter))
@@ -246,23 +268,114 @@ private fun DemoChip() {
 
 // ---------- Реплика Финни ----------
 
-/** Облачко над Финни: он говорит от себя и зовёт к одному делу. Хвостик смотрит вниз, на питомца. */
+/** Сколько облачко висит само, прежде чем сесть в значок. */
+private const val SPEECH_SHOWN_MS = 6_000L
+
+/** Высота места под облачко: постоянная, чтобы Финни не менял размер, когда облачко прячется. */
+private val SpeechZoneHeight = 120.dp
+
+/** Где над облачком голова Финни: сюда смотрит хвостик и здесь сидит значок. */
+private val SpeechTailStart = 80.dp
+
+/**
+ * Реплика Финни. Сначала — облачко: он говорит от себя и зовёт к одному делу текстовой ссылкой.
+ * Через [SPEECH_SHOWN_MS] или по нажатию на облачко оно садится в значок над головой: «!» — важное
+ * (голоден, ждёт приключение, неделю можно завершить), «…» — остальное. Значок или сам Финни открывают его снова.
+ */
 @Composable
-private fun SpeechBubble(speech: HomeUiState.Speech, onAction: (HomeAction) -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth()) {
+private fun SpeechZone(
+    speech: HomeUiState.Speech?,
+    open: Boolean,
+    onOpenChange: (Boolean) -> Unit,
+    animate: Boolean,
+    onAction: (HomeAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LaunchedEffect(open, speech) {
+        if (open && speech != null) {
+            delay(SPEECH_SHOWN_MS)
+            onOpenChange(false)
+        }
+    }
+    Box(modifier.height(SpeechZoneHeight)) {
+        if (speech == null) return@Box
+        val origin = TransformOrigin(0.3f, 1f)
+        AnimatedVisibility(
+            visible = open,
+            enter = if (animate) fadeIn() + scaleIn(initialScale = 0.6f, transformOrigin = origin) else EnterTransition.None,
+            exit = if (animate) fadeOut() + scaleOut(targetScale = 0.6f, transformOrigin = origin) else ExitTransition.None,
+            modifier = Modifier.align(Alignment.BottomStart),
+        ) {
+            SpeechBubble(speech, onClose = { onOpenChange(false) }, onAction = onAction)
+        }
+        AnimatedVisibility(
+            visible = !open,
+            enter = if (animate) fadeIn() + scaleIn() else EnterTransition.None,
+            exit = if (animate) fadeOut() + scaleOut() else ExitTransition.None,
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = SpeechTailStart - 8.dp, bottom = 4.dp),
+        ) {
+            SpeechBadge(important = speech.important, onClick = { onOpenChange(true) })
+        }
+    }
+}
+
+private val HomeUiState.Speech.important: Boolean
+    get() = this == HomeUiState.Speech.HUNGRY || this == HomeUiState.Speech.ADVENTURE || this == HomeUiState.Speech.WEEK_READY
+
+/** Облачко: короткая фраза и текстовая ссылка на дело. Нажатие мимо ссылки прячет облачко. */
+@Composable
+private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onAction: (HomeAction) -> Unit) {
+    val button = speech.button
+    Column(Modifier.fillMaxWidth()) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .creamCard(RoundedCornerShape(24.dp), elevation = 8.dp)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .creamCard(RoundedCornerShape(22.dp), elevation = 8.dp)
+                .clickable(onClickLabel = "Спрятать", onClick = onClose)
+                .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = if (button == null) 10.dp else 0.dp),
         ) {
-            Text(speech.text(), fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
-            speech.button?.let { (label, action) ->
-                PillButton(label, onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth(), arrow = true)
+            Text(speech.text(), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+            button?.let { (label, action) ->
+                Row(
+                    Modifier
+                        .heightIn(min = 48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(role = Role.Button) { onAction(action) }
+                        .padding(end = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal)
+                    Image(
+                        painterResource(R.drawable.ic_arrow_right), null, Modifier.size(16.dp),
+                        colorFilter = ColorFilter.tint(FinniColors.Teal),
+                    )
+                }
             }
         }
-        BubbleTail(Modifier.padding(start = 22.dp).offset(y = (-4).dp))
+        BubbleTail(Modifier.padding(start = SpeechTailStart).offset(y = (-4).dp))
+    }
+}
+
+/** Значок над головой: Финни есть что сказать. Нажатие открывает облачко. */
+@Composable
+private fun SpeechBadge(important: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        modifier = Modifier
+            .size(48.dp)
+            .creamCard(CircleShape, elevation = 6.dp, border = 3.dp)
+            .semantics { contentDescription = if (important) "Финни хочет сказать что-то важное" else "Финни хочет что-то сказать" },
+    ) {
+        Box(Modifier.background(if (important) FinniColors.ActionPeach else FinniColors.Cream), contentAlignment = Alignment.Center) {
+            Text(
+                if (important) "!" else "…",
+                fontSize = 22.sp, fontWeight = FontWeight.Black,
+                color = if (important) FinniColors.ActionPeachInk else FinniColors.Ink,
+            )
+        }
     }
 }
 

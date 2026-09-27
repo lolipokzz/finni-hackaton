@@ -79,6 +79,9 @@ class PetHostState(
     var shown by mutableStateOf(false)
         private set
 
+    /** Что сделать, когда на питомца нажали (кроме его собственной анимации); задаёт экран-владелец. */
+    var onTap: () -> Unit = {}
+
     /** Экран, который сейчас показывает питомца. */
     var owner by mutableStateOf<PetHostOwner?>(null)
         private set
@@ -183,6 +186,7 @@ fun PetHost(
             accessories = spec?.accessories.orEmpty(),
             onShadow = { shadow.value = it },
             active = state.shown,
+            onTap = { state.onTap() },
             modifier = place,
         )
     }
