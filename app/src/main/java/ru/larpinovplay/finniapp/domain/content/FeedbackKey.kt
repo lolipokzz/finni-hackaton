@@ -59,6 +59,7 @@ enum class FeedbackKey(val id: String) {
     SAY_BORED("say.bored"),
     SAY_NEW_TASK("say.new_task"),
     SAY_TOMORROW("say.tomorrow"),
+    SAY_ON_TRIP("say.on_trip"),
 
     DEPOSIT_REJECTED("deposit.rejected"),
 

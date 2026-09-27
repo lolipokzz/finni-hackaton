@@ -21,6 +21,4 @@ internal val defaultShopItems: List<ShopItem> = listOf(
     ShopItem("cap", "Кепка", 40, ShopCategory.OPTIONAL, mood = 20, hint = "Останется навсегда. Надень в гардеробе", slot = WearableSlot.HEAD),
     ShopItem("glasses", "Очки", 35, ShopCategory.OPTIONAL, mood = 15, hint = "Останутся навсегда. Надень в гардеробе", slot = WearableSlot.EYES),
     ShopItem("bowtie", "Бабочка", 30, ShopCategory.OPTIONAL, mood = 15, hint = "Останется навсегда. Надень в гардеробе", slot = WearableSlot.NECK),
-    // Вещи для комнаты: покупаются один раз и сразу появляются в комнате. Велосипеда здесь нет: он — мечта в копилке
-    ShopItem("bed", "Кроватка", 50, ShopCategory.OPTIONAL, mood = 15, hint = "Мягкая лежанка появится в комнате навсегда", decor = true),
 )

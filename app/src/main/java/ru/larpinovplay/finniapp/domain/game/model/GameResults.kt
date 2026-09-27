@@ -6,7 +6,7 @@ sealed interface PurchaseResult {
     data class Success(val item: ShopItem, val balanceAfter: Int) : PurchaseResult
     data class NotEnough(val missing: Int) : PurchaseResult
 
-    /** Одежда уже в гардеробе или вещь уже в комнате: их покупают один раз. */
+    /** Одежда уже в гардеробе: её покупают один раз. */
     data object AlreadyOwned : PurchaseResult
 }
 

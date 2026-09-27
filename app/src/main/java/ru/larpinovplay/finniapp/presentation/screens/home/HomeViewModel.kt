@@ -162,6 +162,7 @@ class HomeViewModel(
     private fun speech(game: GameState, deeds: WeekDeeds, finishBlock: FinishBlock?, tasks: Int): HomeUiState.Speech? = when {
         game.phase == PeriodPhase.PLANNING -> null
         finishBlock == null -> HomeUiState.Speech.WEEK_READY
+        game.currentTrip != null -> HomeUiState.Speech.ON_TRIP   // Финни в поездке: звать в магазин и к заданиям некого
         !deeds.fed -> HomeUiState.Speech.HUNGRY
         finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED -> HomeUiState.Speech.ADVENTURE
         game.goal == null -> HomeUiState.Speech.CHOOSE_GOAL

@@ -357,13 +357,13 @@ private fun Meter(fraction: Float, color: Color) {
 
 // ---------- Карточка товара ----------
 
-/** Что даёт вещь: наклейки-числа сытости и настроения; у одежды и вещей для комнаты — ещё «навсегда». */
+/** Что даёт вещь: наклейки-числа сытости и настроения; у одежды — ещё «навсегда». */
 @Composable
 private fun EffectChips(item: ShopItem, modifier: Modifier = Modifier) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (item.satiety != 0) EffectChip(R.drawable.ic_meter_apple, item.satiety, SatietyTint)
         if (item.mood != 0) EffectChip(R.drawable.ic_meter_smile, item.mood, MoodTint)
-        if (item.isPermanent) {
+        if (item.isWearable) {
             Text(
                 "навсегда", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
                 modifier = Modifier.clip(CircleShape).background(FinniColors.CardMint).padding(horizontal = 9.dp, vertical = 3.dp),
@@ -391,7 +391,7 @@ private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, on
             .clearAndSetSemantics {
                 role = Role.Button
                 contentDescription = when {
-                    owned -> "${item.name}: уже есть " + if (item.decor) "в комнате" else "в гардеробе"
+                    owned -> "${item.name}: уже есть в гардеробе"
                     affordable -> "${item.name}, ${item.price} монет. Купить"
                     else -> "${item.name}, ${item.price} монет. Монет не хватает"
                 }
@@ -514,7 +514,6 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit
     val explanation = when {
         item.category == ShopCategory.MANDATORY -> "${item.name} — это обязательное. Финни поел и доволен!"
         item.isWearable -> "${item.name} теперь в гардеробе навсегда. Надень это Финни! Помни: это необязательное, а не еда"
-        item.decor -> "${item.name} теперь в комнате Финни навсегда. Загляни на главный экран! Помни: это необязательное, а не еда"
         else -> "${item.name} порадовал Финни. Помни: это необязательное, а не еда"
     }
     CardDialog(onDismiss = onDismiss) {
@@ -598,7 +597,7 @@ private fun OptionRow(icon: Int, tint: Color, title: String, subtitle: String?, 
     }
 }
 
-/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Домика» не хватит 60». */
+/** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Кроватки» не хватит 60». */
 private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     val after = fb.savings - fb.missing
     val goal = fb.goal ?: return "В копилке ${fb.savings} → станет $after"

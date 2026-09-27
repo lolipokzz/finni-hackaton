@@ -54,5 +54,5 @@ data class HomeUiState(
      * Реплика Финни: одно самое важное дело сейчас. Порядок выбора — в [HomeViewModel];
      * куда ведёт кнопка реплики, решает экран (HomeUiText.kt).
      */
-    enum class Speech { WEEK_READY, HUNGRY, ADVENTURE, CHOOSE_GOAL, BORED, NEW_TASK, TOMORROW }
+    enum class Speech { WEEK_READY, ON_TRIP, HUNGRY, ADVENTURE, CHOOSE_GOAL, BORED, NEW_TASK, TOMORROW }
 }

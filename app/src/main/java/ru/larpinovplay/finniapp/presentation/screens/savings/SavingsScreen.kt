@@ -71,6 +71,7 @@ import ru.larpinovplay.finniapp.presentation.components.StatRow
 import ru.larpinovplay.finniapp.presentation.components.StepButton
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.creamCard
+import ru.larpinovplay.finniapp.presentation.components.changesRoom
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
@@ -425,8 +426,14 @@ private fun DreamCameTrueDialog(goal: SavingsGoal, onDismiss: () -> Unit) {
                 "Мечта сбылась!", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
                 textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
             )
+            val done = when {
+                goal.id == "room" -> "Ремонт готов: загляни на главный экран, какая теперь комната у Финни!"
+                goal.trip -> "Финни уехал на целую неделю — загляни на главный экран! Когда неделя закончится, он вернётся с сувенирами."
+                changesRoom(goal.id) -> "«${goal.name}» теперь в комнате Финни — загляни на главный экран."
+                else -> "«${goal.name}» теперь у Финни."
+            }
             Text(
-                "«${goal.name}» теперь у Финни. Ты откладывал каждую неделю — и получилось!",
+                "$done Ты откладывал каждую неделю — и получилось!",
                 fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

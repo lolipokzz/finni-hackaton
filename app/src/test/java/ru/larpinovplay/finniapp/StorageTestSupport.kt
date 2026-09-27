@@ -15,7 +15,6 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
-import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
@@ -44,7 +43,8 @@ internal object SampleGames {
         val content = defaultContent()
         val food = content.shopItems.first { it.category == ShopCategory.MANDATORY }
         val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
-        val cheapGoal = SavingsGoal(id = "test-ball", name = "Мяч", cost = 10, hint = "Копить недолго")
+        // Недорогая поездка: в примере сохраняется и поездка
+        val cheapGoal = SavingsGoal(id = "test-trip", name = "Поход", cost = 10, hint = "Копить недолго", trip = true)
         val choice = content.tasks.first { it.payload is TaskPayload.Choice }
         val correct = (choice.payload as TaskPayload.Choice).options.first { it.correct }
 
@@ -66,9 +66,6 @@ internal object SampleGames {
         val cap = content.shopItems.first { it.isWearable }
         game = GameEngine.buy(game, cap).game
         game = GameEngine.wear(game, cap).game
-        // Недорогая вещь для комнаты, чтобы в примере была и комната
-        val lamp = ShopItem("test-lamp", "Лампа", 5, ShopCategory.OPTIONAL, hint = "Для теста", decor = true)
-        game = GameEngine.buy(game, lamp).game
         return game
     }
 
