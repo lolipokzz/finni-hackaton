@@ -39,7 +39,6 @@ class WardrobeViewModel(private val game: GameRepository) : ViewModel() {
             .sortedBy { it.slot }
             .map { WardrobeItem(it, worn = it.slot?.let(pet.outfit::get) == it.id) }
         return WardrobeUiState(
-            petName = pet.name,
             items = items,
             accessories = pet.accessoryNodes,
         )
