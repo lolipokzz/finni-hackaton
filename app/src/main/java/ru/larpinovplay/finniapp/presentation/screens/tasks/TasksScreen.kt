@@ -46,7 +46,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,7 +54,6 @@ import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.task.model.Task
-import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import ru.larpinovplay.finniapp.presentation.adventure.AdventureSky
@@ -64,7 +62,6 @@ import ru.larpinovplay.finniapp.presentation.components.BackButton
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
-import ru.larpinovplay.finniapp.presentation.components.StatRow
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.task.title
@@ -343,51 +340,6 @@ private fun TaskRow(task: Task, status: TaskStatus, modifier: Modifier = Modifie
                 )
             }
         }
-    }
-}
-
-// ---------- Результат ----------
-
-/**
- * Содержимое диалога итога. Само окно (Dialog) создаёт навигация: маршрут TaskResult
- * помечен как диалог, поэтому здесь только карточка, без AlertDialog.
- */
-@Composable
-fun TaskResultCard(result: TaskOutcome, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .padding(horizontal = 14.dp)
-            .fillMaxWidth()
-            .creamCard(RoundedCornerShape(34.dp), elevation = 20.dp)
-            .padding(start = 18.dp, end = 18.dp, top = 20.dp, bottom = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            Modifier.size(72.dp).clip(CircleShape).background(if (result.success) FinniColors.Teal else FinniColors.WarnTint)
-                .border(4.dp, Color.White, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (result.success) Image(painterResource(R.drawable.ic_check), null, Modifier.size(34.dp))
-            else Text("!", fontSize = 34.sp, fontWeight = FontWeight.Black, color = FinniColors.WarnInk)
-        }
-        Text(
-            if (result.success) "Верно!" else "Почти получилось",
-            fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() },
-        )
-        result.consequence?.let {
-            Text(it, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink, textAlign = TextAlign.Center)
-        }
-        Text(result.explanation, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
-        StatRow("Монеты", "+${result.reward}", coin = true)
-        if (!result.success) {
-            Text(
-                "Это задание можно попробовать снова на следующей неделе",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
-            )
-        }
-        TealButton("Понятно", R.drawable.ic_check, onDismiss)
     }
 }
 

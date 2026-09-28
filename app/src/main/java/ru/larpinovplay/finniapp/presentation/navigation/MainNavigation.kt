@@ -35,6 +35,7 @@ import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeScreen
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskPlayScreen
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskResultCard
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksScreen
+import ru.larpinovplay.finniapp.presentation.screens.tasks.toUi
 
 /**
  * Единственный NavDisplay приложения: здесь описан весь граф (см. [Routes.kt][Home]).
@@ -92,7 +93,7 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                         viewModel = koinViewModel { parametersOf(route.taskId) },
                         onCompleted = { outcome ->
                             backStack.goBack()   // TaskPlay → Tasks, итог покажется поверх списка
-                            if (outcome != null) backStack.goTo(TaskResult(route.taskId, outcome))
+                            if (outcome != null) backStack.goTo(TaskResult(route.taskId, outcome.toUi()))
                         },
                         onBack = backStack::goBack,
                     )
