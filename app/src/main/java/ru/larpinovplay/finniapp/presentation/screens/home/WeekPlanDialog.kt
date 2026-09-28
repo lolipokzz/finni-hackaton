@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -121,7 +122,7 @@ fun ActivePlanDialog(active: HomeUiState.ActivePlan, onDismiss: () -> Unit) {
         }
         Text(
             "Новый план составим в начале следующей недели",
-            fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
         TealButton("Понятно", R.drawable.ic_check, onDismiss)
@@ -149,7 +150,7 @@ private fun ActivePlanRow(direction: BudgetDirection, planned: Int, used: Int) {
             )
             Text(
                 (if (warning && saving) "! " else "") + text,
-                fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold,
                 color = if (warning) Color(0xFFB4471B) else FinniColors.InkMuted,
             )
         }
@@ -232,7 +233,7 @@ private fun PlanRow(
                 Text(direction.label, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
                 hint?.let {
                     Text(
-                        it, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold,
+                        it, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold,
                         color = if (warning) Color(0xFFB4471B) else FinniColors.InkMuted,
                     )
                 }

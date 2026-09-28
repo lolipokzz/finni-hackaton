@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -289,7 +290,7 @@ private fun StepCard(state: PetCreationUiState.Creation, onAction: (PetCreationA
     ) {
         state.notice?.let {
             Text(
-                it.text(), fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk,
+                it.text(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(FinniColors.WarnTint).padding(10.dp),
             )
         }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -72,18 +73,18 @@ fun WithdrawDialog(
             if (goal != null && before != null && after != null) {
                 Text(
                     feedback.text(FeedbackKey.WITHDRAW_GOAL_FURTHER, "goal" to goal.name, "before" to before, "after" to after),
-                    fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
+                    style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
                 )
                 val weeksBefore = draft.weeksBefore
                 val weeksAfter = draft.weeksAfter
                 if (weeksBefore != null && weeksAfter != null && weeksAfter > weeksBefore) {
                     Text(
                         feedback.text(FeedbackKey.WITHDRAW_WEEKS, "before" to weeksBefore, "after" to weeksAfter),
-                        fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk,
+                        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk,
                     )
                 }
             } else {
-                Text(feedback.text(FeedbackKey.WITHDRAW_NO_GOAL), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                Text(feedback.text(FeedbackKey.WITHDRAW_NO_GOAL), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
             }
         }
 

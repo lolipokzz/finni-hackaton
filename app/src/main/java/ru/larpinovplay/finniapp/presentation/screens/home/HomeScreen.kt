@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -279,7 +280,7 @@ private fun TutorialDoneDialog(onDone: () -> Unit) {
         ).forEach { (icon, tint, text) ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardSticker(icon, tint, size = 44.dp)
-                Text(text, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+                Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
             }
         }
         Text(
@@ -437,7 +438,7 @@ private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onActi
                 .clickable(onClickLabel = "Спрятать", onClick = onClose)
                 .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = if (button == null) 10.dp else 0.dp),
         ) {
-            Text(speech.text(), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+            Text(speech.text(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
             button?.let { (label, action) ->
                 Row(
                     Modifier

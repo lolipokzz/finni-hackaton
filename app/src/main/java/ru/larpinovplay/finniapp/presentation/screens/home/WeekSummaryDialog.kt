@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -125,7 +126,7 @@ private fun DeedLine(deed: Deed, done: Boolean, explanation: String) {
         }
         Column(Modifier.weight(1f)) {
             Text(deed.title, fontSize = 15.sp, fontWeight = FontWeight.Black, color = if (done) FinniColors.Ink else Color(0xFFB4471B))
-            Text(explanation, fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            Text(explanation, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
     }
 }
@@ -156,7 +157,7 @@ private fun GrowthBlock(summary: WeekSummary) {
             val fresh = summary.steps.coerceAtMost(total - left)
             Paws(Growth(total, earned = total - left - fresh, fresh = fresh), size = 16.dp)
         }
-        Text(text, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal, modifier = Modifier.weight(1f))
+        Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal, modifier = Modifier.weight(1f))
     }
 }
 

@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -262,7 +263,7 @@ private fun DreamCard(
                     state.weeksToGoal != null -> "Осталось $remaining · примерно ${state.weeksToGoal} нед."
                     else -> "Осталось $remaining. Отложи — и я посчитаю срок"
                 },
-                fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal, textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Teal, textAlign = TextAlign.Center,
             )
         }
 
@@ -282,7 +283,7 @@ private fun DreamCard(
                 TealButton("Отложить", R.drawable.ic_coin, onDeposit, modifier = Modifier.weight(1f))
             }
             state.depositError?.let {
-                Text(it.text(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk, textAlign = TextAlign.Center)
+                Text(it.text(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk, textAlign = TextAlign.Center)
             }
         }
         if (state.savings > 0) {
@@ -307,7 +308,7 @@ private fun NoDreamCard(savings: Int, onWithdraw: () -> Unit) {
         Text(
             if (savings > 0) "В копилке уже $savings. Выбери мечту ниже — и они пойдут на неё"
             else "Выбери мечту ниже. Её кольцо появится и в меню",
-            fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
         )
         if (savings > 0) PillButton("Забрать из копилки", onWithdraw, color = FinniColors.Pebble, ink = FinniColors.InkMuted)
     }
@@ -401,7 +402,7 @@ private fun SwitchGoalDialog(goal: SavingsGoal, savings: Int, onConfirm: () -> U
     CardDialog(onDismiss = onDismiss) {
         // Название мечты не склоняется в «Копим на …», поэтому оно в подстроке, а не в вопросе
         GoalHeader(goal, "Новая мечта?", "${goal.name} · ${goal.cost} монет")
-        Text(goal.hint, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        Text(goal.hint, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         DashedDivider()
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             StatRow("В копилке останется", "$savings", coin = true)
@@ -444,7 +445,7 @@ private fun DreamCameTrueDialog(goal: SavingsGoal, onDismiss: () -> Unit) {
             }
             Text(
                 "$done Ты откладывал каждую неделю — и получилось!",
-                fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Финни получил", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)

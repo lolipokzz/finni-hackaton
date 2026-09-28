@@ -28,6 +28,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -340,7 +341,7 @@ private fun FoodLine(weekSatiety: Int) {
                 Text("${weekSatiety.coerceAtMost(need)} из $need", fontSize = 14.sp, fontWeight = FontWeight.Black, color = if (done) FinniColors.Teal else FinniColors.InkMuted)
             }
             Meter(fraction = weekSatiety.toFloat() / need, color = if (done) FinniColors.TealBright else FinniColors.SatietyRing)
-            if (!done) Text("Сначала еда — потом радости", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            if (!done) Text("Сначала еда — потом радости", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
     }
 }
@@ -509,7 +510,7 @@ private fun PurchaseConfirmDialog(
             Text("Финни получит", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
             EffectChips(item)
         }
-        Text(item.hint, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        Text(item.hint, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         DashedDivider()
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (remaining >= 0) StatRow("Останется монет", "$remaining", coin = true)
@@ -538,7 +539,7 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit
     }
     CardDialog(onDismiss = onDismiss) {
         ItemHeader(item, "Куплено!", item.name, done = true)
-        Text(explanation, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+        Text(explanation, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Финни получил", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
             EffectChips(item)

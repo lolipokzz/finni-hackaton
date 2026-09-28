@@ -2,6 +2,7 @@ package ru.larpinovplay.finniapp.presentation.components
 
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarData
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.heightIn
@@ -439,7 +440,7 @@ fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)?
         CardSticker(R.drawable.ic_paw, Color.White, size = 40.dp, iconScale = 0.56f)
         Column(Modifier.weight(1f)) {
             Text("Финни", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal)
-            Text(text, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0B5E4F))
+            Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0B5E4F))
             onSkip?.let {
                 Text(
                     "Пропустить шаг",
@@ -474,7 +475,7 @@ fun FinniSnackbar(data: SnackbarData) {
     ) {
         Text(
             data.visuals.message,
-            fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink,
+            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink,
             modifier = Modifier.weight(1f).padding(vertical = 8.dp),
         )
         data.visuals.actionLabel?.let { label ->

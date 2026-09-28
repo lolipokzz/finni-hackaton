@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -61,12 +62,12 @@ fun TaskResultCard(result: TaskOutcomeUi, onDismiss: () -> Unit, modifier: Modif
         result.consequence?.let {
             Text(it, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink, textAlign = TextAlign.Center)
         }
-        Text(result.explanation, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
+        Text(result.explanation, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
         StatRow("Монеты", "+${result.reward}", coin = true)
         if (!result.success) {
             Text(
                 "Это задание можно попробовать снова на следующей неделе",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
             )
         }
         TealButton("Понятно", R.drawable.ic_check, onDismiss)

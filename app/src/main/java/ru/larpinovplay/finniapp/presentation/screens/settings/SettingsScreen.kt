@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -155,7 +156,7 @@ fun SettingsScreenContent(
                                 CardSticker(card.icon, card.tint, size = 44.dp, iconScale = 0.6f)
                                 Column(Modifier.weight(1f)) {
                                     Text(card.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-                                    Text(card.text, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                                    Text(card.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                                 }
                             }
                         }
@@ -177,7 +178,7 @@ fun SettingsScreenContent(
                                     term, fontSize = 14.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
                                     modifier = Modifier.clip(CircleShape).background(FinniColors.CardMint).padding(horizontal = 10.dp, vertical = 3.dp),
                                 )
-                                Text(text, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                                Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                             }
                         }
                     }
@@ -195,7 +196,7 @@ fun SettingsScreenContent(
                             Text(
                                 "«Питомец Финни» учит планировать монеты, отличать обязательное от необязательного и копить на мечту. " +
                                     "Здесь нет настоящих денег, рекламы и покупок. Все данные хранятся только на этом устройстве.",
-                                fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0B5E4F),
+                                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = Color(0xFF0B5E4F),
                             )
                         }
                     }

@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -257,7 +258,7 @@ internal fun Hint(text: String) {
         }
         AnimatedVisibility(shown) {
             Text(
-                text, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.CoinInk,
+                text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.CoinInk,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFFFFF5C9)).padding(12.dp),
             )
         }
@@ -446,11 +447,11 @@ private fun FinishCard(finish: AdventureUiState.Finish, look: AdventureLook, rew
                 textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
             )
             if (result == null) {
-                Text(feedback.text(FeedbackKey.ADVENTURE_REPLAY), fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
+                Text(feedback.text(FeedbackKey.ADVENTURE_REPLAY), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
             } else {
                 Text(
                     feedback.text(if (result.perfect) FeedbackKey.ADVENTURE_DONE_PERFECT else FeedbackKey.ADVENTURE_DONE_MISTAKES),
-                    fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Row(

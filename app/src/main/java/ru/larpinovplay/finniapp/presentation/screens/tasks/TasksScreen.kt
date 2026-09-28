@@ -205,7 +205,7 @@ private fun AdventureHero(adventure: Adventure, onOpen: () -> Unit) {
             }
             Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(adventure.title, fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink)
-                Text(adventure.intro, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                Text(adventure.intro, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     // Тропинка из шагов: сколько будет сцен
                     repeat(adventure.scenes.size) {
@@ -261,7 +261,7 @@ private fun AdventureDone() {
         }
         Column(Modifier.weight(1f)) {
             Text("Приключение пройдено!", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-            Text("Следующее — на новой неделе", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            Text("Следующее — на новой неделе", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
     }
 }
@@ -364,7 +364,7 @@ internal fun HintButton(hint: String) {
     var shown by remember { mutableStateOf(false) }
     TextButton(onClick = { shown = !shown }) { Text(if (shown) "Скрыть подсказку" else "Подсказка", style = MaterialTheme.typography.labelLarge) }
     if (shown) {
-        Text(hint, style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted, modifier = Modifier.padding(horizontal = 8.dp))
+        Text(hint, style = MaterialTheme.typography.bodyLarge, color = FinniColors.NavyMuted, modifier = Modifier.padding(horizontal = 8.dp))
     }
 }
 
