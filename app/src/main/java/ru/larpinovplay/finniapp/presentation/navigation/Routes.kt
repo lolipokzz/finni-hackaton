@@ -67,5 +67,4 @@ fun HomeSection.toRoute(): NavKey = when (this) {
     HomeSection.SAVINGS -> Savings
     HomeSection.PROGRESS -> Progress
     HomeSection.SETTINGS -> Settings
-    HomeSection.ADULT -> Adult
 }

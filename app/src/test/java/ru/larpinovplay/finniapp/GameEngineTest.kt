@@ -259,20 +259,6 @@ class GameEngineTest {
     }
 
     @Test
-    fun planLeftShowsWhatRemainsPerCategoryAndGoesBelowZeroWhenOverspent() {
-        val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
-        assertNull(newGame().state.planLeft(ShopCategory.MANDATORY))   // плана ещё нет
-
-        val game = newGame()
-            .then { GameEngine.confirmPlan(it, BudgetPlan(mandatory = 30, optional = 5, savings = 65)) }
-            .then { GameEngine.buy(it, food) }
-            .then { GameEngine.buy(it, treat) }
-
-        assertEquals(30 - food.price, game.state.planLeft(ShopCategory.MANDATORY))
-        assertEquals(5 - treat.price, game.state.planLeft(ShopCategory.OPTIONAL))
-    }
-
-    @Test
     fun planWithoutSavingsLineLeavesPiggyBankAlone() {
         val game = newGame().planned()
 

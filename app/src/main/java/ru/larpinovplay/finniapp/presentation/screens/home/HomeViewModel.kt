@@ -95,7 +95,6 @@ class HomeViewModel(
             }
             // Окно закроется вместе с концом обучения (см. toUiState): закрой раньше — мелькнула бы подсветка солнышка
             HomeAction.FinishTutorial -> viewModelScope.launch { game.finishTutorial().orSnackbar { onAction(HomeAction.FinishTutorial) } }
-            HomeAction.PetTapped -> Unit       // TODO: реакция питомца
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
     }

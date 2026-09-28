@@ -37,10 +37,6 @@ val ShopCategory.title: String
         ShopCategory.OPTIONAL -> "Необязательное"
     }
 
-/** Подпись категории на карточке; у одежды ещё и то, что она остаётся навсегда. */
-val ShopItem.categoryText: String
-    get() = if (isWearable) "${category.title} · навсегда" else category.title
-
 val WearableSlot.title: String
     get() = when (this) {
         WearableSlot.HEAD -> "На голову"

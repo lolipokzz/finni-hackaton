@@ -44,9 +44,6 @@ data class GameState(
     /** Сколько за эту неделю потрачено на товары [category]. */
     fun spentThisWeek(category: ShopCategory): Int = purchases.filter { it.category == category }.sumOf { it.price }
 
-    /** Сколько по плану недели ещё осталось на [category]; меньше нуля — потрачено сверх плана, null — плана нет. */
-    fun planLeft(category: ShopCategory): Int? = plan?.let { it[category.budgetDirection] - spentThisWeek(category) }
-
     /** Сколько за эту неделю отложено за вычетом снятого; может быть меньше нуля. Покупка цели сюда не входит. */
     val savedThisWeek: Int get() = depositsThisWeek.sum() - withdrawalsThisWeek.sum()
 
