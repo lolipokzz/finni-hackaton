@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import kotlin.math.roundToInt
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
@@ -63,7 +64,7 @@ class HomeViewModel(
             // Карточка дел сменяется итогами одним обновлением: между ними не мелькнёт главный экран прошлой недели.
             // Пока итоги открыты, второй тап по ещё не исчезнувшей кнопке не закончит (в демо) и следующую неделю
             HomeAction.FinishWeek -> if (_state.value?.weekSummary == null) viewModelScope.launch {
-                when (val result = game.finishWeek().dataOrNull()) {
+                when (val result = game.finishWeek().orSnackbar { onAction(HomeAction.FinishWeek) }) {
                     is FinishWeekResult.Finished -> _state.update { it?.copy(weekSummary = result.summary, deedsOpen = false) }
                     // Карточка дел сама объясняет, чего не хватает
                     is FinishWeekResult.Blocked -> _state.update { it?.copy(finishBlock = result.reason, deedsOpen = true) }
@@ -80,7 +81,7 @@ class HomeViewModel(
                 if (draft.unallocated != 0) return@launch
                 // Окно закроется само вместе с новой неделей: черновик пропадёт — и окно тоже (см. toUiState).
                 // Закрой его раньше — на миг мелькнула бы прошлая подсказка обучения
-                game.confirmPlan(draft.plan)
+                game.confirmPlan(draft.plan).orSnackbar { onAction(HomeAction.ConfirmPlan) }
             }
             is HomeAction.ShowInfo -> _state.update { it?.copy(info = action.info) }
             HomeAction.DismissInfo -> _state.update { it?.copy(info = null) }
@@ -90,10 +91,10 @@ class HomeViewModel(
             HomeAction.SkipTutorialStep -> when (val step = _state.value?.tutorial) {
                 null, TutorialStep.PLAN -> Unit   // без плана неделя не начнётся — этот шаг не пропустить
                 TutorialStep.DEEDS -> _state.update { it?.copy(tutorialDone = true) }   // сразу к «Обучение пройдено»
-                else -> viewModelScope.launch { game.skipTutorialStep(step) }
+                else -> viewModelScope.launch { game.skipTutorialStep(step).orSnackbar { onAction(HomeAction.SkipTutorialStep) } }
             }
             // Окно закроется вместе с концом обучения (см. toUiState): закрой раньше — мелькнула бы подсветка солнышка
-            HomeAction.FinishTutorial -> viewModelScope.launch { game.finishTutorial() }
+            HomeAction.FinishTutorial -> viewModelScope.launch { game.finishTutorial().orSnackbar { onAction(HomeAction.FinishTutorial) } }
             HomeAction.PetTapped -> Unit       // TODO: реакция питомца
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }

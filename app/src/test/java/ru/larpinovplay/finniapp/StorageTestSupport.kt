@@ -104,6 +104,8 @@ internal class FakeGameStore(var saved: GameSnapshot? = null) : GameStore {
 internal class FlakyGameSerializer : Serializer<GameSaveFile> {
     @Volatile var failReads = false
     @Volatile var failWrites = false
+    @Volatile var writeFailure = "сбой диска"   // текст ошибки: по нему узнаётся причина (ENOSPC, EACCES…)
+    @Volatile var writeAttempts = 0
 
     override val defaultValue: GameSaveFile get() = GameSaveSerializer.defaultValue
 
@@ -113,7 +115,8 @@ internal class FlakyGameSerializer : Serializer<GameSaveFile> {
     }
 
     override suspend fun writeTo(t: GameSaveFile, output: OutputStream) {
-        if (failWrites) throw IOException("нет места на диске")
+        writeAttempts++
+        if (failWrites) throw IOException(writeFailure)
         GameSaveSerializer.writeTo(t, output)
     }
 }

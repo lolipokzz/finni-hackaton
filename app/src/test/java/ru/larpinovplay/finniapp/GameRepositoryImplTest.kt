@@ -1,6 +1,5 @@
 package ru.larpinovplay.finniapp
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -25,8 +24,8 @@ import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 /**
  * Репозиторий связывает правила игры и хранилище: правила проверяет GameEngineTest, диск подменён
- * [FakeGameStore]. Главное здесь: действие видно сразу, а на диск ложится последняя игра; сбой записи не теряет игру.
- * Фоновая запись в тестах идёт сразу же ([Dispatchers.Unconfined]), чтобы проверять диск без ожиданий.
+ * [FakeGameStore]. Главное здесь порядок «сначала запись, потом публикация» и то, что сбой хранения
+ * не портит игру, а возвращается вызывающему как [Result.Error].
  */
 class GameRepositoryImplTest {
 
@@ -34,7 +33,7 @@ class GameRepositoryImplTest {
     private val newborn = SampleGames.newborn
     private val store = FakeGameStore()
     private val clock = TestClock()
-    private val game = GameRepositoryImpl(store, startBalance = 100, clock = clock, io = CoroutineScope(Dispatchers.Unconfined))
+    private val game = GameRepositoryImpl(store, startBalance = 100, clock = clock)
     private val plan = BudgetPlan(mandatory = food.price, optional = 100 - food.price)
 
     @Test
@@ -148,33 +147,30 @@ class GameRepositoryImplTest {
     // ---------- Сбои хранения ----------
 
     @Test
-    fun failedWriteKeepsGameAndSavesItWithNextChange() = runBlocking {
+    fun failedSaveLeavesSnapshotUnchangedAndReportsError() = runBlocking {
         game.createPet(newborn)
         val before = game.requireSnapshot()
         store.saveFailure = StorageError.WRITE_FAILED
 
-        assertTrue(game.buy(food).dataOrNull() is PurchaseResult.Success)
-        assertEquals(100 - food.price, game.requireSnapshot().state.balance)   // экран уже видит покупку
-        assertEquals(before, store.saved)                                      // а диск пока нет
+        val result = game.buy(food)
 
-        store.saveFailure = null
-        game.buy(food)
-
-        assertEquals(100 - 2 * food.price, game.requireSnapshot().state.balance)   // ровно две покупки
-        assertEquals(game.requireSnapshot(), store.saved)                         // обе дошли до диска
+        assertEquals(Result.Error(StorageError.WRITE_FAILED), result)   // ошибка уходит в ViewModel
+        assertEquals(before, game.requireSnapshot())   // покупка не применилась ни в памяти, ни на диске
+        assertEquals(before, store.saved)
     }
 
     @Test
-    fun resetDoesNotLetUnsavedGameComeBack() = runBlocking {
+    fun commandsWorkAgainOnceStoreRecovers() = runBlocking {
         game.createPet(newborn)
         store.saveFailure = StorageError.WRITE_FAILED
-        game.buy(food)   // осталось несохранённым
+        game.buy(food)
         store.saveFailure = null
 
-        assertTrue(game.resetProfile() is Result.Success)
+        val result = game.buy(food).dataOrNull()
 
-        assertNull(game.snapshot.value)
-        assertNull(store.saved)
+        assertTrue(result is PurchaseResult.Success)
+        assertEquals(100 - food.price, game.requireSnapshot().state.balance)   // ровно одна покупка, не две
+        assertEquals(game.requireSnapshot(), store.saved)
     }
 
     @Test

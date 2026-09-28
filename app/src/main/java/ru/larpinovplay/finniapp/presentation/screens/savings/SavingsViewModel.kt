@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.savings
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
@@ -51,7 +52,7 @@ class SavingsViewModel(
             SavingsAction.DismissSwitch -> _state.update { it.copy(switchTo = null) }
             is SavingsAction.Deposit -> deposit(action.amount)
             SavingsAction.ReachGoalClicked -> viewModelScope.launch {
-                val reached = game.reachGoal().dataOrNull() ?: return@launch   // второй тап: мечта уже куплена
+                val reached = game.reachGoal().orSnackbar { onAction(SavingsAction.ReachGoalClicked) } ?: return@launch   // второй тап: мечта уже куплена
                 _state.update { it.copy(reached = reached) }
             }
             SavingsAction.DismissReached -> _state.update { it.copy(reached = null) }
@@ -62,7 +63,7 @@ class SavingsViewModel(
             is SavingsAction.ChangeWithdraw -> changeWithdraw(action.increase)
             SavingsAction.ConfirmWithdraw -> confirmWithdraw()
             SavingsAction.DismissWithdraw -> _state.update { it.copy(withdraw = null) }
-            SavingsAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.GOAL) }
+            SavingsAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.GOAL).orSnackbar { onAction(SavingsAction.SkipTutorialStep) } }
         }
     }
 
@@ -72,7 +73,7 @@ class SavingsViewModel(
             goal.id == current.goal?.id -> Unit
             // Смена цели при непустой копилке требует подтверждения
             current.goal != null && current.savings > 0 -> _state.update { it.copy(switchTo = goal) }
-            else -> viewModelScope.launch { game.chooseGoal(goal) }
+            else -> viewModelScope.launch { game.chooseGoal(goal).orSnackbar { onGoalClicked(goal) } }
         }
     }
 
@@ -80,14 +81,14 @@ class SavingsViewModel(
     private fun confirmSwitch() {
         val goal = _state.value.switchTo ?: return
         viewModelScope.launch {
-            game.chooseGoal(goal)
+            game.chooseGoal(goal).orSnackbar { onGoalClicked(goal) }   // повтор снова спросит: копилка не пуста
             _state.update { it.copy(switchTo = null) }
         }
     }
 
     private fun deposit(amount: Int) {
         viewModelScope.launch {
-            val rejected = game.deposit(amount).dataOrNull() as? DepositResult.Rejected
+            val rejected = game.deposit(amount).orSnackbar { deposit(amount) } as? DepositResult.Rejected
             _state.update { it.copy(depositError = rejected) }
         }
     }
@@ -113,8 +114,12 @@ class SavingsViewModel(
 
     private fun confirmWithdraw() {
         val draft = _state.value.withdraw ?: return
+        withdraw(draft.amount)
+    }
+
+    private fun withdraw(amount: Int) {
         viewModelScope.launch {
-            game.withdraw(draft.amount)
+            game.withdraw(amount).orSnackbar { withdraw(amount) }
             _state.update { it.copy(withdraw = null) }
         }
     }

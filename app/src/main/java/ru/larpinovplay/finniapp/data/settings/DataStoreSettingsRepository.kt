@@ -1,9 +1,7 @@
 package ru.larpinovplay.finniapp.data.settings
 
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.MutableStateFlow
+import ru.larpinovplay.finniapp.domain.util.result.map
+import ru.larpinovplay.finniapp.data.storage.onDisk
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Serializer
@@ -16,9 +14,7 @@ import kotlinx.coroutines.flow.retry
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.domain.storage.StorageError
-import ru.larpinovplay.finniapp.domain.util.result.EmptyDataSuccess
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
-import ru.larpinovplay.finniapp.domain.util.result.Result
 import java.io.File
 import java.io.IOException
 
@@ -27,40 +23,21 @@ import java.io.IOException
  * звук и подсказки.
  *
  * Сбои читаются мягко: настройки не стоят прерванной игры, поэтому повреждённый файл заменяется значениями по
- * умолчанию, а неудачное чтение после двух повторов даёт те же значения. Сбой записи возвращается как
- * [StorageError.WRITE_FAILED]: экран может сказать, что настройка не сохранилась.
- *
- * Экран записи не ждёт: новая настройка видна в [observeSettings] сразу, пока DataStore пишет файл на IO.
- * Не записалась — переключатель возвращается к тому, что на диске.
+ * умолчанию, а неудачное чтение после двух повторов даёт те же значения. Запись лечит сбои на месте (onDisk),
+ * а что не вылечилось — возвращает: [StorageError.NO_SPACE], [StorageError.NO_ACCESS] или [StorageError.WRITE_FAILED].
  */
 class DataStoreSettingsRepository internal constructor(
     private val dataStore: DataStore<SettingsSaveFile>,
+    private val file: () -> File,
 ) : SettingsRepository {
 
-    private val saved: Flow<AppSettings> = dataStore.data
+    override fun observeSettings(): Flow<AppSettings> = dataStore.data
         .retry(READ_RETRIES) { it is IOException }
         .catch { if (it is IOException) emit(SettingsSaveFile()) else throw it }
         .map { it.toDomain() }
 
-    /** Настройка, которую экран уже показывает, а диск ещё пишет; null — диск догнал. */
-    private val shown = MutableStateFlow<AppSettings?>(null)
-
-    override fun observeSettings(): Flow<AppSettings> =
-        combine(saved, shown) { onDisk, unsaved -> unsaved ?: onDisk }.distinctUntilChanged()
-
-    override suspend fun updateSettings(transform: (AppSettings) -> AppSettings): EmptyResult<StorageError> {
-        val next = transform(shown.value ?: saved.first())
-        shown.value = next
-        return try {
-            dataStore.updateData { transform(it.toDomain()).toDto() }
-            EmptyDataSuccess
-        } catch (e: IOException) {
-            Result.Error(StorageError.WRITE_FAILED)
-        } finally {
-            // Показанное больше не нужно: либо оно уже на диске, либо не записалось. Более новое не трогаем
-            shown.compareAndSet(next, null)
-        }
-    }
+    override suspend fun updateSettings(transform: (AppSettings) -> AppSettings): EmptyResult<StorageError> =
+        onDisk(file, StorageError.WRITE_FAILED) { dataStore.updateData { transform(it.toDomain()).toDto() } }.map { }
 
     companion object {
 
@@ -84,7 +61,8 @@ class DataStoreSettingsRepository internal constructor(
                 corruptionHandler = ReplaceFileCorruptionHandler { SettingsSaveFile() },
                 scope = scope,
                 produceFile = produceFile,
-            )
+            ),
+            produceFile,
         )
     }
 }

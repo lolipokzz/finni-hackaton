@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.tasks
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import androidx.lifecycle.ViewModel
@@ -39,6 +40,6 @@ class TasksViewModel(
 
     /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
     fun skipTutorialStep() {
-        viewModelScope.launch { game.skipTutorialStep(TutorialStep.TASKS) }
+        viewModelScope.launch { game.skipTutorialStep(TutorialStep.TASKS).orSnackbar { skipTutorialStep() } }
     }
 }

@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.adventure
 
+import ru.larpinovplay.finniapp.presentation.storage.snackbar
+import ru.larpinovplay.finniapp.domain.util.result.Result
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +14,6 @@ import ru.larpinovplay.finniapp.domain.adventure.checkPayment
 import ru.larpinovplay.finniapp.domain.adventure.model.AdventureScene
 import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
-import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 import ru.larpinovplay.finniapp.presentation.screens.adventure.AdventureUiState.SceneCheck
 
 /**
@@ -106,8 +107,14 @@ class AdventureViewModel(
         if (completing) return
         completing = true
         viewModelScope.launch {
-            val result = game.completeAdventure(done.adventure, done.mistakes).dataOrNull()
-            _state.value = done.copy(finish = AdventureUiState.Finish(result))
+            when (val result = game.completeAdventure(done.adventure, done.mistakes)) {
+                is Result.Success -> _state.value = done.copy(finish = AdventureUiState.Finish(result.data))
+                // Итог не сохранился и не засчитан: «Дальше» можно нажать ещё раз
+                is Result.Error -> {
+                    completing = false
+                    result.error.snackbar { complete(done) }
+                }
+            }
         }
     }
 

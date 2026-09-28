@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.shop
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
@@ -59,15 +60,18 @@ class ShopViewModel(
             is ShopAction.PickCheaper -> _state.update { it.copy(feedback = null, pending = action.item) }
             ShopAction.ConfirmPurchase -> confirmPurchase()
             ShopAction.BuyWithSavings -> buyWithSavings()
-            ShopAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.SHOP) }
+            ShopAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.SHOP).orSnackbar { onAction(ShopAction.SkipTutorialStep) } }
         }
     }
 
     /** Окно подтверждения сменяется итогом одним обновлением: между ними не мелькнёт магазин (и подсветка обучения). */
     private fun confirmPurchase() {
-        val item = _state.value.pending ?: return
+        _state.value.pending?.let(::buy)
+    }
+
+    private fun buy(item: ShopItem) {
         viewModelScope.launch {
-            val result = game.buy(item).dataOrNull()
+            val result = game.buy(item).orSnackbar { buy(item) }
             val feedback = when (result) {
                 null -> null
                 is PurchaseResult.Success -> PurchaseFeedback.Bought(item, result.balanceAfter)
@@ -96,14 +100,17 @@ class ShopViewModel(
 
     /** Берёт из копилки ровно недостающее (не весь остаток) и сразу покупает. */
     private fun buyWithSavings() {
-        val notEnough = _state.value.feedback as? PurchaseFeedback.NotEnough ?: return
+        (_state.value.feedback as? PurchaseFeedback.NotEnough)?.let(::buyWithSavings)
+    }
+
+    private fun buyWithSavings(notEnough: PurchaseFeedback.NotEnough) {
         // Окно «Не хватает» сменится итогом покупки сразу, без мелькания магазина между ними
         viewModelScope.launch {
             val item = notEnough.item
             // Баланс мог измениться, пока было открыто окно: считаем недостающее заново
             val missing = (item.price - game.requireSnapshot().state.balance).coerceAtLeast(0)
-            val withdrawn = missing == 0 || game.withdraw(missing).dataOrNull() == WithdrawResult.Success
-            val bought = if (withdrawn) game.buy(item).dataOrNull() as? PurchaseResult.Success else null
+            val withdrawn = missing == 0 || game.withdraw(missing).orSnackbar { buyWithSavings(notEnough) } == WithdrawResult.Success
+            val bought = if (withdrawn) game.buy(item).orSnackbar { buyWithSavings(notEnough) } as? PurchaseResult.Success else null
             _state.update { it.copy(feedback = bought?.let { b -> PurchaseFeedback.Bought(item, b.balanceAfter, fromSavings = missing) }) }
         }
     }

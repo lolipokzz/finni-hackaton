@@ -1,10 +1,6 @@
 package ru.larpinovplay.finniapp.data.game
 
-import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.CoroutineScope
+import ru.larpinovplay.finniapp.domain.util.result.map
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,15 +42,10 @@ import java.time.LocalDate
  * Держит игру в памяти и записывает каждое её изменение в [store]. Сама правил не знает: берёт снимок
  * (игра + питомец), отдаёт его [GameEngine], записывает результат целиком одной записью.
  *
- * Действие игры экрану ждать диска не приходится: новое состояние публикуется в [snapshot] сразу, а запись уходит
- * в фон на [io] (Dispatchers.IO). Записи идут строго по одной и по порядку, и на диск всегда ложится последняя
- * игра; если несколько изменений успели накопиться, пишется только последнее — оно содержит все. Сбой записи
- * игру не откатывает: несохранённое остаётся в памяти и уйдёт на диск со следующим изменением.
- *
- * Создание игры и сбросы, наоборот, ждут записи: их ошибку экран показывает, а сбросу нельзя оставить
- * в очереди старую игру, которая потом воскресла бы на диске.
- *
- * Команды идут строго по одной, чтобы два быстрых нажатия не породили гонку чтения и записи.
+ * Запись идёт раньше публикации: [snapshot] меняется только после успешной записи, поэтому он всегда равен
+ * тому, что лежит на диске, а при сбое команда не применяется и возвращает [StorageError] — его обрабатывает
+ * ViewModel. Сама запись — suspend и идёт на Dispatchers.IO внутри [store]. Команды идут строго по одной,
+ * чтобы два быстрых нажатия не породили гонку чтения и записи.
  *
  * Сегодняшнюю дату для правил недели берёт из [clock]; в тестах его подменяют. [adventures] — приключения из
  * контента: от них зависит, можно ли закончить неделю.
@@ -64,19 +55,12 @@ class GameRepositoryImpl(
     private val startBalance: Int = GameRules.START_BALANCE,
     private val clock: Clock = Clock.systemDefaultZone(),
     private val adventures: List<Adventure> = emptyList(),
-    private val io: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : GameRepository {
 
     private val _snapshot = MutableStateFlow<GameSnapshot?>(null)
     override val snapshot: StateFlow<GameSnapshot?> = _snapshot.asStateFlow()
 
     private val mutex = Mutex()
-
-    /** Изменение, ещё не записанное на диск; null — диск догнал память. */
-    private val unsaved = AtomicReference<GameSnapshot?>(null)
-
-    /** Записи на диск — строго по одной, чтобы последней легла последняя игра. */
-    private val writes = Mutex()
 
     override suspend fun load(): Result<GameSnapshot?, StorageError> = mutex.withLock {
         store.load().onSuccess { _snapshot.value = it }
@@ -129,10 +113,7 @@ class GameRepositoryImpl(
         execute { GameEngine.finishWeek(it, today(), adventures) }
 
     override suspend fun resetProfile(): EmptyResult<StorageError> = mutex.withLock {
-        writes.withLock {
-            unsaved.set(null)   // несохранённая игра больше не нужна: её не должно оказаться на диске после сброса
-            store.clear()
-        }.onSuccess { _snapshot.value = null }
+        store.clear().onSuccess { _snapshot.value = null }
     }
 
     override suspend fun resetToDemo(): EmptyResult<StorageError> = mutex.withLock {
@@ -149,29 +130,13 @@ class GameRepositoryImpl(
             val current = checkNotNull(_snapshot.value) { "Питомец ещё не создан" }
             val transition = command(current)
             // Команда, которую отклонили правила, ничего не меняет: писать на диск нечего
-            if (transition.game != current) {
-                _snapshot.value = transition.game
-                unsaved.set(transition.game)
-                io.launch { flush() }
-            }
-            Result.Success(transition.result)
+            if (transition.game == current) return@withLock Result.Success(transition.result)
+            persist(transition.game).map { transition.result }
         }
-
-    /**
-     * Пишет последнее несохранённое изменение. При сбое оно остаётся несохранённым и уйдёт со следующим.
-     * ponytail: повтора по таймеру нет — если сбои записи станут не редкостью, добавить повтор с паузой.
-     */
-    private suspend fun flush() = writes.withLock {
-        val game = unsaved.getAndSet(null) ?: return@withLock
-        if (store.save(game) is Result.Error) unsaved.compareAndSet(null, game)
-    }
 
     private fun today(): LocalDate = LocalDate.now(clock)
 
-    /** Для создания игры и сбросов: записывает [new], дожидаясь записи, и только после успеха делает его текущим. */
+    /** Записывает [new] и только после успеха делает его текущим; ошибка записи уходит вызывающему. */
     private suspend fun persist(new: GameSnapshot): EmptyResult<StorageError> =
-        writes.withLock {
-            unsaved.set(null)   // прежняя несохранённая игра заменяется новой целиком
-            store.save(new)
-        }.onSuccess { _snapshot.value = new }
+        store.save(new).onSuccess { _snapshot.value = new }
 }

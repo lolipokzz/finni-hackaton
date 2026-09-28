@@ -69,6 +69,8 @@ enum class FeedbackKey(val id: String) {
     STORAGE_WRITE_FAILED("storage.write_failed"),
     STORAGE_CORRUPTED("storage.corrupted"),
     STORAGE_INCOMPATIBLE("storage.incompatible"),
+    STORAGE_NO_SPACE("storage.no_space"),
+    STORAGE_NO_ACCESS("storage.no_access"),
 
     // Приключение недели: разбор каждого шага
     ADVENTURE_PAY_EXACT("adventure.pay_exact"),

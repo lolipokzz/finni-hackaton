@@ -45,7 +45,7 @@ class PetCreationViewModel(
                 is Result.Error -> when (loaded.error) {
                     // Сохранение уже сброшено: игру не вернуть, начинаем заново, но говорим об этом
                     StorageError.CORRUPTED, StorageError.INCOMPATIBLE_VERSION -> loaded.error
-                    StorageError.READ_FAILED, StorageError.WRITE_FAILED -> {
+                    StorageError.READ_FAILED, StorageError.WRITE_FAILED, StorageError.NO_SPACE, StorageError.NO_ACCESS -> {
                         _state.value = PetCreationUiState.LoadFailed(loaded.error)
                         return@launch
                     }

@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.presentation.components
 
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.SnackbarData
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.clickable
@@ -452,3 +455,40 @@ fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)?
         }
     }
 }
+
+/**
+ * Сообщение внизу экрана в стиле наклеек: кремовая плашка в белой обводке, текст и бирюзовая текстовая кнопка
+ * (например, «Повторить»). TalkBack зачитывает его сам: область «живая».
+ */
+@Composable
+fun FinniSnackbar(data: SnackbarData) {
+    Row(
+        Modifier
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .creamCard(RoundedCornerShape(24.dp), elevation = 10.dp)
+            .padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+            .heightIn(min = 52.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            data.visuals.message,
+            fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink,
+            modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+        )
+        data.visuals.actionLabel?.let { label ->
+            Text(
+                label,
+                fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .heightIn(min = 48.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = data::performAction)
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
+            )
+        }
+    }
+}
+
