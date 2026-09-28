@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.events.ObserveAsEvents
+
 import ru.larpinovplay.finniapp.presentation.pet.title
 import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
@@ -24,6 +26,12 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 @Composable
 fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val onAction = viewModel::onAction
+    ObserveAsEvents(viewModel.events) { event ->
+        when (event) {
+            AdultEvent.Done -> onBack()
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         RoomBackground()
         Column(
@@ -38,7 +46,7 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
                     Text("${state.first} + ${state.second} = ?", style = MaterialTheme.typography.headlineMedium)
                     OutlinedTextField(
                         value = state.answer,
-                        onValueChange = viewModel::changeAnswer,
+                        onValueChange = { onAction(AdultAction.ChangeAnswer(it)) },
                         label = { Text("Ответ") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
@@ -46,7 +54,7 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
                         modifier = Modifier.fillMaxWidth(),
                     )
                     state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    Button(onClick = viewModel::unlock, enabled = state.answer.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = { onAction(AdultAction.Unlock) }, enabled = state.answer.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                         Text("Открыть")
                     }
                 }
@@ -79,22 +87,22 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
                     }
                 }
                 AdultCard("Настройки") {
-                    PreferenceSwitch("Звук", state.settings.soundEnabled, !state.busy, viewModel::setSound)
-                    PreferenceSwitch("Анимации", state.settings.animationsEnabled, !state.busy, viewModel::setAnimations)
+                    PreferenceSwitch("Звук", state.settings.soundEnabled, !state.busy) { onAction(AdultAction.SetSound(it)) }
+                    PreferenceSwitch("Анимации", state.settings.animationsEnabled, !state.busy) { onAction(AdultAction.SetAnimations(it)) }
                     // Микрофон: звук обрабатывается только на устройстве, не сохраняется и никуда не отправляется
-                    PreferenceSwitch("Кот повторяет слова (микрофон)", state.settings.voiceRepeatEnabled, !state.busy, viewModel::setVoiceRepeat)
+                    PreferenceSwitch("Кот повторяет слова (микрофон)", state.settings.voiceRepeatEnabled, !state.busy) { onAction(AdultAction.SetVoiceRepeat(it)) }
                 }
                 AdultCard("Демонстрационный режим") {
                     Text("Тестовый питомец, 100 монет, первая неделя. Игровые недели завершаются кнопкой, без ожидания реального времени.")
                     Text("Включение демо заменит текущий профиль и его прогресс.")
-                    OutlinedButton(onClick = { viewModel.request(AdultConfirmation.DEMO) }, enabled = !state.busy) {
+                    OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.DEMO)) }, enabled = !state.busy) {
                         Text(if (state.snapshot?.state?.demoMode == true) "Сбросить демо" else "Включить демо")
                     }
                 }
                 AdultCard("Управление данными") {
                     Text("Сброс удаляет питомца и игровой прогресс. Удаление всех данных дополнительно возвращает настройки к исходным.")
-                    OutlinedButton(onClick = { viewModel.request(AdultConfirmation.RESET_PROFILE) }, enabled = !state.busy) { Text("Сбросить профиль") }
-                    OutlinedButton(onClick = { viewModel.request(AdultConfirmation.DELETE_ALL) }, enabled = !state.busy) { Text("Удалить все данные") }
+                    OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.RESET_PROFILE)) }, enabled = !state.busy) { Text("Сбросить профиль") }
+                    OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.DELETE_ALL)) }, enabled = !state.busy) { Text("Удалить все данные") }
                 }
                 state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
@@ -112,11 +120,11 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
             AdultConfirmation.DEMO -> "Текущий питомец и весь игровой прогресс будут заменены тестовым профилем: Финни Демо, 100 монет, неделя 1."
         }
         AlertDialog(
-            onDismissRequest = viewModel::dismissConfirmation,
+            onDismissRequest = { onAction(AdultAction.DismissConfirmation) },
             title = { Text(title) },
             text = { Text("$explanation Отменить это действие после подтверждения нельзя.") },
-            confirmButton = { TextButton(onClick = { viewModel.confirm(onBack) }, enabled = !state.busy) { Text(if (state.busy) "Подождите…" else "Подтвердить") } },
-            dismissButton = { TextButton(onClick = viewModel::dismissConfirmation, enabled = !state.busy) { Text("Отмена") } },
+            confirmButton = { TextButton(onClick = { onAction(AdultAction.Confirm) }, enabled = !state.busy) { Text(if (state.busy) "Подождите…" else "Подтвердить") } },
+            dismissButton = { TextButton(onClick = { onAction(AdultAction.DismissConfirmation) }, enabled = !state.busy) { Text("Отмена") } },
         )
     }
 }

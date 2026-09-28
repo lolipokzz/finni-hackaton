@@ -86,7 +86,7 @@ fun TasksScreen(
         onOpenTask = onOpenTask,
         onOpenAdventure = onOpenAdventure,
         onBack = onBack,
-        onSkipTutorialStep = viewModel::skipTutorialStep,
+        onSkipTutorialStep = { viewModel.onAction(TasksAction.SkipTutorialStep) },
         modifier = modifier,
     )
 }

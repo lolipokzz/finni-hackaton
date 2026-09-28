@@ -92,7 +92,7 @@ fun SettingsScreen(
     val settings by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreenContent(
         settings = settings,
-        onSettingsChange = viewModel::onSettingsChange,
+        onAction = viewModel::onAction,
         onBack = onBack,
         onOpenAdult = onOpenAdult,
         modifier = modifier,
@@ -102,7 +102,7 @@ fun SettingsScreen(
 @Composable
 fun SettingsScreenContent(
     settings: AppSettings,
-    onSettingsChange: (AppSettings) -> Unit,
+    onAction: (SettingsAction) -> Unit,
     onBack: () -> Unit,
     onOpenAdult: () -> Unit,
     modifier: Modifier = Modifier,
@@ -127,15 +127,16 @@ fun SettingsScreenContent(
                         Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp).padding(horizontal = 14.dp, vertical = 6.dp),
                     ) {
                         ToggleRow(R.drawable.ic_sound, Color(0xFFE6EEFF), "Звуки", "Сигналы при покупках и наградах", settings.soundEnabled) {
-                            onSettingsChange(settings.copy(soundEnabled = it))
+                            onAction(SettingsAction.SetSound(it))
                         }
                         DashedDivider()
                         ToggleRow(R.drawable.ic_sparkles, Color(0xFFFFF5C9), "Анимации", "Финни двигается и машет", settings.animationsEnabled) {
-                            onSettingsChange(settings.copy(animationsEnabled = it))
+                            onAction(SettingsAction.SetAnimations(it))
                         }
                         DashedDivider()
                         ToggleRow(R.drawable.ic_bulb, Color(0xFFFFF0E6), "Подсказки", "Финни говорит, что сделать дальше", settings.tipsEnabled) {
-                            onSettingsChange(settings.copy(tipsEnabled = it))
+                            onAction(SettingsAction.SetTips(it))
+
                         }
                     }
                 }

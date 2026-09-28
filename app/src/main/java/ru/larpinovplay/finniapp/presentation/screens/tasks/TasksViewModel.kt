@@ -38,8 +38,13 @@ class TasksViewModel(
         coach = game.tutorialStep == TutorialStep.TASKS,
     )
 
-    /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
-    fun skipTutorialStep() {
+    fun onAction(action: TasksAction) {
+        when (action) {
+            TasksAction.SkipTutorialStep -> skipTutorialStep()
+        }
+    }
+
+    private fun skipTutorialStep() {
         viewModelScope.launch { game.skipTutorialStep(TutorialStep.TASKS).orSnackbar { skipTutorialStep() } }
     }
 }
