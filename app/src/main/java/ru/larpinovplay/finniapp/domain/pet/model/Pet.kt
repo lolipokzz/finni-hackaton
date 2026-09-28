@@ -2,10 +2,11 @@ package ru.larpinovplay.finniapp.domain.pet.model
 
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
+import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 
 /**
  * Питомец: единственный источник правды о его состоянии. Экраны показывают его как есть и
- * не копируют поля в свои состояния, а игра меняет его вместе со своим состоянием ([GameSnapshot][ru.larpinovplay.finniapp.domain.game.model.GameSnapshot]).
+ * не копируют поля в свои состояния, а игра меняет его вместе со своим состоянием ([GameSnapshot]).
  *
  * Неизменяемый: методы изменения возвращают нового питомца. Стадия роста не хранится, а выводится
  * из очков роста, поэтому не может разойтись с ними (docs/04-rules-and-formulas.md, «Рост питомца»).

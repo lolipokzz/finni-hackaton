@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- MingCute pencil_fill (через Supericons) -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#5B7BFF" android:fillType="evenOdd" android:pathData="M 20.131 3.16 a 3 3 0 0 0 -4.242 0 l -.707 .708 4.95 4.95 .706 -.707 a 3 3 0 0 0 0 -4.243 l -.707 -.707 Z m -1.414 7.072 -4.95 -4.95 -9.09 9.091 a 1.5 1.5 0 0 0 -.401 .724 l -1.029 4.455 a 1 1 0 0 0 1.2 1.2 l 4.456 -1.028 a 1.5 1.5 0 0 0 .723 -.401 z"/>
-</vector>

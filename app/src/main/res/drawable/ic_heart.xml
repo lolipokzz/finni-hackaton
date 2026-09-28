@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- MingCute heart_fill (через Supericons) -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#FF6FA8" android:pathData="M 18.494 3.801 c 2.095 1.221 3.569 3.7 3.504 6.592 C 21.86 16.5 13.5 21 12 21 s -9.861 -4.5 -9.998 -10.607 c -.065 -2.892 1.409 -5.37 3.504 -6.592 C 7.466 2.66 9.928 2.653 12 4.338 c 2.072 -1.685 4.534 -1.679 6.494 -.537"/>
-</vector>

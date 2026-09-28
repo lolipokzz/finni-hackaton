@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -25,7 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -92,7 +94,7 @@ fun SettingsScreen(
     val settings by viewModel.state.collectAsStateWithLifecycle()
     SettingsScreenContent(
         settings = settings,
-        onSettingsChange = viewModel::onSettingsChange,
+        onAction = viewModel::onAction,
         onBack = onBack,
         onOpenAdult = onOpenAdult,
         modifier = modifier,
@@ -102,14 +104,14 @@ fun SettingsScreen(
 @Composable
 fun SettingsScreenContent(
     settings: AppSettings,
-    onSettingsChange: (AppSettings) -> Unit,
+    onAction: (SettingsAction) -> Unit,
     onBack: () -> Unit,
     onOpenAdult: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Раскрытие карточек «Как играть» и «Словарик» — вид одного экрана, в ViewModel ему делать нечего
-    var introOpen by remember { mutableStateOf(false) }
-    var glossaryOpen by remember { mutableStateOf(false) }
+    var introOpen by rememberSaveable { mutableStateOf(false) }
+    var glossaryOpen by rememberSaveable { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
@@ -127,15 +129,16 @@ fun SettingsScreenContent(
                         Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp).padding(horizontal = 14.dp, vertical = 6.dp),
                     ) {
                         ToggleRow(R.drawable.ic_sound, Color(0xFFE6EEFF), "Звуки", "Сигналы при покупках и наградах", settings.soundEnabled) {
-                            onSettingsChange(settings.copy(soundEnabled = it))
+                            onAction(SettingsAction.SetSound(it))
                         }
                         DashedDivider()
                         ToggleRow(R.drawable.ic_sparkles, Color(0xFFFFF5C9), "Анимации", "Финни двигается и машет", settings.animationsEnabled) {
-                            onSettingsChange(settings.copy(animationsEnabled = it))
+                            onAction(SettingsAction.SetAnimations(it))
                         }
                         DashedDivider()
                         ToggleRow(R.drawable.ic_bulb, Color(0xFFFFF0E6), "Подсказки", "Финни говорит, что сделать дальше", settings.tipsEnabled) {
-                            onSettingsChange(settings.copy(tipsEnabled = it))
+                            onAction(SettingsAction.SetTips(it))
+
                         }
                     }
                 }
@@ -154,7 +157,7 @@ fun SettingsScreenContent(
                                 CardSticker(card.icon, card.tint, size = 44.dp, iconScale = 0.6f)
                                 Column(Modifier.weight(1f)) {
                                     Text(card.title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-                                    Text(card.text, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                                    Text(card.text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                                 }
                             }
                         }
@@ -176,7 +179,7 @@ fun SettingsScreenContent(
                                     term, fontSize = 14.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
                                     modifier = Modifier.clip(CircleShape).background(FinniColors.CardMint).padding(horizontal = 10.dp, vertical = 3.dp),
                                 )
-                                Text(text, fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                                Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                             }
                         }
                     }
@@ -194,7 +197,7 @@ fun SettingsScreenContent(
                             Text(
                                 "«Питомец Финни» учит планировать монеты, отличать обязательное от необязательного и копить на мечту. " +
                                     "Здесь нет настоящих денег, рекламы и покупок. Все данные хранятся только на этом устройстве.",
-                                fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0B5E4F),
+                                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = Color(0xFF0B5E4F),
                             )
                         }
                     }
@@ -206,7 +209,7 @@ fun SettingsScreenContent(
                         onClick = onOpenAdult,
                         shape = RoundedCornerShape(28.dp),
                         color = Color.Transparent,
-                        modifier = Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp),
+                        modifier = Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp).semantics { role = Role.Button },
                     ) {
                         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             CardSticker(R.drawable.ic_lock, FinniColors.Pebble, size = 48.dp, iconScale = 0.58f)
@@ -280,7 +283,11 @@ private fun ExpandableCard(
         modifier = Modifier
             .fillMaxWidth()
             .creamCard(shape, elevation = 8.dp)
-            .semantics { stateDescription = if (open) "Открыто" else "Свёрнуто" },
+            .semantics {
+                role = Role.Button
+                stateDescription = if (open) "Открыто" else "Свёрнуто"
+            },
+
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

@@ -6,7 +6,11 @@ sealed interface SavingsAction {
     data class GoalClicked(val goal: SavingsGoal) : SavingsAction
     data object ConfirmSwitch : SavingsAction
     data object DismissSwitch : SavingsAction
-    data class Deposit(val amount: Int) : SavingsAction
+
+    // Отложить: «−»/«+» меняют сумму, «Отложить» переводит её в копилку
+    data class ChangeDeposit(val increase: Boolean) : SavingsAction
+    data object Deposit : SavingsAction
+
     data object ReachGoalClicked : SavingsAction
     data object DismissReached : SavingsAction
 

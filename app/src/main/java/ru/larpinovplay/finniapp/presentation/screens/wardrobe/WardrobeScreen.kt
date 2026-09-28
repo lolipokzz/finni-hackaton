@@ -33,7 +33,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -41,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
-import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.DoneBadge
@@ -75,7 +75,7 @@ fun WardrobeScreen(
     SideEffect { petHost.spec = petHost.spec?.copy(accessories = state.accessories) }
     WardrobeScreenContent(
         state = state,
-        onToggle = viewModel::onToggle,
+        onAction = viewModel::onAction,
         onGoToShop = onGoToShop,
         onBack = onBack,
         petSlot = Modifier.onGloballyPositioned { petHost.setSlot(PetHostOwner.WARDROBE, it) },
@@ -86,7 +86,7 @@ fun WardrobeScreen(
 @Composable
 fun WardrobeScreenContent(
     state: WardrobeUiState,
-    onToggle: (ShopItem) -> Unit,
+    onAction: (WardrobeAction) -> Unit,
     onGoToShop: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -116,7 +116,7 @@ fun WardrobeScreenContent(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 tiles.forEach { (slot, entry) ->
                     if (entry != null) {
-                        ItemTile(entry, onToggle = { onToggle(entry.item) }, modifier = Modifier.weight(1f))
+                        ItemTile(entry, onToggle = { onAction(WardrobeAction.Toggle(entry.item)) }, modifier = Modifier.weight(1f))
                     } else {
                         EmptySlotTile(slot, onGoToShop, modifier = Modifier.weight(1f))
                     }
@@ -154,7 +154,7 @@ private fun ItemTile(entry: WardrobeItem, onToggle: () -> Unit, modifier: Modifi
             .then(if (entry.worn) Modifier.border(7.dp, FinniColors.Teal, shape) else Modifier)
             .clearAndSetSemantics {
                 role = Role.Switch
-                selected = entry.worn
+                toggleableState = ToggleableState(entry.worn)
                 contentDescription = "${item.name}, ${slot?.title?.lowercase().orEmpty()}: " + if (entry.worn) "надето. Снять" else "не надето. Надеть"
             },
     ) {

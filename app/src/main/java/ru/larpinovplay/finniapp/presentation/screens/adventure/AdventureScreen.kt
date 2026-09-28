@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,7 +42,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.selected
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -67,6 +73,8 @@ import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.screens.adventure.AdventureUiState.SceneCheck
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 /**
  * Приключение недели: короткий сюжет по шагам. Здесь не комната, а «улица»: своё небо приключения с лучами,
@@ -244,20 +252,19 @@ internal fun BodyText(text: String) {
 internal fun Hint(text: String) {
     var shown by remember { mutableStateOf(false) }   // раскрыта ли подсказка — состояние элемента, не экрана
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Surface(
+        Button(
             onClick = { shown = !shown },
             shape = CircleShape,
-            color = Color(0xFFFFF5C9),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFF5C9), contentColor = FinniColors.CoinInk),
+            contentPadding = PaddingValues(start = 10.dp, end = 16.dp),
             modifier = Modifier.height(48.dp),
         ) {
-            Row(Modifier.padding(start = 10.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Image(painterResource(R.drawable.ic_bulb), null, Modifier.size(24.dp))
-                Text(if (shown) "Скрыть подсказку" else "Подсказка", fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.CoinInk)
-            }
+            Image(painterResource(R.drawable.ic_bulb), null, Modifier.padding(end = 6.dp).size(24.dp))
+            Text(if (shown) "Скрыть подсказку" else "Подсказка", fontSize = 15.sp, fontWeight = FontWeight.Black)
         }
         AnimatedVisibility(shown) {
             Text(
-                text, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.CoinInk,
+                text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.CoinInk,
                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Color(0xFFFFF5C9)).padding(12.dp),
             )
         }
@@ -279,10 +286,11 @@ private fun ChangeScene(scene: AdventureScene.Change, state: AdventureUiState, l
             FactChip("Стоит", scene.price)
         }
         Hint(scene.hint)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        Row(Modifier.fillMaxWidth().selectableGroup(), horizontalArrangement = Arrangement.SpaceEvenly) {
             changeOptions(paid - scene.price).forEach { option ->
                 val chosen = check?.chosen == option
                 Surface(
+                    selected = chosen,
                     onClick = { onAction(AdventureAction.ChooseChange(option)) },
                     enabled = check == null,
                     shape = CircleShape,
@@ -292,7 +300,7 @@ private fun ChangeScene(scene: AdventureScene.Change, state: AdventureUiState, l
                         .size(72.dp)
                         .alpha(if (check != null && !chosen) 0.45f else 1f)
                         .border(if (chosen) 4.dp else 0.dp, if (chosen) FinniColors.Teal else Color.Transparent, CircleShape)
-                        .semantics { contentDescription = "Сдача $option"; selected = chosen },
+                        .semantics { contentDescription = "Сдача $option"; role = Role.RadioButton },
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Box(Modifier.size(54.dp).clip(CircleShape).background(Color(0xFFFFDD7A)))
@@ -324,7 +332,7 @@ private fun ChoiceScene(scene: AdventureScene.Choice, state: AdventureUiState, l
     SceneCard(R.drawable.ic_scene_question, "Вопрос", look) {
         BodyText(scene.text)
         Hint(scene.hint)
-        scene.options.forEachIndexed { i, option ->
+        Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(12.dp)) { scene.options.forEachIndexed { i, option ->
             val isChosen = option.id == chosen?.id
             val (bg, badge, badgeInk) = when {
                 isChosen && option.correct -> Triple(FinniColors.CardMint, FinniColors.Teal, Color.White)
@@ -332,16 +340,17 @@ private fun ChoiceScene(scene: AdventureScene.Choice, state: AdventureUiState, l
                 else -> Triple(Color.White, look.tint, FinniColors.Ink)
             }
             Surface(
+                selected = isChosen,
                 onClick = { onAction(AdventureAction.ChooseOption(option.id)) },
                 enabled = chosen == null,
                 shape = RoundedCornerShape(20.dp),
                 color = bg,
-                border = androidx.compose.foundation.BorderStroke(2.dp, if (isChosen) badge else FinniColors.Dashed),
+                border = BorderStroke(2.dp, if (isChosen) badge else FinniColors.Dashed),
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp)
                     .alpha(if (chosen != null && !isChosen) 0.5f else 1f)
-                    .semantics { selected = isChosen },
+                    .semantics { role = Role.RadioButton },
             ) {
                 Row(Modifier.padding(horizontal = 10.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Box(Modifier.size(36.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) {
@@ -354,7 +363,7 @@ private fun ChoiceScene(scene: AdventureScene.Choice, state: AdventureUiState, l
                     Text(option.text, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink, modifier = Modifier.weight(1f))
                 }
             }
-        }
+        } }
     }
 }
 
@@ -446,11 +455,11 @@ private fun FinishCard(finish: AdventureUiState.Finish, look: AdventureLook, rew
                 textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
             )
             if (result == null) {
-                Text(feedback.text(FeedbackKey.ADVENTURE_REPLAY), fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
+                Text(feedback.text(FeedbackKey.ADVENTURE_REPLAY), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
             } else {
                 Text(
                     feedback.text(if (result.perfect) FeedbackKey.ADVENTURE_DONE_PERFECT else FeedbackKey.ADVENTURE_DONE_MISTAKES),
-                    fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Row(
@@ -491,7 +500,7 @@ internal fun PickMark(picked: Boolean, size: Dp = 30.dp) {
             val w = 2.5.dp.toPx()
             drawCircle(
                 FinniColors.InkMuted.copy(alpha = 0.5f), radius = this.size.minDimension / 2 - w / 2,
-                style = androidx.compose.ui.graphics.drawscope.Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
+                style = Stroke(w, pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx()))),
             )
         }
     }

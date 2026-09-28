@@ -21,18 +21,13 @@ object FinniColors {
     // Поверхности
     val Wall = Color(0xFFB095D9)         // верх стены на фоне-иллюстрации: виден под системными панелями
     val Card = Color(0xF5FFFFFF)         // белая карточка с лёгкой прозрачностью
-    val CardPeach = Color(0xFFFFF3EA)
-    val CardPink = Color(0xFFFFE8F1)
     val CardMint = Color(0xFFE8F8EF)
     val Track = Color(0xFFE9ECF7)        // фон шкал
 
-    // Шкалы состояния
-    val Satiety = Color(0xFFF9B92B)
-    val Care = Color(0xFFFF7BA9)
+    // Шкала настроения в заданиях
     val Mood = Color(0xFF5CD69C)
 
     // Прочее
-    val Green = Color(0xFF4CD37B)
     val Coral = Color(0xFFFF6F61)
     val Warning = Color(0xFFFF5A5F)
     val Sunny = Color(0xFFFFE7A3)

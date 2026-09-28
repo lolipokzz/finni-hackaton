@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.domain.adventure.model
 
+import ru.larpinovplay.finniapp.domain.adventure.checkPayment
+import ru.larpinovplay.finniapp.domain.adventure.checkBasket
+
 /**
  * Приключение недели: короткий сюжет из сцен (справочник контента, только чтение).
  * Приключения идут по порядку списка, одно за неделю. Числа внутри сцен свои и реальный баланс не трогают:
@@ -28,7 +31,7 @@ sealed interface AdventureScene {
 
     /**
      * Заплатить за товар ценой [price] деньгами из кошелька: [wallet] — номиналы купюр и монет, повторы допустимы.
-     * Верно — хватает и нет лишней купюры или монеты (см. [checkPayment][ru.larpinovplay.finniapp.domain.adventure.checkPayment]).
+     * Верно — хватает и нет лишней купюры или монеты (см. [checkPayment]).
      */
     data class Pay(val text: String, val price: Int, val wallet: List<Int>, val hint: String) : AdventureScene
 
@@ -46,7 +49,7 @@ sealed interface AdventureScene {
 
     /**
      * Собрать покупки на [budget]: уложиться в бюджет и не забыть обязательное ([Item.required]).
-     * Проверка — [checkBasket][ru.larpinovplay.finniapp.domain.adventure.checkBasket].
+     * Проверка — [checkBasket].
      */
     data class Basket(val text: String, val budget: Int, val items: List<Item>, val hint: String) : AdventureScene {
         data class Item(val name: String, val price: Int, val required: Boolean = false)

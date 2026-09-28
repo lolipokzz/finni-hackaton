@@ -8,11 +8,12 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import java.time.LocalDate
+import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
 
 /**
  * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб.
  * [purchases] — покупки текущей недели (обнуляются в конце недели), [wardrobe] — купленная одежда, она остаётся.
- * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine][ru.larpinovplay.finniapp.domain.game.engine.GameEngine].
+ * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine].
  */
 data class GameState(
     val demoMode: Boolean = false,
@@ -42,9 +43,6 @@ data class GameState(
 
     /** Сколько за эту неделю потрачено на товары [category]. */
     fun spentThisWeek(category: ShopCategory): Int = purchases.filter { it.category == category }.sumOf { it.price }
-
-    /** Сколько по плану недели ещё осталось на [category]; меньше нуля — потрачено сверх плана, null — плана нет. */
-    fun planLeft(category: ShopCategory): Int? = plan?.let { it[category.budgetDirection] - spentThisWeek(category) }
 
     /** Сколько за эту неделю отложено за вычетом снятого; может быть меньше нуля. Покупка цели сюда не входит. */
     val savedThisWeek: Int get() = depositsThisWeek.sum() - withdrawalsThisWeek.sum()
@@ -110,6 +108,9 @@ data class GameState(
             val ofTopic = tasks.filter { it.topic == topic }
             TopicProgress(topic, total = ofTopic.size, done = ofTopic.count { taskStatus(it) == TaskStatus.DONE })
         }
+
+    /** Сколько не хватает до цели, если бы в копилке было [savingsIfAny]; 0 — хватает, null — цели нет. */
+    fun goalRemaining(savingsIfAny: Int = savings): Int? = goal?.let { (it.cost - savingsIfAny).coerceAtLeast(0) }
 
     /** Срок в неделях по среднему пополнению за последние 3 закрытые недели, иначе по текущей. */
     fun weeksToGoal(): Int? = weeksToGoal(savings)

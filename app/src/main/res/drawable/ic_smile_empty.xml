@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- MingCute emoji_line (через Supericons) -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp" android:height="24dp"
-    android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#B7BCD3" android:pathData="M 12 2 c 5.523 0 10 4.477 10 10 s -4.477 10 -10 10 S 2 17.523 2 12 6.477 2 12 2 m 0 2 a 8 8 0 1 0 0 16 8 8 0 0 0 0 -16 m 2.8 9.857 a 1 1 0 1 1 1.4 1.428 A 5.984 5.984 0 0 1 12 17 a 5.984 5.984 0 0 1 -4.2 -1.715 1 1 0 0 1 1.4 -1.428 A 3.984 3.984 0 0 0 12 15 c 1.09 0 2.077 -.435 2.8 -1.143 M 8.5 8 a 1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0 -3 m 7 0 a 1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0 -3"/>
-</vector>

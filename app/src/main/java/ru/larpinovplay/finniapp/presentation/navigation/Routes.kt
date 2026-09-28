@@ -1,9 +1,9 @@
 package ru.larpinovplay.finniapp.presentation.navigation
 
-import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
+import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskOutcomeUi
 
 /**
  * Граф навигации (docs/07-screens.md#граф-навигации), после того как питомец создан:
@@ -35,7 +35,7 @@ data class TaskPlay(val taskId: String) : NavKey
 
 /** Итог задания. Показывается диалогом поверх [Tasks], поэтому несёт результат в самом ключе. */
 @Serializable
-data class TaskResult(val taskId: String, val outcome: TaskOutcome) : NavKey
+data class TaskResult(val taskId: String, val outcome: TaskOutcomeUi) : NavKey
 
 /** Приключение недели: сюжет по шагам, итог показывается на том же экране. */
 @Serializable
@@ -67,5 +67,4 @@ fun HomeSection.toRoute(): NavKey = when (this) {
     HomeSection.SAVINGS -> Savings
     HomeSection.PROGRESS -> Progress
     HomeSection.SETTINGS -> Settings
-    HomeSection.ADULT -> Adult
 }

@@ -176,6 +176,17 @@ class GameEngineTest {
     }
 
     @Test
+    fun goalRemainingNeverGoesBelowZero() {
+        assertNull(newGame().state.goalRemaining())   // цели нет
+
+        val saved = newGame().then { GameEngine.chooseGoal(it, goal) }.then { GameEngine.deposit(it, 30) }
+
+        assertEquals(goal.cost - 30, saved.state.goalRemaining())
+        assertEquals(goal.cost - 10, saved.state.goalRemaining(10))       // «если заберу 20»
+        assertEquals(0, saved.state.goalRemaining(goal.cost + 5))         // накоплено больше цены
+    }
+
+    @Test
     fun tripGoalSendsPetAwayOnlyForThatWeek() {
         val sea = content.goals.first { it.trip }
         val saved = newGame(startBalance = 200).then { GameEngine.chooseGoal(it, sea) }.then { GameEngine.deposit(it, sea.cost) }
@@ -245,20 +256,6 @@ class GameEngineTest {
         assertEquals(20, game.state.savings)
         assertEquals(20, game.state.savedThisWeek)
         assertEquals(LedgerReason.PlannedDeposit, game.state.ledger.last().reason)
-    }
-
-    @Test
-    fun planLeftShowsWhatRemainsPerCategoryAndGoesBelowZeroWhenOverspent() {
-        val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
-        assertNull(newGame().state.planLeft(ShopCategory.MANDATORY))   // плана ещё нет
-
-        val game = newGame()
-            .then { GameEngine.confirmPlan(it, BudgetPlan(mandatory = 30, optional = 5, savings = 65)) }
-            .then { GameEngine.buy(it, food) }
-            .then { GameEngine.buy(it, treat) }
-
-        assertEquals(30 - food.price, game.state.planLeft(ShopCategory.MANDATORY))
-        assertEquals(5 - treat.price, game.state.planLeft(ShopCategory.OPTIONAL))
     }
 
     @Test

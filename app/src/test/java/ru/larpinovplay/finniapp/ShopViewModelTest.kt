@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -75,6 +76,8 @@ class ShopViewModelTest {
         val notEnough = vm.state.value.feedback as PurchaseFeedback.NotEnough
         assertEquals(meal.price - 10, notEnough.missing)
         assertTrue(notEnough.canTakeFromSavings)
+        assertEquals(90 - notEnough.missing, notEnough.savingsAfter)
+        assertNull(notEnough.goalRemainingAfter)   // мечта не выбрана
 
         vm.onAction(ShopAction.BuyWithSavings)
 

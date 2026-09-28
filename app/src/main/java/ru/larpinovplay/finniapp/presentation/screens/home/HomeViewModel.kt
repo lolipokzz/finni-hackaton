@@ -74,7 +74,6 @@ class HomeViewModel(
             HomeAction.DismissDeeds -> dismissDeeds()
             HomeAction.SkipTutorialStep -> skipTutorialStep()
             HomeAction.FinishTutorial -> finishTutorial()
-            HomeAction.PetTapped -> Unit       // TODO: реакция питомца
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
     }

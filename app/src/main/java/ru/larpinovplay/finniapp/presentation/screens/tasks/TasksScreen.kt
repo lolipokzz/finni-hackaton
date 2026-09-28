@@ -23,16 +23,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +42,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,16 +50,14 @@ import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.task.model.Task
-import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import ru.larpinovplay.finniapp.presentation.adventure.AdventureSky
 import ru.larpinovplay.finniapp.presentation.adventure.look
-import ru.larpinovplay.finniapp.presentation.components.BackButton
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
-import ru.larpinovplay.finniapp.presentation.components.StatRow
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.task.title
@@ -89,7 +82,7 @@ fun TasksScreen(
         onOpenTask = onOpenTask,
         onOpenAdventure = onOpenAdventure,
         onBack = onBack,
-        onSkipTutorialStep = viewModel::skipTutorialStep,
+        onSkipTutorialStep = { viewModel.onAction(TasksAction.SkipTutorialStep) },
         modifier = modifier,
     )
 }
@@ -110,11 +103,7 @@ fun TasksScreenContent(
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackButton(onBack)
-                Text("Задания", style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
-                state.perWeek?.let { WeekCounter(state.doneThisWeek, it) }
-            }
+            ScreenHeader("Задания", onBack) { state.perWeek?.let { WeekCounter(state.doneThisWeek, it) } }
             Spacer(Modifier.height(14.dp))
             LazyColumn(
                 state = list,
@@ -208,7 +197,7 @@ private fun AdventureHero(adventure: Adventure, onOpen: () -> Unit) {
             }
             Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 14.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(adventure.title, fontSize = 22.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink)
-                Text(adventure.intro, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                Text(adventure.intro, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     // Тропинка из шагов: сколько будет сцен
                     repeat(adventure.scenes.size) {
@@ -264,7 +253,7 @@ private fun AdventureDone() {
         }
         Column(Modifier.weight(1f)) {
             Text("Приключение пройдено!", fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-            Text("Следующее — на новой неделе", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            Text("Следующее — на новой неделе", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
     }
 }
@@ -343,77 +332,6 @@ private fun TaskRow(task: Task, status: TaskStatus, modifier: Modifier = Modifie
                 )
             }
         }
-    }
-}
-
-// ---------- Результат ----------
-
-/**
- * Содержимое диалога итога. Само окно (Dialog) создаёт навигация: маршрут TaskResult
- * помечен как диалог, поэтому здесь только карточка, без AlertDialog.
- */
-@Composable
-fun TaskResultCard(result: TaskOutcome, onDismiss: () -> Unit, modifier: Modifier = Modifier, retryNow: Boolean = false) {
-    Column(
-        modifier
-            .padding(horizontal = 14.dp)
-            .fillMaxWidth()
-            .creamCard(RoundedCornerShape(34.dp), elevation = 20.dp)
-            .padding(start = 18.dp, end = 18.dp, top = 20.dp, bottom = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            Modifier.size(72.dp).clip(CircleShape).background(if (result.success) FinniColors.Teal else FinniColors.WarnTint)
-                .border(4.dp, Color.White, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (result.success) Image(painterResource(R.drawable.ic_check), null, Modifier.size(34.dp))
-            else Text("!", fontSize = 34.sp, fontWeight = FontWeight.Black, color = FinniColors.WarnInk)
-        }
-        Text(
-            if (result.success) "Верно!" else "Почти получилось",
-            fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() },
-        )
-        result.consequence?.let {
-            Text(it, fontSize = 16.sp, lineHeight = 21.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink, textAlign = TextAlign.Center)
-        }
-        Text(result.explanation, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
-        StatRow("Монеты", "+${result.reward}", coin = true)
-        if (!result.success) {
-            Text(
-                // В демо после ошибки задание можно решить сразу ещё раз (ТЗ 2.5.8), в игре — на следующей неделе
-                if (retryNow) "Можно сразу попробовать ещё раз" else "Это задание можно попробовать снова на следующей неделе",
-                fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
-            )
-        }
-        TealButton("Понятно", R.drawable.ic_check, onDismiss)
-    }
-}
-
-/** Нужен для превью и тестов виджета списка покупок. */
-@Composable
-internal fun ShopListRow(item: TaskPayload.ShopList.Item, checked: Boolean, onToggle: () -> Unit) {
-    Surface(onClick = onToggle, shape = RoundedCornerShape(16.dp), color = if (checked) FinniColors.BlueLight else Color.White) {
-        Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = checked, onCheckedChange = { onToggle() })
-            Column(Modifier.weight(1f)) {
-                Text(item.name, style = MaterialTheme.typography.bodyLarge)
-                Text(if (item.mandatory) "нужное" else "желаемое", style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
-            }
-            Text("${item.price}", style = MaterialTheme.typography.titleMedium)
-            Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(18.dp))
-        }
-    }
-}
-
-@Composable
-internal fun HintButton(hint: String) {
-    var shown by remember { mutableStateOf(false) }
-    TextButton(onClick = { shown = !shown }) { Text(if (shown) "Скрыть подсказку" else "Подсказка", style = MaterialTheme.typography.labelLarge) }
-    if (shown) {
-        Text(hint, style = MaterialTheme.typography.bodyMedium, color = FinniColors.NavyMuted, modifier = Modifier.padding(horizontal = 8.dp))
     }
 }
 

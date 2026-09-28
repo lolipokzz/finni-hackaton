@@ -33,6 +33,7 @@ class ProgressViewModel(
             week = game.week,
             goal = game.goal,
             savings = game.savings,
+            goalRemaining = game.goalRemaining(),
             completedGoals = game.completedGoals,
             taskTopics = game.topicProgress(content.tasks),
             lastWeek = game.history.lastOrNull(),

@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -173,7 +174,7 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Paws(growth, size = 18.dp)
-                Text(text, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted)
+                Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted)
             }
         }
 
@@ -248,7 +249,7 @@ private fun TodoRow(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Image(painterResource(icon), null, Modifier.size(28.dp))
-        Text(text, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = ink, modifier = Modifier.weight(1f).padding(vertical = 6.dp))
+        Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = ink, modifier = Modifier.weight(1f).padding(vertical = 6.dp))
         go?.let { (label, section) -> PillButton(label, onClick = { goTo(section) }, color = buttonColor, ink = buttonInk) }
     }
 }
@@ -264,7 +265,7 @@ private fun FinishNote(text: String) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Image(painterResource(R.drawable.ic_moon), null, Modifier.size(22.dp))
-            Text(text, fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, modifier = Modifier.weight(1f))
+            Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, modifier = Modifier.weight(1f))
         }
     }
 }

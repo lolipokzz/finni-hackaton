@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -173,7 +174,7 @@ private fun Counter(
                 }
             }
             if (pieces.isEmpty()) {
-                Text("Перетащи сюда купюры и монеты из кошелька", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF9A7040))
+                Text("Перетащи сюда купюры и монеты из кошелька", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = Color(0xFF9A7040))
             } else {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     pieces.forEach { index ->

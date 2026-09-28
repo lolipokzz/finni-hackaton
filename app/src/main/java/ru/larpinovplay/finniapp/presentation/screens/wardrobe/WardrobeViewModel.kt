@@ -3,11 +3,10 @@ package ru.larpinovplay.finniapp.presentation.screens.wardrobe
 import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
@@ -19,16 +18,27 @@ import ru.larpinovplay.finniapp.presentation.pet.accessoryNode
 /** Гардероб: купленная одежда питомца, по одной вещи на место. Всё состояние — из игры. */
 class WardrobeViewModel(private val game: GameRepository) : ViewModel() {
 
-    val state: StateFlow<WardrobeUiState> = game.snapshot.filterNotNull()
-        .map(::toUiState)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, toUiState(game.requireSnapshot()))
+    private val _state = MutableStateFlow(toUiState(game.requireSnapshot()))
+    val state: StateFlow<WardrobeUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            game.snapshot.filterNotNull().collect { _state.value = toUiState(it) }
+        }
+    }
+
+    fun onAction(action: WardrobeAction) {
+        when (action) {
+            is WardrobeAction.Toggle -> toggle(action.item)
+        }
+    }
 
     /** Надетую вещь снимает, ненадетую надевает (прежняя вещь с того же места снимается сама). */
-    fun onToggle(item: ShopItem) {
+    private fun toggle(item: ShopItem) {
         val slot = item.slot ?: return
         val worn = game.requireSnapshot().pet.outfit[slot] == item.id
         viewModelScope.launch {
-            (if (worn) game.takeOff(slot) else game.wear(item)).orSnackbar { onToggle(item) }
+            (if (worn) game.takeOff(slot) else game.wear(item)).orSnackbar { toggle(item) }
         }
     }
 

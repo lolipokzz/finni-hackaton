@@ -38,6 +38,7 @@ class SavingsViewModel(
                         switchTo = it.switchTo,
                         reached = it.reached,
                         depositError = it.depositError,
+                        depositPicked = it.depositPicked,
                         withdraw = it.withdraw?.let { w -> withdrawDraft(snapshot.state, w.amount) },
                     )
                 }
@@ -50,7 +51,8 @@ class SavingsViewModel(
             is SavingsAction.GoalClicked -> onGoalClicked(action.goal)
             SavingsAction.ConfirmSwitch -> confirmSwitch()
             SavingsAction.DismissSwitch -> dismissSwitch()
-            is SavingsAction.Deposit -> deposit(action.amount)
+            is SavingsAction.ChangeDeposit -> changeDeposit(action.increase)
+            SavingsAction.Deposit -> deposit(_state.value.depositAmount)
             SavingsAction.ReachGoalClicked -> reachGoal()
             SavingsAction.DismissReached -> dismissReached()
             SavingsAction.WithdrawClicked -> openWithdraw()
@@ -102,6 +104,12 @@ class SavingsViewModel(
         }
     }
 
+    /** Шаг — [GameRules.PLAN_STEP], сумма — от шага до всего кошелька. */
+    private fun changeDeposit(increase: Boolean) = _state.update {
+        val step = if (increase) GameRules.PLAN_STEP else -GameRules.PLAN_STEP
+        it.copy(depositPicked = (it.depositAmount + step).coerceIn(GameRules.PLAN_STEP, it.depositMax))
+    }
+
     private fun deposit(amount: Int) {
         viewModelScope.launch {
             val rejected = game.deposit(amount).orSnackbar { deposit(amount) } as? DepositResult.Rejected
@@ -118,6 +126,8 @@ class SavingsViewModel(
             savingsBefore = game.savings,
             weeksBefore = game.weeksToGoal(),
             weeksAfter = game.weeksToGoal(game.savings - clamped),
+            remainingBefore = game.goalRemaining(),
+            remainingAfter = game.goalRemaining(game.savings - clamped),
         )
     }
 
@@ -146,6 +156,7 @@ class SavingsViewModel(
         goal = game.goal,
         goals = content.goals,
         weeksToGoal = game.weeksToGoal(),
+        goalRemaining = game.goalRemaining(),
         completedGoalIds = game.completedGoals.map { it.id }.toSet(),
         coach = game.tutorialStep == TutorialStep.GOAL,
     )

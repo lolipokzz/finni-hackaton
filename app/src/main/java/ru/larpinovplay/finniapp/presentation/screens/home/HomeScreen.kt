@@ -42,6 +42,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -64,7 +69,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.boundsInWindow
+import ru.larpinovplay.finniapp.presentation.components.petShield
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -93,7 +98,8 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.presentation.components.BubbleTail
-import ru.larpinovplay.finniapp.presentation.components.CoinPill
+import ru.larpinovplay.finniapp.presentation.components.CoinButton
+import ru.larpinovplay.finniapp.presentation.components.MeterButton
 import ru.larpinovplay.finniapp.presentation.components.MeterRing
 import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
 import ru.larpinovplay.finniapp.presentation.components.PebbleButton
@@ -118,6 +124,7 @@ import ru.larpinovplay.finniapp.presentation.pet.modelScale
 import ru.larpinovplay.finniapp.presentation.pet.skinAsset
 import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import androidx.compose.foundation.BorderStroke
 
 /**
  * Главный экран: комната с питомцем и немного «наклеек» вокруг (PRODUCT.md, макет v6).
@@ -166,12 +173,7 @@ fun HomeScreenContent(
     if (petHost != null) {
         DisposableEffect(petHost) {
             petHost.onTap = { speechOpen = true }
-            petHost.onShieldTap = { speechOpen = true }
-            onDispose {
-                petHost.onTap = {}
-                petHost.onShieldTap = {}
-                petHost.shield = null
-            }
+            onDispose { petHost.onTap = {} }
         }
     }
     Box(modifier = modifier.fillMaxSize().roomOrigin(room)) {
@@ -207,7 +209,11 @@ fun HomeScreenContent(
                     modifier = Modifier.align(Alignment.BottomCenter),
                     // Финни молчит, но ему есть что сказать: маленькое облачко «…» у головы
                     hint = state.speech?.takeIf { !speechOpen && coachStep == null }?.let { speech ->
-                        { TypingBubble(important = speech.important, onClick = { speechOpen = true }) }
+                        {
+                            val open = { speechOpen = true }
+                            // Облачко «…» закрывает собой кусочек питомца: нажатие на него открывает реплику без его анимации
+                            TypingBubble(important = speech.important, onClick = open, modifier = Modifier.petShield(petHost, open))
+                        }
                     },
                 )
             }
@@ -221,6 +227,7 @@ fun HomeScreenContent(
                 coachStep.coachText, targets[coachStep],
                 onSkip = { onAction(HomeAction.SkipTutorialStep) }.takeIf { coachStep != TutorialStep.PLAN },
                 round = true,
+                petHost = petHost,
             )
         }
     }
@@ -280,7 +287,7 @@ private fun TutorialDoneDialog(onDone: () -> Unit) {
         ).forEach { (icon, tint, text) ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CardSticker(icon, tint, size = 44.dp)
-                Text(text, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+                Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
             }
         }
         Text(
@@ -298,7 +305,7 @@ private fun TutorialDoneDialog(onDone: () -> Unit) {
 private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
     val pet = state.pet
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        MeterRing(
+        MeterButton(
             value = pet.satiety.value,
             color = FinniColors.SatietyRing,
             track = FinniColors.SatietyTrack,
@@ -307,7 +314,7 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
             onClick = { onAction(HomeAction.ShowInfo(HomeInfo.SATIETY)) },
         )
         Spacer(Modifier.width(10.dp))
-        MeterRing(
+        MeterButton(
             value = pet.mood.value,
             color = FinniColors.MoodRing,
             track = FinniColors.MoodTrack,
@@ -316,7 +323,7 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
             onClick = { onAction(HomeAction.ShowInfo(HomeInfo.MOOD)) },
         )
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            CoinPill(state.balance, onClick = { onAction(HomeAction.ShowInfo(HomeInfo.COINS)) })
+            CoinButton(state.balance, onClick = { onAction(HomeAction.ShowInfo(HomeInfo.COINS)) })
         }
         PebbleButton(
             icon = R.drawable.ic_gear_line,
@@ -368,22 +375,29 @@ private fun StatusCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier
+    // Кликабельная карточка: Surface(onClick) — сам даёт отклик и нажатие, роль задаём явно (Surface её не ставит)
+    val shape = RoundedCornerShape(22.dp)
+    Surface(
+        onClick = onClick,
+        shape = shape,
+        color = Color.Transparent,
+        modifier = modifier
             .heightIn(min = 56.dp)
-            .creamCard(RoundedCornerShape(22.dp), elevation = 6.dp, border = 3.dp)
-            .clickable(role = Role.Button, onClick = onClick)
-            .clearAndSetSemantics { contentDescription = description; role = Role.Button }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .creamCard(shape, elevation = 6.dp, border = 3.dp)
+            .clearAndSetSemantics { contentDescription = description; role = Role.Button },
     ) {
-        Box(Modifier.size(36.dp).clip(CircleShape).background(tint), contentAlignment = Alignment.Center) {
-            Image(painterResource(icon), null, Modifier.size(22.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, lineHeight = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(
+            Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(36.dp).clip(CircleShape).background(tint), contentAlignment = Alignment.Center) {
+                Image(painterResource(icon), null, Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 15.sp, lineHeight = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(detail, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
@@ -391,49 +405,36 @@ private fun StatusCard(
 /** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка с мордочкой кота. */
 @Composable
 private fun PetButton(pet: Pet, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = Color.Transparent,
-        modifier = Modifier
-            .size(48.dp)
-            .creamCard(CircleShape, elevation = 8.dp, border = 3.dp)
-            .clearAndSetSemantics { contentDescription = "${pet.name}: рост и прогресс" },
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Image(painterResource(R.drawable.ic_cat), null, Modifier.size(26.dp), colorFilter = ColorFilter.tint(FinniColors.TealBright))
-        }
+    IconButton(onClick = onClick, modifier = Modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp)) {
+        Image(
+            painterResource(R.drawable.ic_cat),
+            contentDescription = "${pet.name}: рост и прогресс",
+            modifier = Modifier.size(26.dp),
+            colorFilter = ColorFilter.tint(FinniColors.TealBright),
+        )
     }
 }
 
 /** «План недели»: голубая наклейка дела «Траты по плану», как соседняя кнопка питомца — без подписи. */
 @Composable
 private fun PlanButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(
+    IconButton(
         onClick = onClick,
-        shape = CircleShape,
-        color = Color.Transparent,
         // Отступ сверху — чтобы круг подсветки обучения не задевал кнопку питомца
         modifier = Modifier
             .padding(top = 6.dp)
             .then(modifier)
             .size(48.dp)
             .creamCard(CircleShape, elevation = 8.dp, border = 3.dp)
-            .background(Color(0xFFE6EEFF))
-            .clearAndSetSemantics {
-                contentDescription = "План недели"
-                role = Role.Button
-            },
+            .background(Color(0xFFE6EEFF)),
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Image(painterResource(R.drawable.ic_deed_plan), null, Modifier.size(26.dp))
-        }
+        Image(painterResource(R.drawable.ic_deed_plan), contentDescription = "План недели", modifier = Modifier.size(26.dp))
     }
 }
 
 @Composable
 private fun DemoChip() {
-    Surface(shape = CircleShape, color = FinniColors.Sunny, border = androidx.compose.foundation.BorderStroke(2.dp, Color.White)) {
+    Surface(shape = CircleShape, color = FinniColors.Sunny, border = BorderStroke(2.dp, Color.White)) {
         Text("Демо", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
     }
 }
@@ -496,23 +497,19 @@ private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onActi
             Modifier
                 .fillMaxWidth()
                 .creamCard(RoundedCornerShape(22.dp), elevation = 8.dp)
-                .clickable(onClickLabel = "Спрятать", onClick = onClose)
+                .clickable(role = Role.Button, onClickLabel = "Спрятать", onClick = onClose)
                 .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = if (button == null) 10.dp else 0.dp),
         ) {
-            Text(speech.text(), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+            Text(speech.text(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
             button?.let { (label, action) ->
-                Row(
-                    Modifier
-                        .heightIn(min = 48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(role = Role.Button) { onAction(action) }
-                        .padding(end = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                TextButton(
+                    onClick = { onAction(action) },
+                    colors = ButtonDefaults.textButtonColors(contentColor = FinniColors.Teal),
+                    contentPadding = PaddingValues(start = 0.dp, end = 6.dp),
                 ) {
-                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal)
+                    Text(label, fontSize = 15.sp, fontWeight = FontWeight.Black)
                     Image(
-                        painterResource(R.drawable.ic_arrow_right), null, Modifier.size(16.dp),
+                        painterResource(R.drawable.ic_arrow_right), null, Modifier.padding(start = 4.dp).size(16.dp),
                         colorFilter = ColorFilter.tint(FinniColors.Teal),
                     )
                 }
@@ -575,9 +572,7 @@ private fun PetArea(
             exit = if (state.animationsEnabled) fadeOut() else ExitTransition.None,
             modifier = Modifier.align(Alignment.TopCenter).offset(x = side * 0.2f, y = headTop),
         ) {
-            // Облачко «…» закрывает собой кусочек питомца: нажатие на него открывает реплику без его анимации
-            Box(Modifier.onGloballyPositioned { petHost?.shield = it.boundsInWindow() }) { hint?.invoke() }
-            DisposableEffect(Unit) { onDispose { petHost?.shield = null } }
+            hint?.invoke()
         }
     }
 }
@@ -591,12 +586,13 @@ private const val HEAD_TOP_FACTOR = 1.03f
  * перерисовка под ним затемняет весь слот.
  */
 @Composable
-private fun TypingBubble(important: Boolean, onClick: () -> Unit) {
+private fun TypingBubble(important: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val dot = if (important) FinniColors.DeedPending else FinniColors.InkMuted
     Box(
-        Modifier
+        modifier
             .size(width = 64.dp, height = 44.dp)
-            .clickable(onClickLabel = "Послушать Финни", onClick = onClick)
+
+            .clickable(role = Role.Button, onClickLabel = "Послушать Финни", onClick = onClick)
             .semantics { contentDescription = if (important) "Финни хочет сказать что-то важное" else "Финни хочет что-то сказать" },
     ) {
         // Хвостик: два кружка вниз-влево, к голове
@@ -706,7 +702,7 @@ private fun MenuItem(
                     Surface(
                         shape = CircleShape,
                         color = FinniColors.ActionPeach,
-                        border = androidx.compose.foundation.BorderStroke(3.dp, Color.White),
+                        border = BorderStroke(3.dp, Color.White),
                         modifier = Modifier.align(Alignment.TopEnd).offset(x = 12.dp, y = (-8).dp).wrapContentWidth(unbounded = true),
                     ) {
                         Row(Modifier.padding(horizontal = 7.dp, vertical = 1.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -740,7 +736,9 @@ private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, sunModifi
                 .requiredSize(88.dp)
                 .then(sunModifier)
                 .semantics {
+                    role = Role.Button
                     contentDescription = "Неделя ${state.week}: сделано ${deeds.steps} из ${WeekDeeds.MAX_STEPS} дел" +
+
                         if (ready) ". Неделю можно завершить" else ". Открыть дела недели"
                 },
         ) {
@@ -767,7 +765,7 @@ private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, sunModifi
         Surface(
             shape = CircleShape,
             color = FinniColors.Teal,
-            border = androidx.compose.foundation.BorderStroke(3.dp, Color.White),
+            border = BorderStroke(3.dp, Color.White),
             modifier = Modifier.align(Alignment.TopCenter).offset(x = 34.dp, y = (-4).dp).wrapContentWidth(unbounded = true),
         ) {
             Text(
@@ -779,7 +777,7 @@ private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, sunModifi
         Surface(
             shape = CircleShape,
             color = FinniColors.Teal,
-            border = androidx.compose.foundation.BorderStroke(2.dp, Color.White),
+            border = BorderStroke(2.dp, Color.White),
             shadowElevation = 3.dp,
             modifier = Modifier.padding(top = 74.dp).wrapContentWidth(unbounded = true),
         ) {

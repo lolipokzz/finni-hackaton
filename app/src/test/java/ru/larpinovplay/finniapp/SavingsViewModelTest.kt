@@ -8,11 +8,13 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsAction
@@ -55,6 +57,9 @@ class SavingsViewModelTest {
         val state = game.requireSnapshot().state
         assertEquals(state.weeksToGoal(), draft.weeksBefore)
         assertEquals(state.weeksToGoal(10), draft.weeksAfter)
+        val goal = checkNotNull(state.goal)
+        assertEquals(goal.cost - 20, draft.remainingBefore)
+        assertEquals(goal.cost - 10, draft.remainingAfter)
     }
 
     @Test
@@ -79,5 +84,31 @@ class SavingsViewModelTest {
         assertNull(vm.state.value.withdraw)
         assertEquals(15, game.requireSnapshot().state.savings)
         assertEquals(85, game.requireSnapshot().state.balance)
+    }
+
+    @Test
+    fun depositAmountStepsWithinStepAndWallet() {
+        val vm = viewModel()   // в кошельке 80
+        assertEquals(10, vm.state.value.depositAmount)
+
+        repeat(3) { vm.onAction(SavingsAction.ChangeDeposit(increase = false)) }
+        assertEquals(GameRules.PLAN_STEP, vm.state.value.depositAmount)
+        assertFalse(vm.state.value.canDepositLess)
+
+        repeat(30) { vm.onAction(SavingsAction.ChangeDeposit(increase = true)) }
+        assertEquals(80, vm.state.value.depositAmount)
+        assertFalse(vm.state.value.canDepositMore)
+    }
+
+    @Test
+    fun depositMovesChosenAmountAndKeepsChoice() {
+        val vm = viewModel()
+        vm.onAction(SavingsAction.ChangeDeposit(increase = true))   // 15
+
+        vm.onAction(SavingsAction.Deposit)
+
+        assertEquals(35, game.requireSnapshot().state.savings)
+        assertEquals(15, vm.state.value.depositAmount)
+        assertEquals(game.requireSnapshot().state.goalRemaining(), vm.state.value.goalRemaining)
     }
 }

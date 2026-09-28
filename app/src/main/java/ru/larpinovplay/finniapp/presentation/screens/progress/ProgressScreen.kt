@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -155,7 +156,7 @@ private fun GrowthCard(state: ProgressUiState) {
         if (growth == null) {
             Text(
                 "Финни вырос до последней стадии. Так держать!",
-                fontSize = 15.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
@@ -176,7 +177,7 @@ private fun GrowthCard(state: ProgressUiState) {
         }
         Text(
             "Каждое дело недели — шаг: Финни сыт, не скучает, копилка и траты по плану. Шаги не пропадают, а новая стадия даёт больше карманных.",
-            fontSize = 13.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
+            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
         )
     }
 }
@@ -236,7 +237,7 @@ private fun DreamCard(state: ProgressUiState) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (goal == null) {
                     Text("Мечта не выбрана", fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-                    Text("В копилке ${state.savings}. Выбери мечту в «Копилке»", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                    Text("В копилке ${state.savings}. Выбери мечту в «Копилке»", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(goal.name, fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, modifier = Modifier.weight(1f))
@@ -246,7 +247,7 @@ private fun DreamCard(state: ProgressUiState) {
                     }
                     MeterBar(state.savings.toFloat() / goal.cost, FinniColors.DreamRing)
                     Text(
-                        "Осталось ${(goal.cost - state.savings).coerceAtLeast(0)}",
+                        "Осталось ${state.goalRemaining ?: 0}",
                         fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
                     )
                 }
@@ -268,7 +269,7 @@ private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
         if (summary == null) {
             Text(
                 "Пока нет завершённых недель. Когда сделаешь дела, нажми на солнышко на главном экране",
-                fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
+                style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
             )
             return@Card
         }
@@ -282,7 +283,7 @@ private fun LastWeekCard(summary: WeekSummary?, weeksCompleted: Int) {
                         Modifier.padding(top = 6.dp).size(8.dp).clip(CircleShape)
                             .background(if (summary.deeds[deed]) FinniColors.TealBright else FinniColors.DeedPending),
                     )
-                    Text(summary.deedText(deed), fontSize = 14.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                    Text(summary.deedText(deed), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                 }
             }
         }
@@ -392,7 +393,7 @@ private fun LedgerCard(week: Int, entries: List<LedgerEntry>) {
     Card {
         CardHeading("Монеты этой недели", "Неделя $week")
         if (entries.isEmpty()) {
-            Text("Пока ничего не происходило", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+            Text("Пока ничего не происходило", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
         entries.asReversed().forEach { e ->
             val (icon, tint) = ledgerSticker(e)

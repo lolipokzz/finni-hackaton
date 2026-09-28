@@ -37,6 +37,8 @@ sealed interface PurchaseFeedback {
         val cheaper: List<ShopItem>,
         val savings: Int = 0,
         val goal: SavingsGoal? = null,
+        val savingsAfter: Int = savings - missing,   // сколько останется в копилке, если взять недостающее
+        val goalRemainingAfter: Int? = null,         // сколько тогда не хватит до цели; null — цели нет
     ) : PurchaseFeedback {
         val canTakeFromSavings: Boolean get() = savings >= missing
     }
