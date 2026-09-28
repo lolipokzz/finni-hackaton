@@ -4,6 +4,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ru.larpinovplay.finniapp.data.storage.StorageJson
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
@@ -19,7 +20,9 @@ internal data class SettingsSaveFile(
     val soundEnabled: Boolean = true,
     val animationsEnabled: Boolean = true,
     val tipsEnabled: Boolean = true,
-    val voiceRepeatEnabled: Boolean = true,
+    // Новое имя поля: прежнее «voiceRepeatEnabled» было включено по умолчанию и уже записано в файлах.
+    // Старое значение пропускается, и повтор слов выключен, пока его не включит взрослый
+    @SerialName("voiceRepeatByAdult") val voiceRepeatEnabled: Boolean = false,
 )
 
 internal fun SettingsSaveFile.toDomain() = AppSettings(soundEnabled, animationsEnabled, tipsEnabled, voiceRepeatEnabled)

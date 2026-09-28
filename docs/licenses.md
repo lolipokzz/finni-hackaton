@@ -13,3 +13,8 @@
 | Phosphor Icons | npm `@phosphor-icons/core`, https://github.com/phosphor-icons/core | MIT | `ic_cap`, `ic_glasses`, `ic_soap`, `ic_fruits` (в MingCute нет подходящих) |
 
 Монета `ic_coin` (золотая, с лапкой) нарисована командой, она не из набора.
+
+## Иконка приложения
+
+Иконка (`mipmap-*/ic_launcher*`) и иконка 512×512 для карточки RuStore (`docs/rustore/icon-512.png`) сделаны из
+изображения Финни, которое предоставила команда. Фон адаптивной иконки — градиент, продолжающий фон изображения.

@@ -69,6 +69,28 @@ class HomeViewModelTest {
         assertEquals(FinishBlock.PLAN_NOT_CONFIRMED, vm.state.value?.finishBlock)
     }
 
+    /** ТЗ 2.5.3: активное задание видно на главном экране. Сначала приключение недели — без него неделю не закончить. */
+    @Test
+    fun activeTaskIsAdventureOfWeekFirst() {
+        val vm = viewModel()
+
+        val adventure = content.adventures.first()
+        assertEquals(HomeUiState.ActiveTask(adventure.title, adventure.reward, adventure = true), vm.state.value?.activeTask)
+    }
+
+    @Test
+    fun afterAdventureActiveTaskIsNextTask() {
+        // Приключения засчитывает репозиторий, поэтому ему нужен их список
+        val game = GameRepositoryImpl(FakeGameStore(), clock = clock, adventures = content.adventures)
+        runBlocking { game.createPet(SampleGames.newborn) }
+        val vm = HomeViewModel(game, content, InMemorySettingsRepository())
+
+        runBlocking { game.completeAdventure(content.adventures.first(), mistakes = 0) }
+
+        val task = checkNotNull(game.requireSnapshot().state.availableTasks(content.tasks).firstOrNull())
+        assertEquals(HomeUiState.ActiveTask(task.title, task.reward, adventure = false), vm.state.value?.activeTask)
+    }
+
     /** Окно плана само не всплывает: Финни зовёт, ребёнок открывает кнопкой «План», закрыть можно и без плана. */
     @Test
     fun planWindowOpensOnlyByButton() {

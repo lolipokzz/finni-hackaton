@@ -155,9 +155,9 @@ fun PebbleButton(@DrawableRes icon: Int, description: String, onClick: () -> Uni
         onClick = onClick,
         shape = CircleShape,
         color = color,
-        modifier = modifier.size(48.dp).semantics { contentDescription = description },
+        modifier = modifier.size(48.dp),
     ) {
-        Box(contentAlignment = Alignment.Center) { Image(painterResource(icon), null, Modifier.size(22.dp)) }
+        Box(contentAlignment = Alignment.Center) { Image(painterResource(icon), description, Modifier.size(22.dp)) }
     }
 }
 
@@ -315,16 +315,18 @@ fun CoinPill(coins: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? =
 
 /** Назад: круглая кремовая наклейка со стрелкой, как шестерёнка на главном экране. */
 @Composable
-fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     Surface(
         onClick = onClick,
+        enabled = enabled,
         shape = CircleShape,
         color = Color.Transparent,
-        modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp).semantics { contentDescription = "Назад" },
+        modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
+            // Описание на значке: кнопка объединяет содержимое, и TalkBack читает «Назад, кнопка» на одном элементе
             Image(
-                painterResource(R.drawable.ic_arrow_right), null,
+                painterResource(R.drawable.ic_arrow_right), "Назад",
                 Modifier.size(22.dp).graphicsLayer(scaleX = -1f),
                 colorFilter = ColorFilter.tint(FinniColors.Ink),
             )
@@ -395,9 +397,15 @@ fun StatRow(label: String, value: String, coin: Boolean = false, warn: Boolean =
 
 /** Шапка раздела поверх комнаты: «назад», белый заголовок с тенью и, справа, что-то своё раздела. */
 @Composable
-fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, trailing: @Composable () -> Unit = {}) {
+fun ScreenHeader(
+    title: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    backEnabled: Boolean = true,
+    trailing: @Composable () -> Unit = {},
+) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BackButton(onBack)
+        BackButton(onBack, enabled = backEnabled)
         Text(title, style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
         trailing()
     }

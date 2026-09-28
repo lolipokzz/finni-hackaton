@@ -27,6 +27,9 @@ import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import kotlin.math.roundToInt
 
 /** Какого питомца рисовать. Главный экран собирает это из состояния и отдаёт в [PetHostState]. */
@@ -205,7 +208,8 @@ fun PetHost(
             pettingAnimation = spec?.pettingAnimation,
             accessories = spec?.accessories.orEmpty(),
             onShadow = { shadow.value = it },
-            active = state.shown,
+            // Свёрнутое приложение — пауза: не рисует, молчит и не слушает микрофон; видимое (STARTED и выше) — работает
+            active = state.shown && LocalLifecycleOwner.current.lifecycle.currentStateAsState().value.isAtLeast(Lifecycle.State.STARTED),
             onTap = { state.onTap() },
             shield = { x, y -> state.shield?.contains(Offset(x, y)) == true },
             onShieldTap = { state.onShieldTap() },

@@ -20,9 +20,10 @@ data class HomeUiState(
     val week: Int,                     // номер игрового периода
     val speech: Speech? = null,        // что Финни говорит в облачке и куда зовёт; null — облачка нет
     val tasksBadge: Int = 0,           // сколько заданий и приключений ждёт: значок на «Заданиях»
+    val activeTask: ActiveTask? = null,  // что решать сейчас (ТЗ 2.5.3); null — на этой неделе всё сделано
     val animationsEnabled: Boolean = true,
     val soundEnabled: Boolean = true,
-    val voiceRepeatEnabled: Boolean = true,
+    val voiceRepeatEnabled: Boolean = false,
     val demoMode: Boolean = false,
     val info: HomeInfo? = null,                          // открытое окно «что это значит» у монет/сытости/настроения
     val weekSummary: WeekSummary? = null,     // итог только что закрытой недели; null — окно не показывается
@@ -57,6 +58,9 @@ data class HomeUiState(
 
     /** Цель копилки в том виде, в каком её показывает главный экран. */
     data class Goal(val name: String, val cost: Int)
+
+    /** Активное задание на главном экране: приключение недели или ближайшее доступное задание. */
+    data class ActiveTask(val title: String, val reward: Int, val adventure: Boolean)
 
     /**
      * Реплика Финни: одно самое важное дело сейчас. Порядок выбора — в [HomeViewModel];
