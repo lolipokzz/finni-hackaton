@@ -26,6 +26,7 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
             is SettingsAction.SetSound -> update { it.copy(soundEnabled = action.enabled) }
             is SettingsAction.SetAnimations -> update { it.copy(animationsEnabled = action.enabled) }
             is SettingsAction.SetTips -> update { it.copy(tipsEnabled = action.enabled) }
+            is SettingsAction.SetVoiceRepeat -> update { it.copy(voiceRepeatEnabled = action.enabled) }
         }
     }
 

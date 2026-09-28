@@ -5,4 +5,5 @@ sealed interface SettingsAction {
     data class SetSound(val enabled: Boolean) : SettingsAction
     data class SetAnimations(val enabled: Boolean) : SettingsAction
     data class SetTips(val enabled: Boolean) : SettingsAction
+    data class SetVoiceRepeat(val enabled: Boolean) : SettingsAction
 }

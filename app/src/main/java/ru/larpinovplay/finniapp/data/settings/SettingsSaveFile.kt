@@ -21,7 +21,7 @@ internal data class SettingsSaveFile(
     val animationsEnabled: Boolean = true,
     val tipsEnabled: Boolean = true,
     // Новое имя поля: прежнее «voiceRepeatEnabled» было включено по умолчанию и уже записано в файлах.
-    // Старое значение пропускается, и повтор слов выключен, пока его не включит взрослый
+    // Старое значение пропускается, и повтор слов выключен, пока его не включат в настройках
     @SerialName("voiceRepeatByAdult") val voiceRepeatEnabled: Boolean = false,
 )
 

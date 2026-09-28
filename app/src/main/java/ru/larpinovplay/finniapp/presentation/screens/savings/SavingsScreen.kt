@@ -134,7 +134,7 @@ fun SavingsScreenContent(
                 }
                 item(key = "title", span = { GridItemSpan(maxLineSpan) }) {
                     Text(
-                        if (state.goal == null) "Выбери мечту" else "Все мечты",
+                        if (state.goal == null) "Выбери цель" else "Все цели",
                         style = OnRoomLabel.copy(fontSize = 20.sp),
                         modifier = Modifier.padding(start = 4.dp, top = 6.dp).semantics { heading() },
                     )
@@ -152,7 +152,7 @@ fun SavingsScreenContent(
         }
         if (state.coach) {
             TutorialSpotlight(
-                "Выбери мечту — любую, какую хочешь! Монеты из копилки будут копиться на неё.",
+                "Выбери цель — любую, какую хочешь! Монеты из копилки будут копиться на неё.",
                 dreams.all,
                 scroll = list,
                 onSkip = { onAction(SavingsAction.SkipTutorialStep) },
@@ -235,7 +235,7 @@ private fun DreamCard(
         Box(
             contentAlignment = Alignment.BottomCenter,
             modifier = Modifier.clearAndSetSemantics {
-                contentDescription = "Мечта: ${goal.name}. Накоплено ${state.savings} из ${goal.cost}"
+                contentDescription = "Цель: ${goal.name}. Накоплено ${state.savings} из ${goal.cost}"
             },
         ) {
             DreamRing(state.savings.toFloat() / goal.cost, goal.icon, Modifier.padding(bottom = 18.dp))
@@ -257,7 +257,7 @@ private fun DreamCard(
             Text(goal.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, textAlign = TextAlign.Center)
             Text(
                 when {
-                    reached -> "Хватает на мечту!"
+                    reached -> "Хватает на цель!"
                     state.weeksToGoal != null -> "Осталось $remaining · примерно ${state.weeksToGoal} нед."
                     else -> "Осталось $remaining. Отложи — и я посчитаю срок"
                 },
@@ -267,7 +267,7 @@ private fun DreamCard(
 
         DashedDivider()
         if (reached) {
-            TealButton("Получить мечту!", R.drawable.ic_sun_small, onReach)
+            TealButton("Достичь цели!", R.drawable.ic_sun_small, onReach)
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StepButton("−", "Отложить меньше", enabled = state.canDepositLess) { onChangeDeposit(false) }
@@ -304,8 +304,8 @@ private fun NoDreamCard(savings: Int, onWithdraw: () -> Unit) {
         CardSticker(R.drawable.ic_deed_pig, FinniColors.DreamTint, size = 112.dp, iconScale = 0.6f)
         Text("На что будем копить?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink, textAlign = TextAlign.Center)
         Text(
-            if (savings > 0) "В копилке уже $savings. Выбери мечту ниже — и они пойдут на неё"
-            else "Выбери мечту ниже. Её кольцо появится и в меню",
+            if (savings > 0) "В копилке уже $savings. Выбери цель ниже — и они пойдут на неё"
+            else "Выбери цель ниже. Её кольцо появится и в меню",
             style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
         )
         if (savings > 0) PillButton("Забрать из копилки", onWithdraw, color = FinniColors.Pebble, ink = FinniColors.InkMuted)
@@ -399,7 +399,7 @@ private fun GoalHeader(goal: SavingsGoal, title: String, subtitle: String) {
 private fun SwitchGoalDialog(goal: SavingsGoal, savings: Int, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     CardDialog(onDismiss = onDismiss) {
         // Название мечты не склоняется в «Копим на …», поэтому оно в подстроке, а не в вопросе
-        GoalHeader(goal, "Новая мечта?", "${goal.name} · ${goal.cost} монет")
+        GoalHeader(goal, "Новая цель?", "${goal.name} · ${goal.cost} монет")
         Text(goal.hint, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         DashedDivider()
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -432,7 +432,7 @@ private fun DreamCameTrueDialog(goal: SavingsGoal, onDismiss: () -> Unit) {
                 ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(18.dp)) }
             }
             Text(
-                "Мечта сбылась!", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
+                "Цель достигнута!", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
                 textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() },
             )
             val done = when {
@@ -450,6 +450,6 @@ private fun DreamCameTrueDialog(goal: SavingsGoal, onDismiss: () -> Unit) {
                 EffectChip(R.drawable.ic_meter_smile, GameRules.GOAL_MOOD_BONUS, Color(0xFFFFF5C9))
             }
         }
-        TealButton("Выбрать новую мечту", R.drawable.ic_sun_small, onDismiss)
+        TealButton("Выбрать новую цель", R.drawable.ic_sun_small, onDismiss)
     }
 }

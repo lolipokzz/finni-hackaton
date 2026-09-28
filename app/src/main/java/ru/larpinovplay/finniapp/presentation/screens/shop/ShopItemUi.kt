@@ -39,9 +39,9 @@ val ShopCategory.title: String
 
 val WearableSlot.title: String
     get() = when (this) {
-        WearableSlot.HEAD -> "На голову"
-        WearableSlot.EYES -> "На глаза"
-        WearableSlot.NECK -> "На шею"
+        WearableSlot.HEAD -> "Голова"
+        WearableSlot.EYES -> "Глаза"
+        WearableSlot.NECK -> "Шея"
     }
 
 private fun Int.signed() = if (this > 0) "+$this" else "$this"

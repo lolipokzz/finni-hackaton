@@ -1,5 +1,9 @@
 package ru.larpinovplay.finniapp.presentation.screens.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -42,6 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
@@ -138,8 +145,9 @@ fun SettingsScreenContent(
                         DashedDivider()
                         ToggleRow(R.drawable.ic_bulb, Color(0xFFFFF0E6), "Подсказки", "Финни говорит, что сделать дальше", settings.tipsEnabled) {
                             onAction(SettingsAction.SetTips(it))
-
                         }
+                        DashedDivider()
+                        VoiceRepeatRow(settings.voiceRepeatEnabled) { onAction(SettingsAction.SetVoiceRepeat(it)) }
                     }
                 }
 
@@ -261,6 +269,36 @@ private fun ToggleRow(icon: Int, tint: Color, title: String, subtitle: String, c
                 uncheckedBorderColor = FinniColors.Dashed,
             ),
         )
+    }
+}
+
+/**
+ * Повтор слов — единственное, чему нужен микрофон. По умолчанию выключен; доступ к микрофону спрашивается
+ * только в момент включения этого переключателя, а не сам по себе на главном экране.
+ * Звук обрабатывается только на устройстве: не записывается в файлы и никуда не отправляется.
+ * Переключатель показывает, работает ли повтор на самом деле: включён и доступ выдан.
+ */
+@Composable
+private fun VoiceRepeatRow(setting: Boolean, onChange: (Boolean) -> Unit) {
+    val context = LocalContext.current
+    fun granted() = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+    var hasMic by remember { mutableStateOf(granted()) }
+    var denied by remember { mutableStateOf(false) }
+    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        hasMic = ok
+        denied = !ok
+        if (ok) onChange(true)
+    }
+    ToggleRow(
+        R.drawable.ic_mic, Color(0xFFFFE6F0), "Кот повторяет слова",
+        if (denied) "Нужен доступ к микрофону: его можно выдать в настройках телефона" else "Слушает микрофон, звук никуда не уходит",
+        setting && hasMic,
+    ) { on ->
+        when {
+            !on -> onChange(false)
+            granted() -> { hasMic = true; denied = false; onChange(true) }
+            else -> request.launch(Manifest.permission.RECORD_AUDIO)
+        }
     }
 }
 

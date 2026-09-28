@@ -39,6 +39,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -184,29 +186,31 @@ fun HomeScreenContent(
             Spacer(Modifier.height(10.dp))
             StatusRow(state, onAction)
             Spacer(Modifier.height(10.dp))
-            // Слева под кольцами — редкая кнопка «всё о Финни», справа от неё реплика: одна строка на двоих
-            Row(verticalAlignment = Alignment.Top) {
-                Column(Modifier.width(62.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PetButton(state.pet, onClick = { onAction(HomeAction.OpenSection(HomeSection.PROGRESS)) })
-                    // Кнопка плана: до начала недели — составить план (окно открывается только по ней), потом — как он идёт
-                    if (state.planDraft != null || state.activePlan != null) {
-                        PlanButton(Modifier.spotlightTarget(targets, TutorialStep.PLAN)) { onAction(HomeAction.OpenPlan) }
-                    }
-                    if (state.demoMode) DemoChip()
+            // Слева под кольцами — редкая кнопка «всё о Финни» и кнопка плана; реплика Финни — над его головой
+            Column(Modifier.width(62.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                PetButton(state.pet, onClick = { onAction(HomeAction.OpenSection(HomeSection.PROGRESS)) })
+                // Кнопка плана: до начала недели — составить план (окно открывается только по ней), потом — как он идёт
+                if (state.planDraft != null || state.activePlan != null) {
+                    PlanButton(Modifier.spotlightTarget(targets, TutorialStep.PLAN)) { onAction(HomeAction.OpenPlan) }
                 }
-                SpeechZone(
-                    speech = state.speech.takeIf { coachStep == null },
-                    open = speechOpen,
-                    onOpenChange = { speechOpen = it },
-                    animate = state.animationsEnabled,
-                    onAction = onAction,
-                    modifier = Modifier.padding(start = 14.dp).weight(1f),
-                )
+                if (state.demoMode) DemoChip()
+            }
+            val speech = state.speech.takeIf { coachStep == null }
+            // Облачко висит [SPEECH_SHOWN_MS] и садится в «…» у головы
+            LaunchedEffect(speechOpen, speech) {
+                if (speechOpen && speech != null) {
+                    delay(SPEECH_SHOWN_MS)
+                    speechOpen = false
+                }
             }
             Box(Modifier.fillMaxWidth().weight(1f)) {
                 PetArea(
                     state, petHost, room,
                     modifier = Modifier.align(Alignment.BottomCenter),
+                    // Реплика — облачко точно над головой, хвостиком к ней
+                    speech = speech?.takeIf { speechOpen }?.let { shown ->
+                        { SpeechBubble(shown, petHost, onClose = { speechOpen = false }, onAction = onAction) }
+                    },
                     // Финни молчит, но ему есть что сказать: маленькое облачко «…» у головы
                     hint = state.speech?.takeIf { !speechOpen && coachStep == null }?.let { speech ->
                         {
@@ -279,7 +283,7 @@ private fun TutorialDoneDialog(onDone: () -> Unit) {
     CardDialog {
         CardTitle("Обучение пройдено!", "Мур! Спасибо, что помогаешь мне с монетами")
         listOf(
-            Triple(R.drawable.ic_deed_plan, Color(0xFFE6EEFF), "План — в начале недели раздели монеты"),
+            Triple(R.drawable.ic_week_plan, Color(0xFFE6EEFF), "План — в начале недели раздели монеты"),
             Triple(R.drawable.ic_nav_savings, Color(0xFFFFE6F0), "Копилка — копим на мечту"),
             Triple(R.drawable.ic_nav_shop, Color(0xFFFFF0E6), "Магазин — еда и радости для меня"),
             Triple(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2), "Задания — решай и зарабатывай монеты"),
@@ -402,12 +406,12 @@ private fun StatusCard(
     }
 }
 
-/** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка с мордочкой кота. */
+/** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка со столбиками роста. */
 @Composable
 private fun PetButton(pet: Pet, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp)) {
         Image(
-            painterResource(R.drawable.ic_cat),
+            painterResource(R.drawable.ic_progress),
             contentDescription = "${pet.name}: рост и прогресс",
             modifier = Modifier.size(26.dp),
             colorFilter = ColorFilter.tint(FinniColors.TealBright),
@@ -415,7 +419,7 @@ private fun PetButton(pet: Pet, onClick: () -> Unit) {
     }
 }
 
-/** «План недели»: голубая наклейка дела «Траты по плану», как соседняя кнопка питомца — без подписи. */
+/** «План недели»: голубая наклейка с календарём, как соседняя кнопка прогресса — без подписи. */
 @Composable
 private fun PlanButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     IconButton(
@@ -428,7 +432,7 @@ private fun PlanButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
             .creamCard(CircleShape, elevation = 8.dp, border = 3.dp)
             .background(Color(0xFFE6EEFF)),
     ) {
-        Image(painterResource(R.drawable.ic_deed_plan), contentDescription = "План недели", modifier = Modifier.size(26.dp))
+        Image(painterResource(R.drawable.ic_week_plan), contentDescription = "План недели", modifier = Modifier.size(26.dp))
     }
 }
 
@@ -444,58 +448,24 @@ private fun DemoChip() {
 /** Сколько облачко висит само, прежде чем сесть в значок. */
 private const val SPEECH_SHOWN_MS = 6_000L
 
-/** Высота места под облачко: постоянная, чтобы Финни не менял размер, когда облачко прячется. */
-private val SpeechZoneHeight = 120.dp
-
-/** Где над облачком голова Финни: сюда смотрит хвостик. */
-private val SpeechTailStart = 80.dp
-
 /**
- * Реплика Финни. Сначала — облачко: он говорит от себя и зовёт к одному делу текстовой ссылкой.
+ * Реплика Финни. Сначала — облачко над головой: он говорит от себя и зовёт к одному делу текстовой ссылкой.
  * Через [SPEECH_SHOWN_MS] или по нажатию на облачко оно прячется, а у головы остаётся маленькое «…»
  * ([TypingBubble]); оно или сам Финни открывают реплику снова.
  */
-@Composable
-private fun SpeechZone(
-    speech: HomeUiState.Speech?,
-    open: Boolean,
-    onOpenChange: (Boolean) -> Unit,
-    animate: Boolean,
-    onAction: (HomeAction) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LaunchedEffect(open, speech) {
-        if (open && speech != null) {
-            delay(SPEECH_SHOWN_MS)
-            onOpenChange(false)
-        }
-    }
-    Box(modifier.height(SpeechZoneHeight)) {
-        if (speech == null) return@Box
-        val origin = TransformOrigin(0.3f, 1f)
-        AnimatedVisibility(
-            visible = open,
-            enter = if (animate) fadeIn() + scaleIn(initialScale = 0.6f, transformOrigin = origin) else EnterTransition.None,
-            exit = if (animate) fadeOut() + scaleOut(targetScale = 0.6f, transformOrigin = origin) else ExitTransition.None,
-            modifier = Modifier.align(Alignment.BottomStart),
-        ) {
-            SpeechBubble(speech, onClose = { onOpenChange(false) }, onAction = onAction)
-        }
-    }
-}
-
 private val HomeUiState.Speech.important: Boolean
     get() = this == HomeUiState.Speech.PLAN_WEEK || this == HomeUiState.Speech.HUNGRY || this == HomeUiState.Speech.ADVENTURE ||
         this == HomeUiState.Speech.WEEK_READY
 
 /** Облачко: короткая фраза и текстовая ссылка на дело. Нажатие мимо ссылки прячет облачко. */
 @Composable
-private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onAction: (HomeAction) -> Unit) {
+private fun SpeechBubble(speech: HomeUiState.Speech, petHost: PetHostState?, onClose: () -> Unit, onAction: (HomeAction) -> Unit) {
     val button = speech.button
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.widthIn(max = SpeechBubbleMaxWidth), horizontalAlignment = Alignment.CenterHorizontally) {
         Column(
             Modifier
-                .fillMaxWidth()
+                // Облачко частично под прозрачным видом питомца: нажатия туда пересылает вид (см. petShield)
+                .petShield(petHost, onClose)
                 .creamCard(RoundedCornerShape(22.dp), elevation = 8.dp)
                 .clickable(role = Role.Button, onClickLabel = "Спрятать", onClick = onClose)
                 .padding(start = 14.dp, end = 8.dp, top = 10.dp, bottom = if (button == null) 10.dp else 0.dp),
@@ -504,6 +474,7 @@ private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onActi
             button?.let { (label, action) ->
                 TextButton(
                     onClick = { onAction(action) },
+                    modifier = Modifier.petShield(petHost) { onAction(action) },
                     colors = ButtonDefaults.textButtonColors(contentColor = FinniColors.Teal),
                     contentPadding = PaddingValues(start = 0.dp, end = 6.dp),
                 ) {
@@ -515,7 +486,8 @@ private fun SpeechBubble(speech: HomeUiState.Speech, onClose: () -> Unit, onActi
                 }
             }
         }
-        BubbleTail(Modifier.padding(start = SpeechTailStart).offset(y = (-4).dp))
+        // Хвостик по центру, вниз — к голове Финни
+        BubbleTail(Modifier.offset(y = (-4).dp), pointsLeft = false)
     }
 }
 
@@ -531,11 +503,12 @@ private fun PetArea(
     petHost: PetHostState?,
     room: RoomAnchor,
     modifier: Modifier = Modifier,
+    speech: (@Composable () -> Unit)? = null,
     hint: (@Composable () -> Unit)? = null,
 ) {
     val pet = state.pet
-    // Повторять слова можно, только если это включил взрослый, звук включён и доступ к микрофону уже выдан.
-    // Сам экран ребёнка доступ никогда не спрашивает: его запрашивает раздел для взрослых при включении
+    // Повторять слова можно, только если это включено в настройках, звук включён и доступ к микрофону уже выдан.
+    // Сам главный экран доступ никогда не спрашивает: его запрашивает переключатель в настройках при включении
     val wantsVoice = state.voiceRepeatEnabled && state.soundEnabled
     val micGranted = petHost != null && rememberMicrophoneGranted(wantsVoice)
     val spec = PetSpec(
@@ -565,7 +538,20 @@ private fun PetArea(
         // Облачко справа от головы. Питомец уменьшается от пола, поэтому макушка тем ниже, чем он меньше.
         // Слот накрыт видом питомца: нажатие приходит питомцу, а он и открывает реплику (PetHostState.onTap)
         val side = maxHeight
-        val headTop = side * (1f - HEAD_TOP_FACTOR * pet.growthStage.modelScale).coerceAtLeast(0f)
+        val headTop = side * (FLOOR_IN_SLOT - PET_HEIGHT_IN_SLOT * pet.growthStage.modelScale).coerceAtLeast(0f)
+        // Реплика: облачко по центру над макушкой, низ облачка — у ушей. Место над слотом свободно, поэтому
+        // облачко выше головы может выходить за верх слота
+        AnimatedVisibility(
+            visible = speech != null,
+            enter = if (state.animationsEnabled) fadeIn() + scaleIn(initialScale = 0.6f, transformOrigin = TransformOrigin(0.5f, 1f)) else EnterTransition.None,
+            exit = if (state.animationsEnabled) fadeOut() + scaleOut(targetScale = 0.6f, transformOrigin = TransformOrigin(0.5f, 1f)) else ExitTransition.None,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .height(headTop)
+                .wrapContentHeight(align = Alignment.Bottom, unbounded = true),
+        ) {
+            speech?.invoke()
+        }
         AnimatedVisibility(
             visible = hint != null,
             enter = if (state.animationsEnabled) fadeIn() + scaleIn(initialScale = 0.5f, transformOrigin = TransformOrigin(0f, 1f)) else EnterTransition.None,
@@ -577,8 +563,16 @@ private fun PetArea(
     }
 }
 
-/** Доля слота от макушки взрослого кота до пола (с ушами); подобрано по моделям assets/cat. */
-private const val HEAD_TOP_FACTOR = 1.03f
+/** Облачко реплики не шире этого: над головой, не заезжая на кнопки слева. */
+private val SpeechBubbleMaxWidth = 260.dp
+
+/**
+ * Где кончики ушей, в долях стороны слота от его верха: FLOOR_IN_SLOT − PET_HEIGHT_IN_SLOT × масштаб стадии.
+ * Питомец уменьшается от пола, а пол — не низ слота. Замерено на экране в спокойной позе на всех трёх стадиях
+ * (малыш 0,366, подросток 0,239, взрослый 0,129 — ровно на прямой). По ней садятся облачко реплики и «…».
+ */
+private const val FLOOR_IN_SLOT = 0.868f
+private const val PET_HEIGHT_IN_SLOT = 0.739f
 
 /**
  * Маленькое облачко «• • •» с хвостиком из двух кружков к голове: Финни есть что сказать.
@@ -612,8 +606,8 @@ private fun TypingBubble(important: Boolean, onClick: () -> Unit, modifier: Modi
 }
 
 /**
- * Выдан ли доступ к микрофону. Только проверка, без запроса: запрос — в разделе для взрослых (ТЗ 3.1 п. 4, 3.4, 3.5).
- * Проверяется заново, когда меняется [key] — например, взрослый только что включил повтор слов.
+ * Выдан ли доступ к микрофону. Только проверка, без запроса: запрос — у переключателя в настройках.
+ * Проверяется заново, когда меняется [key] — например, повтор слов только что включили.
  */
 @Composable
 private fun rememberMicrophoneGranted(key: Boolean): Boolean {

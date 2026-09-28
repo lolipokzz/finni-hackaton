@@ -63,7 +63,7 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
-    fun voiceRepeatTurnedOnByAdultSurvivesRestart() = runBlocking {
+    fun voiceRepeatTurnedOnInSettingsSurvivesRestart() = runBlocking {
         open().updateSettings { it.copy(voiceRepeatEnabled = true) }
 
         assertEquals(true, restart().observeSettings().first().voiceRepeatEnabled)

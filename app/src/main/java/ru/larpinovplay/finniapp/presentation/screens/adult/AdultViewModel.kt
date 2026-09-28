@@ -51,7 +51,6 @@ class AdultViewModel(
             AdultAction.Unlock -> unlock()
             is AdultAction.SetSound -> updateSettings { it.copy(soundEnabled = action.enabled) }
             is AdultAction.SetAnimations -> updateSettings { it.copy(animationsEnabled = action.enabled) }
-            is AdultAction.SetVoiceRepeat -> updateSettings { it.copy(voiceRepeatEnabled = action.enabled) }
             is AdultAction.Request -> request(action.confirmation)
             AdultAction.DismissConfirmation -> dismissConfirmation()
             AdultAction.Confirm -> confirm()

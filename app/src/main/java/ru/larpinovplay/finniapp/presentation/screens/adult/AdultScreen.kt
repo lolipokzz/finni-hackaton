@@ -26,15 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -127,7 +118,6 @@ fun AdultScreenContent(
                 AdultCard("Настройки") {
                     PreferenceSwitch("Звук", state.settings.soundEnabled, !state.busy) { onAction(AdultAction.SetSound(it)) }
                     PreferenceSwitch("Анимации", state.settings.animationsEnabled, !state.busy) { onAction(AdultAction.SetAnimations(it)) }
-                    VoiceRepeatSwitch(state.settings.voiceRepeatEnabled, !state.busy) { onAction(AdultAction.SetVoiceRepeat(it)) }
                 }
                 AdultCard("Демонстрационный режим") {
                     Text("Тестовый питомец, ${GameRules.START_BALANCE} монет, первая неделя. Игровые недели завершаются кнопкой, без ожидания реального времени.")
@@ -174,41 +164,6 @@ private fun AdultCard(title: String, content: @Composable ColumnScope.() -> Unit
             content()
         }
     }
-}
-
-/**
- * Повтор слов — единственное, чему нужен микрофон. По умолчанию выключен и включается только здесь, взрослым:
- * доступ к микрофону спрашивается в момент включения, а не на экране ребёнка (ТЗ 3.1 п. 4, 3.4, 3.5).
- * Звук обрабатывается только на устройстве: не записывается в файлы и никуда не отправляется.
- * Переключатель показывает, работает ли повтор на самом деле: включён и доступ выдан.
- */
-@Composable
-private fun VoiceRepeatSwitch(setting: Boolean, enabled: Boolean, onChange: (Boolean) -> Unit) {
-    val context = LocalContext.current
-    fun granted() = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-    var hasMic by remember { mutableStateOf(granted()) }
-    var denied by remember { mutableStateOf(false) }
-    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        hasMic = ok
-        denied = !ok
-        if (ok) onChange(true)
-    }
-    PreferenceSwitch("Кот повторяет слова (микрофон)", setting && hasMic, enabled) { on ->
-        when {
-            !on -> onChange(false)
-            granted() -> { hasMic = true; denied = false; onChange(true) }
-            else -> request.launch(Manifest.permission.RECORD_AUDIO)
-        }
-    }
-    Text(
-        if (denied) {
-            "Без доступа к микрофону кот не сможет повторять слова. Доступ можно выдать в настройках Android, в разрешениях этого приложения."
-        } else {
-            "Выключено по умолчанию. Кот слышит только то, что говорят рядом с телефоном: звук не сохраняется и никуда не отправляется."
-        },
-        style = MaterialTheme.typography.bodySmall,
-        color = if (denied) MaterialTheme.colorScheme.error else FinniColors.NavyMuted,
-    )
 }
 
 @Composable

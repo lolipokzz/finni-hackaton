@@ -7,7 +7,6 @@ sealed interface AdultAction {
 
     data class SetSound(val enabled: Boolean) : AdultAction
     data class SetAnimations(val enabled: Boolean) : AdultAction
-    data class SetVoiceRepeat(val enabled: Boolean) : AdultAction
 
     /** Сброс, удаление или демо: сначала окно подтверждения, действие — только по [Confirm]. */
     data class Request(val confirmation: AdultConfirmation) : AdultAction

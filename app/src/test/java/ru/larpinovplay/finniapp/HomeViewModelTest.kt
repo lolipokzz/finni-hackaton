@@ -27,6 +27,7 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
+import ru.larpinovplay.finniapp.domain.pet.model.PetSatiety
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeAction
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeUiState
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeViewModel
@@ -246,7 +247,24 @@ class HomeViewModelTest {
 
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
         vm.onAction(HomeAction.ConfirmPlan)
-        assertEquals(HomeUiState.Speech.HUNGRY, vm.state.value?.speech)   // еды на неделю ещё не куплено
+        // Финни сыт (70), поэтому о еде не просит: следующее важное — выбрать мечту
+        assertEquals(HomeUiState.Speech.CHOOSE_GOAL, vm.state.value?.speech)
+    }
+
+    /** «Мур! Я проголодался» — только при сытости 30 и ниже. */
+    @Test
+    fun finniSaysHungryOnlyAtThirtyOrLower() {
+        fun speechAt(satiety: Int): HomeUiState.Speech? {
+            val game = GameRepositoryImpl(FakeGameStore(), clock = clock)
+            runBlocking { game.createPet(SampleGames.newborn.copy(satiety = PetSatiety(satiety))) }
+            val vm = HomeViewModel(game, content, InMemorySettingsRepository())
+            vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
+            vm.onAction(HomeAction.ConfirmPlan)
+            return vm.state.value?.speech
+        }
+        assertEquals(HomeUiState.Speech.HUNGRY, speechAt(30))
+        assertEquals(HomeUiState.Speech.HUNGRY, speechAt(10))
+        assertEquals(HomeUiState.Speech.CHOOSE_GOAL, speechAt(31))
     }
 
     @Test
