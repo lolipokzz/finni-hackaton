@@ -66,7 +66,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.layout.boundsInWindow
+import ru.larpinovplay.finniapp.presentation.components.petShield
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -168,12 +168,7 @@ fun HomeScreenContent(
     if (petHost != null) {
         DisposableEffect(petHost) {
             petHost.onTap = { speechOpen = true }
-            petHost.onShieldTap = { speechOpen = true }
-            onDispose {
-                petHost.onTap = {}
-                petHost.onShieldTap = {}
-                petHost.shield = null
-            }
+            onDispose { petHost.onTap = {} }
         }
     }
     Box(modifier = modifier.fillMaxSize().roomOrigin(room)) {
@@ -207,7 +202,11 @@ fun HomeScreenContent(
                     modifier = Modifier.align(Alignment.BottomCenter),
                     // Финни молчит, но ему есть что сказать: маленькое облачко «…» у головы
                     hint = state.speech?.takeIf { !speechOpen && coachStep == null }?.let { speech ->
-                        { TypingBubble(important = speech.important, onClick = { speechOpen = true }) }
+                        {
+                            val open = { speechOpen = true }
+                            // Облачко «…» закрывает собой кусочек питомца: нажатие на него открывает реплику без его анимации
+                            TypingBubble(important = speech.important, onClick = open, modifier = Modifier.petShield(petHost, open))
+                        }
                     },
                 )
             }
@@ -221,6 +220,7 @@ fun HomeScreenContent(
                 coachStep.coachText, targets[coachStep],
                 onSkip = { onAction(HomeAction.SkipTutorialStep) }.takeIf { coachStep != TutorialStep.PLAN },
                 round = true,
+                petHost = petHost,
             )
         }
     }
@@ -514,9 +514,7 @@ private fun PetArea(
             exit = if (state.animationsEnabled) fadeOut() else ExitTransition.None,
             modifier = Modifier.align(Alignment.TopCenter).offset(x = side * 0.2f, y = headTop),
         ) {
-            // Облачко «…» закрывает собой кусочек питомца: нажатие на него открывает реплику без его анимации
-            Box(Modifier.onGloballyPositioned { petHost?.shield = it.boundsInWindow() }) { hint?.invoke() }
-            DisposableEffect(Unit) { onDispose { petHost?.shield = null } }
+            hint?.invoke()
         }
     }
 }
@@ -530,11 +528,12 @@ private const val HEAD_TOP_FACTOR = 1.03f
  * перерисовка под ним затемняет весь слот.
  */
 @Composable
-private fun TypingBubble(important: Boolean, onClick: () -> Unit) {
+private fun TypingBubble(important: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val dot = if (important) FinniColors.DeedPending else FinniColors.InkMuted
     Box(
-        Modifier
+        modifier
             .size(width = 64.dp, height = 44.dp)
+
             .clickable(onClickLabel = "Послушать Финни", onClick = onClick)
             .semantics { contentDescription = if (important) "Финни хочет сказать что-то важное" else "Финни хочет что-то сказать" },
     ) {

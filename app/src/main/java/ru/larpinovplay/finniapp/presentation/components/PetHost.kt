@@ -24,6 +24,8 @@ import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -90,11 +92,27 @@ class PetHostState(
     var onTap: () -> Unit = {}
 
     /**
-     * Элемент экрана под питомцем, который сам принимает нажатия (в координатах окна): касание над ним
-     * не будит питомца, а вызывает [onShieldTap]. Вид питомца лежит поверх экрана и иначе забрал бы нажатие.
+     * Элементы экрана под питомцем, которые сами принимают нажатия: область в координатах окна и действие.
+     * Вид питомца лежит поверх экрана и иначе забрал бы нажатие. Ставятся модификатором [petShield].
      */
-    var shield: Rect? = null
-    var onShieldTap: () -> Unit = {}
+    private val shields = mutableMapOf<Any, Pair<Rect, () -> Unit>>()
+
+    internal fun setShield(key: Any, bounds: Rect, onTap: () -> Unit) {
+        shields[key] = bounds to onTap
+    }
+
+    internal fun removeShield(key: Any) {
+        shields.remove(key)
+    }
+
+    /**
+     * Действие элемента под точкой ([x], [y] — координаты окна) или null, если там только питомец.
+     * Если элементы вложены (подсказка и её кнопка), побеждает самый маленький — тот, в который целились.
+     */
+    fun shieldAt(x: Float, y: Float): (() -> Unit)? = shields.values
+        .filter { (bounds, _) -> bounds.contains(Offset(x, y)) }
+        .minByOrNull { (bounds, _) -> bounds.width * bounds.height }
+        ?.second
 
     /** Экран, который сейчас показывает питомца. */
     var owner by mutableStateOf<PetHostOwner?>(null)
@@ -207,8 +225,8 @@ fun PetHost(
             onShadow = { shadow.value = it },
             active = state.shown,
             onTap = { state.onTap() },
-            shield = { x, y -> state.shield?.contains(Offset(x, y)) == true },
-            onShieldTap = { state.onShieldTap() },
+            shieldAt = state::shieldAt,
+
             modifier = place,
         )
     }
@@ -257,4 +275,28 @@ private val FALLBACK_SIZE = 320.dp
 
 private class BoundsHolder {
     var value: Rect? = null
+}
+
+/**
+ * Элемент под видом питомца, который сам принимает нажатия: касание над ним получает [onTap], а не питомец.
+ * Нужен всему, что может оказаться на слоте питомца (облачко «…», подсказка обучения). Без [host] (превью,
+ * экраны без питомца) ничего не делает. Уйдя с экрана, элемент снимает свой щит сам.
+ */
+fun Modifier.petShield(host: PetHostState?, onTap: () -> Unit): Modifier =
+    if (host == null) this else this then PetShieldElement(host, onTap)
+
+private data class PetShieldElement(val host: PetHostState, val onTap: () -> Unit) : ModifierNodeElement<PetShieldNode>() {
+    override fun create() = PetShieldNode(host, onTap)
+    override fun update(node: PetShieldNode) {
+        node.host.removeShield(node)
+        node.host = host
+        node.onTap = onTap
+    }
+}
+
+private class PetShieldNode(var host: PetHostState, var onTap: () -> Unit) : Modifier.Node(), GlobalPositionAwareModifierNode {
+    override fun onGloballyPositioned(coordinates: LayoutCoordinates) =
+        host.setShield(this, coordinates.boundsInWindow()) { onTap() }
+
+    override fun onDetach() = host.removeShield(this)
 }

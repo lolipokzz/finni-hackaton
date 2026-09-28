@@ -91,6 +91,7 @@ fun TutorialSpotlight(
     modifier: Modifier = Modifier,
     round: Boolean = false,
     scroll: ScrollableState? = null,
+    petHost: PetHostState? = null,
 ) {
     var origin by remember { mutableStateOf(Offset.Zero) }
     var size by remember { mutableStateOf(IntSize.Zero) }
@@ -147,12 +148,16 @@ fun TutorialSpotlight(
         )
         strips.forEach { Blocker(it, scroll) }
         val noteOnTop = open == null || open.center.y > screen.height / 2
+        // Подсказка может лечь на слот питомца, а его вид лежит поверх окна: без щита нажатие на «Пропустить шаг»
+        // досталось бы питомцу. Щит на всю карточку глушит нажатие мимо кнопки, щит кнопки — пропускает шаг
         CoachNote(
             text,
             onSkip = onSkip,
+            skipModifier = onSkip?.let { Modifier.petShield(petHost, it) } ?: Modifier,
             modifier = Modifier
                 .align(if (noteOnTop) Alignment.TopCenter else Alignment.BottomCenter)
-                .padding(start = 14.dp, end = 14.dp, top = 92.dp, bottom = 24.dp),
+                .padding(start = 14.dp, end = 14.dp, top = 92.dp, bottom = 24.dp)
+                .petShield(petHost) {},
         )
     }
 }

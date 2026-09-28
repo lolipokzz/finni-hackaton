@@ -85,12 +85,10 @@ fun PetModel3D(
     active: Boolean = true,
     contentDescription: String = "Питомец. Нажми, и он помашет, или погладь его",
     onTap: () -> Unit = {},
-    shield: (x: Float, y: Float) -> Boolean = { _, _ -> false },
-    onShieldTap: () -> Unit = {},
+    shieldAt: (x: Float, y: Float) -> (() -> Unit)? = { _, _ -> null },
 ) {
     val currentOnTap by rememberUpdatedState(onTap)
-    val currentShield by rememberUpdatedState(shield)
-    val currentOnShieldTap by rememberUpdatedState(onShieldTap)
+    val currentShieldAt by rememberUpdatedState(shieldAt)
     val controller = remember {
         PetModelController(tintMaterial, idleAnimation, tapAnimation, hitAnimations, pettingAnimation, cameraDistance)
     }
@@ -106,19 +104,20 @@ fun PetModel3D(
                 // Клик не знает координат: запоминаем точку касания, а клик (в том числе от TalkBack) её забирает.
                 // Движение пальца дальше порога — это поглаживание, а не нажатие
                 val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-                // Касание, начатое над элементом экрана, который лежит под питомцем ([shield], координаты окна),
-                // питомцу не достаётся: ни анимации, ни клика — только onShieldTap при отпускании
+                // Касание, начатое над элементом экрана, который лежит под питомцем ([shieldAt], координаты окна),
+                // питомцу не достаётся: ни анимации, ни клика — при отпускании выполняется действие этого элемента
                 val location = IntArray(2)
-                var shielded = false
+                var shielded: (() -> Unit)? = null
                 setOnTouchListener { view, event ->
                     if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                         view.getLocationInWindow(location)
-                        shielded = currentShield(location[0] + event.x, location[1] + event.y)
+                        shielded = currentShieldAt(location[0] + event.x, location[1] + event.y)
                     }
-                    if (shielded) {
+                    val action = shielded
+                    if (action != null) {
                         when (event.actionMasked) {
-                            MotionEvent.ACTION_UP -> { shielded = false; currentOnShieldTap() }
-                            MotionEvent.ACTION_CANCEL -> shielded = false
+                            MotionEvent.ACTION_UP -> { shielded = null; action() }
+                            MotionEvent.ACTION_CANCEL -> shielded = null
                         }
                         return@setOnTouchListener true
                     }

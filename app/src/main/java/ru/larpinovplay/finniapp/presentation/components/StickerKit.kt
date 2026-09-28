@@ -427,7 +427,7 @@ fun DoneBadge(modifier: Modifier = Modifier, size: Dp = 24.dp) {
  * «Пропустить шаг». Стоит прямо там, где нужно действие, а не отдельным окном.
  */
 @Composable
-fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)? = null) {
+fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)? = null, skipModifier: Modifier = Modifier) {
     Row(
         modifier
             .fillMaxWidth()
@@ -448,6 +448,7 @@ fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)?
                     modifier = Modifier
                         .align(Alignment.End)
                         .heightIn(min = 48.dp)
+                        .then(skipModifier)
                         .clip(CircleShape)
                         .clickable(role = Role.Button, onClick = it)
                         .padding(horizontal = 8.dp, vertical = 14.dp),
