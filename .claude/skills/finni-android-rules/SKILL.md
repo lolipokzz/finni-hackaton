@@ -54,7 +54,10 @@ app/           Application, Koin-модули
 
 - Кремовый стиль сохраняем модификатором: `Modifier.creamCard(shape)` на кнопке + прозрачный `containerColor`
   и `elevation = null` у `Button`, чтобы не было двойной тени.
-- Выключенное состояние — через `enabled` и `disabled*Color`, не через `Modifier.alpha()`.
+- Выключенное состояние — через `enabled` и `disabled*Color` Material-компонента, не через `Modifier.alpha()`
+  вместо `enabled`. `alpha` допустим только как визуальное приглушение поверх уже выставленного `enabled = false`
+  (например, невыбранные варианты после ответа).
+- У переключателя (`Role.Switch`/`Checkbox`) состояние — `toggleableState`, у выбора (`RadioButton`/`Tab`) — `selected`.
 - Сначала ищи готовое в `components/StickerKit.kt` (`TealButton`, `SoftButton`, `PillButton`, `PebbleButton`,
   `BackButton`, `StepButton`, `ScreenHeader`, `CardDialog`, `StatRow`…). Не заводи локальный дубль (`StepButton` в TaskPlay — ошибка).
 - «Назад» — везде `ScreenHeader`/`BackButton` (ТЗ 3.6: единообразное расположение). Не `TextButton("← Назад")`, не «‹».
