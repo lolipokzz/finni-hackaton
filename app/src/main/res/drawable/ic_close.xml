@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute close_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
-    <!-- Закрыть окно. -->
-    <path android:strokeColor="#1F3B4D" android:strokeWidth="2.8" android:strokeLineCap="round"
-        android:pathData="M6 6l12 12M18 6L6 18"/>
+    <path android:fillColor="#1F3B4D" android:fillType="evenOdd" android:pathData="m 12 14.122 5.303 5.303 a 1.5 1.5 0 0 0 2.122 -2.122 L 14.12 12 l 5.304 -5.303 a 1.5 1.5 0 1 0 -2.122 -2.121 L 12 9.879 6.697 4.576 a 1.5 1.5 0 1 0 -2.122 2.12 L 9.88 12 l -5.304 5.304 a 1.5 1.5 0 1 0 2.122 2.12 z"/>
 </vector>

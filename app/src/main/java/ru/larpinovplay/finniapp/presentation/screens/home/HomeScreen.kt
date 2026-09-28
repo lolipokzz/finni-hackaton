@@ -255,7 +255,7 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
     }
 }
 
-/** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка с лапкой. */
+/** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка с мордочкой кота. */
 @Composable
 private fun PetButton(pet: Pet, onClick: () -> Unit) {
     Surface(
@@ -268,7 +268,7 @@ private fun PetButton(pet: Pet, onClick: () -> Unit) {
             .clearAndSetSemantics { contentDescription = "${pet.name}: рост и прогресс" },
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Image(painterResource(R.drawable.ic_paw), null, Modifier.size(24.dp), colorFilter = ColorFilter.tint(FinniColors.TealBright))
+            Image(painterResource(R.drawable.ic_cat), null, Modifier.size(26.dp), colorFilter = ColorFilter.tint(FinniColors.TealBright))
         }
     }
 }

@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute chicken_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <path android:fillColor="#D98C5F" android:pathData="M5,24 a15,13 0 1,0 30,0 a15,13 0 1,0 -30,0Z"/>
-    <path android:fillColor="#F2B48C" android:pathData="M10,21 a7,5 0 1,0 14,0 a7,5 0 1,0 -14,0Z"/>
-    <path android:strokeColor="#F4EDE3" android:strokeWidth="7" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M32,30 L42,40"/>
-    <path android:fillColor="#F4EDE3" android:pathData="M38,38 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0Z"/>
-    <path android:fillColor="#F4EDE3" android:pathData="M35,42 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0Z"/>
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#D9704A" android:pathData="M 20.132 5.99 a 2.988 2.988 0 0 0 -1.345 -.777 3 3 0 1 0 -5.606 2.07 l -.808 .81 a 5.675 5.675 0 0 0 -.034 -.005 c -.927 -.117 -1.956 -.048 -2.969 .152 -2 .396 -4.149 1.347 -5.502 2.7 -1.366 1.366 -1.93 2.978 -1.786 4.591 .142 1.583 .954 3.062 2.14 4.247 1.186 1.186 2.664 1.999 4.247 2.14 1.613 .145 3.225 -.42 4.592 -1.786 1.352 -1.353 2.304 -3.5 2.7 -5.502 .2 -1.012 .268 -2.042 .152 -2.968 a 3.95 3.95 0 0 0 -.005 -.034 l .809 -.81 a 3.001 3.001 0 0 0 3.415 -4.828"/>
 </vector>

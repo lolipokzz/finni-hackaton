@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phosphor hand-soap-fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <!-- Кусок мыла с пузырьками -->
-    <path android:fillColor="#FF9EC7" android:pathData="M8,26 q0,-8 8,-8 h16 q8,0 8,8 v6 q0,8 -8,8 h-16 q-8,0 -8,-8Z"/>
-    <path android:fillColor="#FFC4DD" android:pathData="M12,26 q0,-5 5,-5 h14 q5,0 5,5 v2 q0,3 -3,3 h-18 q-3,0 -3,-3Z"/>
-    <path android:fillColor="#DCEFFF" android:pathData="M12,12 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0Z"/>
-    <path android:fillColor="#DCEFFF" android:pathData="M25,7 a3.5,3.5 0 1,0 7,0 a3.5,3.5 0 1,0 -7,0Z"/>
-    <path android:fillColor="#DCEFFF" android:pathData="M31,14 a2.5,2.5 0 1,0 5,0 a2.5,2.5 0 1,0 -5,0Z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M14,10.5 a1.5,1.5 0 1,0 3,0 a1.5,1.5 0 1,0 -3,0Z"/>
+    android:viewportWidth="256" android:viewportHeight="256">
+    <path android:fillColor="#FF6FA8" android:pathData="M 184 96.8 V 88 a 32 32 0 0 0 -32 -32 H 136 V 32 h 32 a 8 8 0 0 1 8 8 8 8 0 0 0 16 0 24 24 0 0 0 -24 -24 H 104 a 8 8 0 0 0 0 16 h 16 V 56 H 104 A 32 32 0 0 0 72 88 v 8.8 A 40.07 40.07 0 0 0 40 136 v 80 a 16 16 0 0 0 16 16 H 200 a 16 16 0 0 0 16 -16 V 136 A 40.07 40.07 0 0 0 184 96.8 Z M 104 72 h 48 a 16 16 0 0 1 16 16 v 8 H 88 V 88 A 16 16 0 0 1 104 72 Z"/>
 </vector>
