@@ -26,7 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -110,8 +110,8 @@ fun SettingsScreenContent(
     modifier: Modifier = Modifier,
 ) {
     // Раскрытие карточек «Как играть» и «Словарик» — вид одного экрана, в ViewModel ему делать нечего
-    var introOpen by remember { mutableStateOf(false) }
-    var glossaryOpen by remember { mutableStateOf(false) }
+    var introOpen by rememberSaveable { mutableStateOf(false) }
+    var glossaryOpen by rememberSaveable { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()

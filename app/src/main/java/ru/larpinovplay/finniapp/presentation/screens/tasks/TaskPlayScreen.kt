@@ -24,7 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.mapSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -115,7 +117,7 @@ fun TaskPlayScreenContent(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: ()
 
 @Composable
 private fun ChoiceWidget(p: TaskPayload.Choice, onSubmit: (TaskAnswer) -> Unit) {
-    var selected by remember { mutableStateOf<String?>(null) }
+    var selected by rememberSaveable { mutableStateOf<String?>(null) }
     Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         p.options.forEach { option ->
             val isSelected = option.id == selected
@@ -145,7 +147,10 @@ private fun ChoiceWidget(p: TaskPayload.Choice, onSubmit: (TaskAnswer) -> Unit) 
 
 @Composable
 private fun AllocateWidget(p: TaskPayload.Allocate, onSubmit: (TaskAnswer) -> Unit) {
-    var amounts by remember { mutableStateOf(p.buckets.associate { it.id to 0 }) }
+    // Ввод ребёнка переживает пересоздание экрана (шрифт, тема) и выгрузку процесса
+    var amounts by rememberSaveable(stateSaver = mapSaver({ it }, { saved -> saved.mapValues { (_, v) -> v as Int } })) {
+        mutableStateOf(p.buckets.associate { it.id to 0 })
+    }
     val total = amounts.values.sum()
     val remaining = p.total - total
     Card {
@@ -180,7 +185,9 @@ private fun AllocateWidget(p: TaskPayload.Allocate, onSubmit: (TaskAnswer) -> Un
 
 @Composable
 private fun ShopListWidget(p: TaskPayload.ShopList, onSubmit: (TaskAnswer) -> Unit) {
-    var selected by remember { mutableStateOf(setOf<String>()) }
+    var selected by rememberSaveable(stateSaver = listSaver<Set<String>, String>({ it.toList() }, { it.toSet() })) {
+        mutableStateOf(emptySet())
+    }
     val total = p.items.filter { it.id in selected }.sumOf { it.price }
     val over = total > p.budget
     Card {
@@ -257,7 +264,7 @@ private fun ShopListRow(item: TaskPayload.ShopList.Item, checked: Boolean, onTog
 
 @Composable
 private fun HintButton(hint: String) {
-    var shown by remember { mutableStateOf(false) }
+    var shown by rememberSaveable { mutableStateOf(false) }
     TextButton(onClick = { shown = !shown }) { Text(if (shown) "Скрыть подсказку" else "Подсказка", style = MaterialTheme.typography.labelLarge) }
     if (shown) {
         Text(hint, style = MaterialTheme.typography.bodyLarge, color = FinniColors.NavyMuted, modifier = Modifier.padding(horizontal = 8.dp))

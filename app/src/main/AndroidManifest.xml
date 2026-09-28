@@ -14,9 +14,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.FinniApp">
+        <!-- Только портрет (ТЗ 3.1: обязателен портрет от 360 dp). Экраны рассчитаны на вертикаль, а поворот
+             пересоздавал бы экран посреди задания. На Android 16+ на планшетах и складных (≥ 600 dp) система
+             блокировку игнорирует — это ожидаемо: поддержка планшетов в ТЗ — только преимущество. -->
         <activity
             android:name=".presentation.MainActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity,DiscouragedApi"
             android:label="@string/app_name"
             android:theme="@style/Theme.FinniApp">
             <intent-filter>
