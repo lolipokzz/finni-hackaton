@@ -5,6 +5,9 @@ data class AppSettings(
     val soundEnabled: Boolean = true,
     val animationsEnabled: Boolean = true,
     val tipsEnabled: Boolean = true,
-    /** Питомец слушает микрофон и повторяет услышанное своим голосом (звук остаётся на устройстве). */
-    val voiceRepeatEnabled: Boolean = true,
+    /**
+     * Питомец слушает микрофон и повторяет услышанное своим голосом (звук остаётся на устройстве).
+     * Выключено по умолчанию и включается только взрослым: микрофон не нужен для обязательного сценария (ТЗ 3.1 п. 4).
+     */
+    val voiceRepeatEnabled: Boolean = false,
 )

@@ -43,6 +43,8 @@ import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
+import ru.larpinovplay.finniapp.presentation.components.CatEarFrame
+import ru.larpinovplay.finniapp.presentation.components.CatEarFrameContentTop
 import ru.larpinovplay.finniapp.presentation.components.BubbleTail
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.CoachNote
@@ -51,7 +53,6 @@ import ru.larpinovplay.finniapp.presentation.components.Paws
 import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.PillButton
 import ru.larpinovplay.finniapp.presentation.components.TealButton
-import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.growth
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.game.todoText
@@ -59,7 +60,7 @@ import ru.larpinovplay.finniapp.presentation.pet.nextStageTitle
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /*
- * Дела недели — карточка над солнышком. Четыре наклейки дел, что осталось сделать (каждое — с кнопкой туда,
+ * Дела недели — карточка-мордочка с ушками (CatEarFrame) над солнышком. Четыре наклейки дел, что осталось сделать (каждое — с кнопкой туда,
  * где это делается), лапки роста и конец недели: кнопка, если можно, или спокойное «почему пока нельзя».
  */
 
@@ -108,14 +109,15 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
     val deeds = state.deeds
     val all = deeds.steps == WeekDeeds.MAX_STEPS
     val feedback = LocalFeedback.current
+    CatEarFrame(Modifier.fillMaxWidth()) {
     Column(
         Modifier
             .fillMaxWidth()
-            .creamCard(RoundedCornerShape(34.dp), elevation = 20.dp)
             .verticalScroll(rememberScrollState())
-            .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 16.dp),
+            .padding(start = 18.dp, end = 18.dp, top = CatEarFrameContentTop, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // Заголовок — на мордочке, под полосками на лбу
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
@@ -182,6 +184,7 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
             FinishBlock.PLAN_NOT_CONFIRMED -> FinishNote(feedback.text(FeedbackKey.FINISH_NO_PLAN))
             FinishBlock.ADVENTURE_NOT_PLAYED -> Unit   // уже в «осталось сделать», с кнопкой
         }
+    }
     }
 }
 

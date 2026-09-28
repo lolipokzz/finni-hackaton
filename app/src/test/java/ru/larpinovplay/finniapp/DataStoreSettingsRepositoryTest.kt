@@ -50,6 +50,26 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun voiceRepeatIsOffByDefault() = runBlocking {
+        assertEquals(false, open().observeSettings().first().voiceRepeatEnabled)
+    }
+
+    @Test
+    fun oldFileWithVoiceRepeatOnStartsWithItOff() = runBlocking {
+        // Файл версии, где повтор слов был включён по умолчанию и записан в настройки
+        file.writeText("""{"soundEnabled":true,"animationsEnabled":true,"tipsEnabled":true,"voiceRepeatEnabled":true}""")
+
+        assertEquals(AppSettings(voiceRepeatEnabled = false), open().observeSettings().first())
+    }
+
+    @Test
+    fun voiceRepeatTurnedOnByAdultSurvivesRestart() = runBlocking {
+        open().updateSettings { it.copy(voiceRepeatEnabled = true) }
+
+        assertEquals(true, restart().observeSettings().first().voiceRepeatEnabled)
+    }
+
+    @Test
     fun updateAppliesTransformAndKeepsOtherFields() = runBlocking {
         val settings = open()
 

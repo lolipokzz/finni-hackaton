@@ -383,8 +383,8 @@ private fun CoinCount(coins: Int, color: Color = Color.Unspecified) {
 
 /** Назад: круглая кремовая наклейка со стрелкой, как шестерёнка на главном экране. */
 @Composable
-fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(onClick = onClick, modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp)) {
+fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    IconButton(onClick = onClick, enabled = enabled, modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp)) {
         Image(
             painterResource(R.drawable.ic_arrow_right),
             contentDescription = "Назад",
@@ -475,9 +475,15 @@ fun StatRow(label: String, value: String, coin: Boolean = false, warn: Boolean =
 
 /** Шапка раздела поверх комнаты: «назад», белый заголовок с тенью и, справа, что-то своё раздела. */
 @Composable
-fun ScreenHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier, trailing: @Composable () -> Unit = {}) {
+fun ScreenHeader(
+    title: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    backEnabled: Boolean = true,
+    trailing: @Composable () -> Unit = {},
+) {
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        BackButton(onBack)
+        BackButton(onBack, enabled = backEnabled)
         Text(title, style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
         trailing()
     }

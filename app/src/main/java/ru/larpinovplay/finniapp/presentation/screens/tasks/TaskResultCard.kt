@@ -36,7 +36,7 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
  * помечен как диалог, поэтому здесь только карточка, без AlertDialog.
  */
 @Composable
-fun TaskResultCard(result: TaskOutcomeUi, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun TaskResultCard(result: TaskOutcomeUi, onDismiss: () -> Unit, modifier: Modifier = Modifier, retryNow: Boolean = false) {
     Column(
         modifier
             .padding(horizontal = 14.dp)
@@ -66,7 +66,8 @@ fun TaskResultCard(result: TaskOutcomeUi, onDismiss: () -> Unit, modifier: Modif
         StatRow("Монеты", "+${result.reward}", coin = true)
         if (!result.success) {
             Text(
-                "Это задание можно попробовать снова на следующей неделе",
+                // В демо после ошибки задание можно решить сразу ещё раз (ТЗ 2.5.8), в игре — на следующей неделе
+                if (retryNow) "Можно сразу попробовать ещё раз" else "Это задание можно попробовать снова на следующей неделе",
                 style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
             )
         }

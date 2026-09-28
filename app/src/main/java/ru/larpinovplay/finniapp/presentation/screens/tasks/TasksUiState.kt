@@ -7,7 +7,7 @@ import ru.larpinovplay.finniapp.domain.task.model.Task
 data class TasksUiState(
     val items: List<TaskItem>,
     val doneThisWeek: Int,
-    val perWeek: Int,
+    val perWeek: Int?,                       // null — демо: лимита заданий в неделю нет
     val adventure: Adventure? = null,        // приключение, которое ждёт на этой неделе
     val adventureDone: Boolean = false,      // приключение этой недели уже пройдено
     val coach: Boolean = false,              // обучение: Финни просит решить задание

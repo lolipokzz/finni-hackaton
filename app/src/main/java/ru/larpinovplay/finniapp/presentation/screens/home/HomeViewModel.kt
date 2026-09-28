@@ -61,42 +61,75 @@ class HomeViewModel(
 
     fun onAction(action: HomeAction) {
         when (action) {
-            // Карточка дел сменяется итогами одним обновлением: между ними не мелькнёт главный экран прошлой недели.
-            // Пока итоги открыты, второй тап по ещё не исчезнувшей кнопке не закончит (в демо) и следующую неделю
-            HomeAction.FinishWeek -> if (_state.value?.weekSummary == null) viewModelScope.launch {
-                when (val result = game.finishWeek().orSnackbar { onAction(HomeAction.FinishWeek) }) {
-                    is FinishWeekResult.Finished -> _state.update { it?.copy(weekSummary = result.summary, deedsOpen = false) }
-                    // Карточка дел сама объясняет, чего не хватает
-                    is FinishWeekResult.Blocked -> _state.update { it?.copy(finishBlock = result.reason, deedsOpen = true) }
-                    null -> Unit
-                }
-            }
-            HomeAction.DismissWeekSummary -> _state.update { it?.copy(weekSummary = null) }
+            HomeAction.FinishWeek -> finishWeek()
+            HomeAction.DismissWeekSummary -> dismissWeekSummary()
             is HomeAction.ChangePlan -> changePlan(action.direction, action.increase)
             is HomeAction.SetPlan -> setPlan(action.direction, action.amount)
-            HomeAction.OpenPlan -> _state.update { it?.copy(planOpen = it.planDraft != null || it.activePlan != null) }
-            HomeAction.ClosePlan -> _state.update { it?.copy(planOpen = false) }
-            HomeAction.ConfirmPlan -> viewModelScope.launch {
-                val draft = _state.value?.planDraft ?: return@launch
-                if (draft.unallocated != 0) return@launch
-                // Окно закроется само вместе с новой неделей: черновик пропадёт — и окно тоже (см. toUiState).
-                // Закрой его раньше — на миг мелькнула бы прошлая подсказка обучения
-                game.confirmPlan(draft.plan).orSnackbar { onAction(HomeAction.ConfirmPlan) }
-            }
-            is HomeAction.ShowInfo -> _state.update { it?.copy(info = action.info) }
-            HomeAction.DismissInfo -> _state.update { it?.copy(info = null) }
-            HomeAction.ShowDeeds -> _state.update { it?.copy(deedsOpen = true) }
-            // Дела недели — последний шаг обучения: посмотрел — окно «Обучение пройдено», закончится по «Да»
-            HomeAction.DismissDeeds -> _state.update { it?.copy(deedsOpen = false, tutorialDone = it.tutorial == TutorialStep.DEEDS) }
-            HomeAction.SkipTutorialStep -> when (val step = _state.value?.tutorial) {
-                null, TutorialStep.PLAN -> Unit   // без плана неделя не начнётся — этот шаг не пропустить
-                TutorialStep.DEEDS -> _state.update { it?.copy(tutorialDone = true) }   // сразу к «Обучение пройдено»
-                else -> viewModelScope.launch { game.skipTutorialStep(step).orSnackbar { onAction(HomeAction.SkipTutorialStep) } }
-            }
-            // Окно закроется вместе с концом обучения (см. toUiState): закрой раньше — мелькнула бы подсветка солнышка
-            HomeAction.FinishTutorial -> viewModelScope.launch { game.finishTutorial().orSnackbar { onAction(HomeAction.FinishTutorial) } }
+            HomeAction.OpenPlan -> openPlan()
+            HomeAction.ClosePlan -> closePlan()
+            HomeAction.ConfirmPlan -> confirmPlan()
+            is HomeAction.ShowInfo -> showInfo(action.info)
+            HomeAction.DismissInfo -> dismissInfo()
+            HomeAction.ShowDeeds -> showDeeds()
+            HomeAction.DismissDeeds -> dismissDeeds()
+            HomeAction.SkipTutorialStep -> skipTutorialStep()
+            HomeAction.FinishTutorial -> finishTutorial()
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
+    }
+
+    /**
+     * Карточка дел сменяется итогами одним обновлением: между ними не мелькнёт главный экран прошлой недели.
+     * Пока итоги открыты, второй тап по ещё не исчезнувшей кнопке не закончит (в демо) и следующую неделю.
+     */
+    private fun finishWeek() {
+        if (_state.value?.weekSummary != null) return
+        viewModelScope.launch {
+            when (val result = game.finishWeek().orSnackbar { finishWeek() }) {
+                is FinishWeekResult.Finished -> _state.update { it?.copy(weekSummary = result.summary, deedsOpen = false) }
+                // Карточка дел сама объясняет, чего не хватает
+                is FinishWeekResult.Blocked -> _state.update { it?.copy(finishBlock = result.reason, deedsOpen = true) }
+                null -> Unit
+            }
+        }
+    }
+
+    private fun dismissWeekSummary() = _state.update { it?.copy(weekSummary = null) }
+
+    private fun openPlan() = _state.update { it?.copy(planOpen = it.planDraft != null || it.activePlan != null) }
+
+    private fun closePlan() = _state.update { it?.copy(planOpen = false) }
+
+    /**
+     * Окно закроется само вместе с новой неделей: черновик пропадёт — и окно тоже (см. toUiState).
+     * Закрой его раньше — на миг мелькнула бы прошлая подсказка обучения.
+     */
+    private fun confirmPlan() {
+        val draft = _state.value?.planDraft ?: return
+        if (draft.unallocated != 0) return
+        viewModelScope.launch { game.confirmPlan(draft.plan).orSnackbar { confirmPlan() } }
+    }
+
+    private fun showInfo(info: HomeInfo) = _state.update { it?.copy(info = info) }
+
+    private fun dismissInfo() = _state.update { it?.copy(info = null) }
+
+    private fun showDeeds() = _state.update { it?.copy(deedsOpen = true) }
+
+    /** Дела недели — последний шаг обучения: посмотрел — окно «Обучение пройдено», закончится по «Да». */
+    private fun dismissDeeds() = _state.update { it?.copy(deedsOpen = false, tutorialDone = it.tutorial == TutorialStep.DEEDS) }
+
+    private fun skipTutorialStep() {
+        when (val step = _state.value?.tutorial) {
+            null, TutorialStep.PLAN -> Unit   // без плана неделя не начнётся — этот шаг не пропустить
+            TutorialStep.DEEDS -> _state.update { it?.copy(tutorialDone = true) }   // сразу к «Обучение пройдено»
+            else -> viewModelScope.launch { game.skipTutorialStep(step).orSnackbar { skipTutorialStep() } }
+        }
+    }
+
+    /** Окно закроется вместе с концом обучения (см. toUiState): закрой раньше — мелькнула бы подсветка солнышка. */
+    private fun finishTutorial() {
+        viewModelScope.launch { game.finishTutorial().orSnackbar { finishTutorial() } }
     }
 
     /** «+» добавляет шаг, но не больше, чем осталось разложить; «−» убирает шаг, но не ниже нуля. */
@@ -180,6 +213,9 @@ class HomeViewModel(
             week = game.week,
             speech = if (settings.tipsEnabled) speech(game, deeds, finishBlock, tasks) else null,
             tasksBadge = tasks + if (finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED) 1 else 0,
+            // Сначала приключение недели — без него неделю не закончить, потом ближайшее задание
+            activeTask = game.adventureOfWeek(content.adventures)?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = true) }
+                ?: game.availableTasks(content.tasks).firstOrNull()?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = false) },
             animationsEnabled = settings.animationsEnabled,
             soundEnabled = settings.soundEnabled,
             voiceRepeatEnabled = settings.voiceRepeatEnabled,

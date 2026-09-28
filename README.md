@@ -15,7 +15,7 @@
 - Kotlin 2.2, Jetpack Compose (Material 3), Navigation Compose
 - Jetpack DataStore + kotlinx.serialization для локального состояния
 - Чистый Kotlin/JVM-модуль `:domain` с игровой логикой и unit-тестами (JUnit)
-- `minSdk 27`, `targetSdk 36`, `applicationId ru.larpinovplay.finniapp`
+- `minSdk 26` (Android 8.0, ТЗ 3.1), `targetSdk 37`, `applicationId ru.larpinovplay.finniapp`
 
 ## Состав репозитория
 

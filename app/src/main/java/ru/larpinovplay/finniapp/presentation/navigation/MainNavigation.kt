@@ -20,8 +20,12 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import ru.larpinovplay.finniapp.domain.content.Content
+import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
+import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.presentation.components.PetHostOwner
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.screens.adult.AdultScreen
@@ -100,7 +104,14 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                 }
 
                 entry<TaskResult>(metadata = DialogSceneStrategy.dialog()) { route ->
-                    TaskResultCard(result = route.outcome, onDismiss = backStack::goBack)
+                    // Можно ли решить задание снова прямо сейчас — так бывает в демо: там нет лимита и ожидания недели
+                    val game = koinInject<GameRepository>()
+                    val content = koinInject<Content>()
+                    val retryNow = remember(route) {
+                        val task = content.tasks.firstOrNull { it.id == route.taskId }
+                        task != null && game.snapshot.value?.state?.taskStatus(task) == TaskStatus.AVAILABLE
+                    }
+                    TaskResultCard(result = route.outcome, onDismiss = backStack::goBack, retryNow = retryNow)
                 }
 
                 entry<Shop> {

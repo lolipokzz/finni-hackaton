@@ -95,6 +95,7 @@ fun TaskPlayScreenContent(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: ()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Кнопка «Назад» — та же, что на всех экранах (ТЗ 3.6), с подписью для TalkBack
             ScreenHeader(task.title, onBack, Modifier.padding(top = 8.dp))
             Card {
                 Column(Modifier.padding(16.dp)) {

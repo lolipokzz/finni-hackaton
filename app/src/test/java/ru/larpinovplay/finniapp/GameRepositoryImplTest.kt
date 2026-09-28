@@ -11,6 +11,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
@@ -35,6 +36,20 @@ class GameRepositoryImplTest {
     private val clock = TestClock()
     private val game = GameRepositoryImpl(store, startBalance = 100, clock = clock)
     private val plan = BudgetPlan(mandatory = food.price, optional = 100 - food.price)
+
+    /** Раздел взрослого обещает демо с [GameRules.START_BALANCE] монет на первой неделе (ТЗ 2.5.13) — так и есть. */
+    @Test
+    fun demoStartsWithStartBalanceOnFirstWeek() = runBlocking {
+        val game = GameRepositoryImpl(FakeGameStore(), clock = clock)
+
+        game.resetToDemo()
+
+        val state = game.requireSnapshot().state
+        assertTrue(state.demoMode)
+        assertEquals(GameRules.START_BALANCE, state.balance)
+        assertEquals(1, state.week)
+        assertEquals("Финни Демо", game.requireSnapshot().pet.name)
+    }
 
     @Test
     fun gameDoesNotExistUntilPetIsCreated() {

@@ -1,6 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.CardTitle
@@ -10,8 +11,6 @@ import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
 import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
 import android.Manifest
 import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -34,6 +33,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
@@ -181,6 +181,8 @@ fun HomeScreenContent(
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
             TopRow(state, onAction)
+            Spacer(Modifier.height(10.dp))
+            StatusRow(state, onAction)
             Spacer(Modifier.height(10.dp))
             // Слева под кольцами — редкая кнопка «всё о Финни», справа от неё реплика: одна строка на двоих
             Row(verticalAlignment = Alignment.Top) {
@@ -332,14 +334,75 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
     }
 }
 
-/** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка с лапкой. */
+/**
+ * Копилка и активное задание числом и словами (ТЗ 2.5.3): видно сразу, без перехода в разделы.
+ * Каждая карточка ведёт туда, где с этим работают.
+ */
+@Composable
+private fun StatusRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
+    val goal = state.goal
+    val task = state.activeTask
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        StatusCard(
+            icon = R.drawable.ic_nav_savings,
+            tint = Color(0xFFFFE6F0),
+            title = "В копилке ${state.savings}",
+            detail = goal?.let { "${it.name}: ${state.savings} из ${it.cost}" } ?: "Цель не выбрана",
+            description = "Копилка: ${state.savings} монет. " + (goal?.let { "Цель: ${it.name}, накоплено ${state.savings} из ${it.cost}" } ?: "Цель ещё не выбрана"),
+            modifier = Modifier.weight(1f),
+            onClick = { onAction(HomeAction.OpenSection(HomeSection.SAVINGS)) },
+        )
+        StatusCard(
+            icon = if (task?.adventure == true) R.drawable.ic_adventure else R.drawable.ic_nav_tasks,
+            tint = Color(0xFFE6F8F2),
+            title = task?.title ?: "Задания сделаны",
+            detail = task?.let { (if (it.adventure) "Приключение" else "Задание") + " · +${it.reward}" } ?: "Новые — на следующей неделе",
+            description = task?.let { (if (it.adventure) "Приключение недели: " else "Задание: ") + "${it.title}, награда ${it.reward} монет" }
+                ?: "Задания этой недели сделаны",
+            modifier = Modifier.weight(1f),
+            onClick = { onAction(HomeAction.OpenSection(HomeSection.TASKS)) },
+        )
+    }
+}
+
+@Composable
+private fun StatusCard(
+    icon: Int,
+    tint: Color,
+    title: String,
+    detail: String,
+    description: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier
+            .heightIn(min = 56.dp)
+            .creamCard(RoundedCornerShape(22.dp), elevation = 6.dp, border = 3.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .clearAndSetSemantics { contentDescription = description; role = Role.Button }
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(tint), contentAlignment = Alignment.Center) {
+            Image(painterResource(icon), null, Modifier.size(22.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(title, fontSize = 15.sp, lineHeight = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(detail, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+/** Всё о Финни: рост и прогресс. Нажимают редко, поэтому это маленькая круглая наклейка с мордочкой кота. */
 @Composable
 private fun PetButton(pet: Pet, onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp)) {
         Image(
-            painterResource(R.drawable.ic_paw),
+            painterResource(R.drawable.ic_cat),
             contentDescription = "${pet.name}: рост и прогресс",
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(26.dp),
             colorFilter = ColorFilter.tint(FinniColors.TealBright),
         )
     }
@@ -464,10 +527,10 @@ private fun PetArea(
     hint: (@Composable () -> Unit)? = null,
 ) {
     val pet = state.pet
-    // Повторять слова можно, только если это разрешено взрослым, звук включён и есть доступ к микрофону.
-    // Спрашиваем доступ лишь при живом питомце: в превью нет механизма разрешений
+    // Повторять слова можно, только если это включил взрослый, звук включён и доступ к микрофону уже выдан.
+    // Сам экран ребёнка доступ никогда не спрашивает: его запрашивает раздел для взрослых при включении
     val wantsVoice = state.voiceRepeatEnabled && state.soundEnabled
-    val micGranted = petHost != null && rememberMicrophone(ask = wantsVoice)
+    val micGranted = petHost != null && rememberMicrophoneGranted(wantsVoice)
     val spec = PetSpec(
         assetName = pet.growthStage.modelAsset,
         tintArgb = pet.look.color.argb,
@@ -542,20 +605,15 @@ private fun TypingBubble(important: Boolean, onClick: () -> Unit, modifier: Modi
 }
 
 /**
- * Есть ли доступ к микрофону. Если [ask] и доступа нет — один раз за показ экрана спрашивает у системы
- * (после двух отказов Android сам перестаёт показывать запрос, и питомец просто не повторяет слова).
+ * Выдан ли доступ к микрофону. Только проверка, без запроса: запрос — в разделе для взрослых (ТЗ 3.1 п. 4, 3.4, 3.5).
+ * Проверяется заново, когда меняется [key] — например, взрослый только что включил повтор слов.
  */
 @Composable
-private fun rememberMicrophone(ask: Boolean): Boolean {
+private fun rememberMicrophoneGranted(key: Boolean): Boolean {
     val context = LocalContext.current
-    var granted by remember {
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+    return remember(key) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     }
-    val request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted = it }
-    LaunchedEffect(ask) {
-        if (ask && !granted) request.launch(Manifest.permission.RECORD_AUDIO)
-    }
-    return granted
 }
 
 // ---------- Меню и солнышко недели ----------
@@ -738,6 +796,7 @@ private fun HomeScreenPreview() {
         week = 3,
         speech = HomeUiState.Speech.HUNGRY,
         tasksBadge = 1,
+        activeTask = HomeUiState.ActiveTask(title = "Раздели 60 монет", reward = 5, adventure = false),
         finishBlock = FinishBlock.SAME_DAY,
         deeds = WeekDeeds(fed = false, notBored = true, savingsOnPlan = true, spendingOnPlan = true),
     )

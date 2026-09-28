@@ -103,7 +103,7 @@ fun TasksScreenContent(
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
-            ScreenHeader("Задания", onBack) { WeekCounter(state.doneThisWeek, state.perWeek) }
+            ScreenHeader("Задания", onBack) { state.perWeek?.let { WeekCounter(state.doneThisWeek, it) } }
             Spacer(Modifier.height(14.dp))
             LazyColumn(
                 state = list,
