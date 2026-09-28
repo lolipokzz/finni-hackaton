@@ -99,4 +99,22 @@ internal val defaultTasks: List<Task> = listOf(
             )
         ),
     ),
+    Task(
+        id = "payments_two_prices",
+        topic = TaskTopic.PAYMENTS,
+        title = "Два корма",
+        intro = "Финни нужен корм, и ещё ему хочется наклейки. Корм стоит 15, наклейки — 5. " +
+            "Рядом такой же корм за 25, а наклейки к нему в подарок. Как купить выгоднее?",
+        reward = 5, rewardOnMistake = 3,
+        explanationSuccess = "15 + 5 = 20, а это меньше 25. «Подарок» не бесплатный: сравнивай, сколько стоит всё вместе.",
+        explanationMistake = "Посчитаем: корм 15 и наклейки 5 — всего 20. Корм с подарком стоит 25. Подарок обошёлся бы в 10, а не в 5.",
+        hint = "Сложи цену корма и наклеек и сравни с 25.",
+        payload = TaskPayload.Choice(
+            listOf(
+                TaskPayload.Choice.Option("apart", "Корм за 15 и наклейки за 5 отдельно", true, "Всего 20 монет — на 5 меньше."),
+                TaskPayload.Choice.Option("gift", "Корм с подарком за 25", false, "Наклейки обошлись в 10 монет вместо 5."),
+                TaskPayload.Choice.Option("same", "Всё равно, цена одинаковая", false, "Не одинаковая: 20 и 25. Разница — 5 монет."),
+            )
+        ),
+    ),
 )

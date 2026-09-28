@@ -113,7 +113,7 @@ fun TasksScreenContent(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BackButton(onBack)
                 Text("Задания", style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
-                WeekCounter(state.doneThisWeek, state.perWeek)
+                state.perWeek?.let { WeekCounter(state.doneThisWeek, it) }
             }
             Spacer(Modifier.height(14.dp))
             LazyColumn(
@@ -353,7 +353,7 @@ private fun TaskRow(task: Task, status: TaskStatus, modifier: Modifier = Modifie
  * помечен как диалог, поэтому здесь только карточка, без AlertDialog.
  */
 @Composable
-fun TaskResultCard(result: TaskOutcome, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+fun TaskResultCard(result: TaskOutcome, onDismiss: () -> Unit, modifier: Modifier = Modifier, retryNow: Boolean = false) {
     Column(
         modifier
             .padding(horizontal = 14.dp)
@@ -383,7 +383,8 @@ fun TaskResultCard(result: TaskOutcome, onDismiss: () -> Unit, modifier: Modifie
         StatRow("Монеты", "+${result.reward}", coin = true)
         if (!result.success) {
             Text(
-                "Это задание можно попробовать снова на следующей неделе",
+                // В демо после ошибки задание можно решить сразу ещё раз (ТЗ 2.5.8), в игре — на следующей неделе
+                if (retryNow) "Можно сразу попробовать ещё раз" else "Это задание можно попробовать снова на следующей неделе",
                 fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
             )
         }

@@ -39,6 +39,7 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
@@ -83,20 +84,8 @@ fun TaskPlayScreenContent(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: ()
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Surface(onClick = onBack, shape = CircleShape, color = FinniColors.Lavender, modifier = Modifier.size(48.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("‹", style = MaterialTheme.typography.headlineMedium, color = FinniColors.Navy)
-                    }
-                }
-                Text(task.title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-            }
+            // Кнопка «Назад» — та же, что на всех экранах (ТЗ 3.6), с подписью для TalkBack
+            ScreenHeader(task.title, onBack, Modifier.padding(top = 8.dp))
             Card {
                 Column(Modifier.padding(16.dp)) {
                     Text(task.topic.title(), style = MaterialTheme.typography.labelMedium, color = FinniColors.NavyMuted)

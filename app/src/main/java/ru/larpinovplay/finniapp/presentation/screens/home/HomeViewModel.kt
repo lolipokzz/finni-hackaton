@@ -214,6 +214,9 @@ class HomeViewModel(
             week = game.week,
             speech = if (settings.tipsEnabled) speech(game, deeds, finishBlock, tasks) else null,
             tasksBadge = tasks + if (finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED) 1 else 0,
+            // Сначала приключение недели — без него неделю не закончить, потом ближайшее задание
+            activeTask = game.adventureOfWeek(content.adventures)?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = true) }
+                ?: game.availableTasks(content.tasks).firstOrNull()?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = false) },
             animationsEnabled = settings.animationsEnabled,
             soundEnabled = settings.soundEnabled,
             voiceRepeatEnabled = settings.voiceRepeatEnabled,
