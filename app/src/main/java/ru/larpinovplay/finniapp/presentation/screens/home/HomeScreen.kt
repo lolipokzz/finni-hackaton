@@ -375,22 +375,29 @@ private fun StatusCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier
+    // Кликабельная карточка: Surface(onClick) — сам даёт отклик и нажатие, роль задаём явно (Surface её не ставит)
+    val shape = RoundedCornerShape(22.dp)
+    Surface(
+        onClick = onClick,
+        shape = shape,
+        color = Color.Transparent,
+        modifier = modifier
             .heightIn(min = 56.dp)
-            .creamCard(RoundedCornerShape(22.dp), elevation = 6.dp, border = 3.dp)
-            .clickable(role = Role.Button, onClick = onClick)
-            .clearAndSetSemantics { contentDescription = description; role = Role.Button }
-            .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .creamCard(shape, elevation = 6.dp, border = 3.dp)
+            .clearAndSetSemantics { contentDescription = description; role = Role.Button },
     ) {
-        Box(Modifier.size(36.dp).clip(CircleShape).background(tint), contentAlignment = Alignment.Center) {
-            Image(painterResource(icon), null, Modifier.size(22.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, lineHeight = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(
+            Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(Modifier.size(36.dp).clip(CircleShape).background(tint), contentAlignment = Alignment.Center) {
+                Image(painterResource(icon), null, Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, fontSize = 15.sp, lineHeight = 18.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(detail, fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
