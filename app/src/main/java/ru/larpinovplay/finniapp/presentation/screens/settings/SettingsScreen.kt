@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -208,7 +209,7 @@ fun SettingsScreenContent(
                         onClick = onOpenAdult,
                         shape = RoundedCornerShape(28.dp),
                         color = Color.Transparent,
-                        modifier = Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp),
+                        modifier = Modifier.fillMaxWidth().creamCard(RoundedCornerShape(28.dp), elevation = 8.dp).semantics { role = Role.Button },
                     ) {
                         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             CardSticker(R.drawable.ic_lock, FinniColors.Pebble, size = 48.dp, iconScale = 0.58f)
@@ -282,7 +283,11 @@ private fun ExpandableCard(
         modifier = Modifier
             .fillMaxWidth()
             .creamCard(shape, elevation = 8.dp)
-            .semantics { stateDescription = if (open) "Открыто" else "Свёрнуто" },
+            .semantics {
+                role = Role.Button
+                stateDescription = if (open) "Открыто" else "Свёрнуто"
+            },
+
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {

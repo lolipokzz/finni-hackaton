@@ -4,10 +4,11 @@ import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
 import ru.larpinovplay.finniapp.domain.util.result.Result
+import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
 
 /**
  * Где лежит сохранённая игра. Знает только, как прочитать и записать снимок целиком; правил игры и порядка
- * команд не знает, это дело [ru.larpinovplay.finniapp.data.game.GameRepositoryImpl]. Отделено, чтобы репозиторий
+ * команд не знает, это дело [GameRepositoryImpl]. Отделено, чтобы репозиторий
  * проверялся без диска, а сбои записи подделывались в тесте. Исключения библиотеки хранения наружу не выходят:
  * все ожидаемые сбои приходят как [StorageError].
  */

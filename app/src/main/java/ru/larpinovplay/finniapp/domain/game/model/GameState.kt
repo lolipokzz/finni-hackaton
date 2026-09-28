@@ -8,11 +8,12 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import java.time.LocalDate
+import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
 
 /**
  * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб.
  * [purchases] — покупки текущей недели (обнуляются в конце недели), [wardrobe] — купленная одежда, она остаётся.
- * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine][ru.larpinovplay.finniapp.domain.game.engine.GameEngine].
+ * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine].
  */
 data class GameState(
     val demoMode: Boolean = false,

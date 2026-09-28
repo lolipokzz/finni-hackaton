@@ -23,16 +23,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -336,31 +332,6 @@ private fun TaskRow(task: Task, status: TaskStatus, modifier: Modifier = Modifie
                 )
             }
         }
-    }
-}
-
-/** Нужен для превью и тестов виджета списка покупок. */
-@Composable
-internal fun ShopListRow(item: TaskPayload.ShopList.Item, checked: Boolean, onToggle: () -> Unit) {
-    Surface(onClick = onToggle, shape = RoundedCornerShape(16.dp), color = if (checked) FinniColors.BlueLight else Color.White) {
-        Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = checked, onCheckedChange = { onToggle() })
-            Column(Modifier.weight(1f)) {
-                Text(item.name, style = MaterialTheme.typography.bodyLarge)
-                Text(if (item.mandatory) "нужное" else "желаемое", style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
-            }
-            Text("${item.price}", style = MaterialTheme.typography.titleMedium)
-            Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(18.dp))
-        }
-    }
-}
-
-@Composable
-internal fun HintButton(hint: String) {
-    var shown by remember { mutableStateOf(false) }
-    TextButton(onClick = { shown = !shown }) { Text(if (shown) "Скрыть подсказку" else "Подсказка", style = MaterialTheme.typography.labelLarge) }
-    if (shown) {
-        Text(hint, style = MaterialTheme.typography.bodyLarge, color = FinniColors.NavyMuted, modifier = Modifier.padding(horizontal = 8.dp))
     }
 }
 

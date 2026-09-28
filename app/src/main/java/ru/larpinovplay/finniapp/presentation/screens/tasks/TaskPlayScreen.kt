@@ -40,8 +40,17 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
+import ru.larpinovplay.finniapp.presentation.components.StepButton
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+
 import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import androidx.compose.ui.text.style.TextAlign
 
 /**
  * Прохождение одного задания. [onCompleted] вызывается после ответа с итогом
@@ -107,16 +116,18 @@ fun TaskPlayScreenContent(task: Task, onSubmit: (TaskAnswer) -> Unit, onBack: ()
 @Composable
 private fun ChoiceWidget(p: TaskPayload.Choice, onSubmit: (TaskAnswer) -> Unit) {
     var selected by remember { mutableStateOf<String?>(null) }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         p.options.forEach { option ->
             val isSelected = option.id == selected
             Surface(
+                selected = isSelected,
                 onClick = { selected = option.id },
                 shape = RoundedCornerShape(20.dp),
                 color = if (isSelected) FinniColors.Blue else FinniColors.Card,
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(4.dp, RoundedCornerShape(20.dp), ambientColor = FinniColors.Navy.copy(alpha = 0.12f), spotColor = FinniColors.Navy.copy(alpha = 0.12f))
+                    .semantics { role = Role.RadioButton },
             ) {
                 Text(
                     option.text,
@@ -143,9 +154,11 @@ private fun AllocateWidget(p: TaskPayload.Allocate, onSubmit: (TaskAnswer) -> Un
                 val value = amounts[bucket.id] ?: 0
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(bucket.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    StepButton("−", enabled = value > 0) { amounts = amounts + (bucket.id to value - p.step) }
-                    Text("$value", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.size(width = 56.dp, height = 36.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                    StepButton("+", enabled = remaining >= p.step) { amounts = amounts + (bucket.id to value + p.step) }
+                    StepButton("−", "Меньше: ${bucket.label}", enabled = value > 0, color = FinniColors.BlueLight, ink = FinniColors.Blue,
+                        disabledColor = FinniColors.Track, disabledInk = FinniColors.NavyMuted) { amounts = amounts + (bucket.id to value - p.step) }
+                    Text("$value", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.size(width = 56.dp, height = 36.dp), textAlign = TextAlign.Center)
+                    StepButton("+", "Больше: ${bucket.label}", enabled = remaining >= p.step, color = FinniColors.BlueLight, ink = FinniColors.Blue,
+                        disabledColor = FinniColors.Track, disabledInk = FinniColors.NavyMuted) { amounts = amounts + (bucket.id to value + p.step) }
                 }
             }
             Row {
@@ -162,20 +175,6 @@ private fun AllocateWidget(p: TaskPayload.Allocate, onSubmit: (TaskAnswer) -> Un
     }
 }
 
-@Composable
-private fun StepButton(text: String, enabled: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        shape = CircleShape,
-        color = if (enabled) FinniColors.BlueLight else FinniColors.Track,
-        modifier = Modifier.size(48.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(text, style = MaterialTheme.typography.headlineSmall, color = if (enabled) FinniColors.Blue else FinniColors.NavyMuted)
-        }
-    }
-}
 
 // ---------- Список покупок ----------
 
@@ -232,4 +231,35 @@ private fun Card(content: @Composable () -> Unit) {
         color = FinniColors.Card,
         content = content
     )
+}
+
+/** Строка списка покупок: нажимается вся строка, флажок только показывает состояние. */
+@Composable
+private fun ShopListRow(item: TaskPayload.ShopList.Item, checked: Boolean, onToggle: () -> Unit) {
+    Surface(
+        checked = checked,
+        onCheckedChange = { onToggle() },
+        shape = RoundedCornerShape(16.dp),
+        color = if (checked) FinniColors.BlueLight else Color.White,
+        modifier = Modifier.semantics { role = Role.Checkbox },
+    ) {
+        Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = checked, onCheckedChange = null)
+            Column(Modifier.weight(1f)) {
+                Text(item.name, style = MaterialTheme.typography.bodyLarge)
+                Text(if (item.mandatory) "нужное" else "желаемое", style = MaterialTheme.typography.labelSmall, color = FinniColors.NavyMuted)
+            }
+            Text("${item.price}", style = MaterialTheme.typography.titleMedium)
+            Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(start = 4.dp).size(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun HintButton(hint: String) {
+    var shown by remember { mutableStateOf(false) }
+    TextButton(onClick = { shown = !shown }) { Text(if (shown) "Скрыть подсказку" else "Подсказка", style = MaterialTheme.typography.labelLarge) }
+    if (shown) {
+        Text(hint, style = MaterialTheme.typography.bodyLarge, color = FinniColors.NavyMuted, modifier = Modifier.padding(horizontal = 8.dp))
+    }
 }

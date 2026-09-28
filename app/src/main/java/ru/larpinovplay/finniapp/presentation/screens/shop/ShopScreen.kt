@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -76,6 +77,7 @@ import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.screens.home.barColor
 import ru.larpinovplay.finniapp.presentation.screens.home.sticker
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import androidx.compose.ui.graphics.ColorFilter
 
 /**
  * Магазин, ТЗ 2.5.6: товары двух типов; до покупки видны цена, категория и влияние на питомца;
@@ -218,22 +220,21 @@ private fun CategoryTabs(selected: ShopCategory, onSelect: (ShopCategory) -> Uni
         Modifier
             .fillMaxWidth()
             .creamCard(CircleShape, elevation = 8.dp)
-            .padding(6.dp),
+            .padding(6.dp)
+            .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         ShopCategory.entries.forEach { category ->
             val isSelected = category == selected
             Surface(
+                selected = isSelected,
                 onClick = { onSelect(category) },
                 shape = CircleShape,
                 color = if (isSelected) FinniColors.Teal else Color.Transparent,
                 modifier = Modifier
                     .weight(1f)
                     .height(52.dp)
-                    .semantics {
-                        role = Role.Tab
-                        this.selected = isSelected
-                    },
+                    .semantics { role = Role.Tab },
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -591,7 +592,12 @@ private fun NotEnoughDialog(
 /** Вариант выхода из нехватки: наклейка, что сделать и что из этого будет, стрелка — туда. */
 @Composable
 private fun OptionRow(icon: Int, tint: Color, title: String, subtitle: String?, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(22.dp), color = tint.copy(alpha = 0.55f), modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(22.dp),
+        color = tint.copy(alpha = 0.55f),
+        modifier = Modifier.fillMaxWidth().semantics { role = Role.Button },
+    ) {
         Row(
             Modifier.padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -604,7 +610,7 @@ private fun OptionRow(icon: Int, tint: Color, title: String, subtitle: String?, 
             }
             Image(
                 painterResource(R.drawable.ic_arrow_right), null, Modifier.size(18.dp),
-                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(FinniColors.InkMuted),
+                colorFilter = ColorFilter.tint(FinniColors.InkMuted),
             )
         }
     }

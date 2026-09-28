@@ -76,6 +76,8 @@ import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.changesRoom
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 
 /**
  * Копилка, ТЗ 2.5.7: цели с понятной стоимостью, выбранная цель выделена; видны накоплено,
@@ -195,8 +197,8 @@ private fun DreamRing(progress: Float, icon: Int, modifier: Modifier = Modifier,
         Canvas(Modifier.size(size)) {
             val stroke = 16.dp.toPx()
             val inset = stroke / 2
-            val arcSize = androidx.compose.ui.geometry.Size(this.size.width - stroke, this.size.height - stroke)
-            val topLeft = androidx.compose.ui.geometry.Offset(inset, inset)
+            val arcSize = Size(this.size.width - stroke, this.size.height - stroke)
+            val topLeft = Offset(inset, inset)
             drawArc(FinniColors.DreamTrack, 0f, 360f, useCenter = false, topLeft = topLeft, size = arcSize, style = Stroke(stroke))
             if (shown > 0f) {
                 drawArc(

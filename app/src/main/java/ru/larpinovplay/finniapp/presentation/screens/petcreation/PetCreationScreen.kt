@@ -8,7 +8,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,7 +28,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -46,7 +50,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -238,21 +241,21 @@ private fun TopBar(step: CreationStep, onBack: () -> Unit, onSkip: () -> Unit) {
             }
         }
         if (step.isLesson) {
-            Text(
-                "Пропустить",
-                fontSize = 14.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .clip(CircleShape)
-                    .background(FinniColors.Cream.copy(alpha = 0.85f))
-                    .clickableButton(onSkip)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-            )
+            TextButton(
+                onClick = onSkip,
+                colors = ButtonDefaults.textButtonColors(
+                    containerColor = FinniColors.Cream.copy(alpha = 0.85f),
+                    contentColor = FinniColors.Ink,
+                ),
+                contentPadding = PaddingValues(horizontal = 14.dp),
+                modifier = Modifier.align(Alignment.CenterEnd),
+            ) {
+                Text("Пропустить", fontSize = 14.sp, fontWeight = FontWeight.Black)
+            }
         }
     }
 }
 
-private fun Modifier.clickableButton(onClick: () -> Unit): Modifier = clickable(role = Role.Button, onClick = onClick)
 
 /** Облачко Финни над ним: говорит от себя; на уроках — с бирюзовым заголовком. Хвостик смотрит на питомца. */
 @Composable
@@ -316,7 +319,11 @@ private fun StepCard(state: PetCreationUiState.Creation, onAction: (PetCreationA
 /** Девять раскрасок кружками в три ряда; выбранная — в бирюзовой рамке с галочкой и подписью. */
 @Composable
 private fun ColorPicker(selected: PetColor, onSelect: (PetColor) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp), horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth().selectableGroup(),
+    ) {
         PetColor.entries.chunked(5).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { color ->
@@ -325,12 +332,14 @@ private fun ColorPicker(selected: PetColor, onSelect: (PetColor) -> Unit) {
                         Modifier
                             .size(52.dp)
                             .clip(CircleShape)
+                            // Нажимается весь кружок с рамкой: 52 dp, а не только цветная середина
+                            .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(color) })
+                            .semantics { contentDescription = "Раскраска: ${color.title}" }
                             .border(if (isSelected) 4.dp else 3.dp, if (isSelected) FinniColors.Teal else Color.White, CircleShape)
                             .padding(if (isSelected) 5.dp else 3.dp)
                             .clip(CircleShape)
-                            .background(Color(color.argb))
-                            .clickableButton { onSelect(color) }
-                            .semantics { contentDescription = "Раскраска: ${color.title}"; this.selected = isSelected },
+                            .background(Color(color.argb)),
+
                         contentAlignment = Alignment.Center,
                     ) {
                         if (isSelected) DoneBadge(size = 22.dp)

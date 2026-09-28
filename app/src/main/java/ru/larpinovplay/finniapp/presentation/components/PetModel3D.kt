@@ -24,6 +24,12 @@ import com.google.android.filament.utils.Manipulator
 import com.google.android.filament.utils.ModelViewer
 import com.google.android.filament.utils.Utils
 import java.nio.ByteBuffer
+import com.google.android.filament.Colors
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.log2
+import kotlin.math.sin
 
 /**
  * Показывает glTF-модель питомца из assets и анимирует её.
@@ -334,7 +340,7 @@ private class PetModelController(
         val instance = viewer.asset?.instance?.materialInstances?.firstOrNull { it.name == SKIN_MATERIAL } ?: return
         val bitmap = appContext.assets.open(skin).use { BitmapFactory.decodeStream(it) } ?: return
         val engine = viewer.engine
-        val levels = 1 + kotlin.math.floor(kotlin.math.log2(maxOf(bitmap.width, bitmap.height).toFloat())).toInt()
+        val levels = 1 + floor(log2(maxOf(bitmap.width, bitmap.height).toFloat())).toInt()
         val texture = Texture.Builder()
             .width(bitmap.width)
             .height(bitmap.height)
@@ -481,7 +487,7 @@ private class PetModelController(
         if (left == null || right == null || hipLeft == null || hipRight == null) return null
         val hipY = minOf(hipLeft[1], hipRight[1])
         if (y < hipY) return null
-        return if (kotlin.math.abs(x - left[0]) <= kotlin.math.abs(x - right[0])) TapZone.FOOT_LEFT else TapZone.FOOT_RIGHT
+        return if (abs(x - left[0]) <= abs(x - right[0])) TapZone.FOOT_LEFT else TapZone.FOOT_RIGHT
     }
 
     /** Экранная точка (x, y в пикселях вида) сустава [name]; null, если такого узла в модели нет. */
@@ -567,7 +573,7 @@ private class PetModelController(
         val feet = listOfNotNull(left, right)
         val cx = if (feet.isEmpty()) 0f else feet.map { it[0] }.average().toFloat()
         val cz = if (feet.isEmpty()) 0f else feet.map { it[2] }.average().toFloat()
-        val spread = if (left != null && right != null) kotlin.math.abs(left[0] - right[0]) / 2 else 0f
+        val spread = if (left != null && right != null) abs(left[0] - right[0]) / 2 else 0f
         val lift = if (feet.isEmpty() || restFootY.isNaN()) 0f else
             feet.map { (it[1] - restFootY).coerceAtLeast(0f) }.average().toFloat()
 
@@ -667,7 +673,7 @@ private class PetModelController(
         val r = ((argb shr 16) and 0xFF) / 255f
         val g = ((argb shr 8) and 0xFF) / 255f
         val b = (argb and 0xFF) / 255f
-        instance.setParameter("baseColorFactor", com.google.android.filament.Colors.RgbaType.SRGB, r, g, b, 1f)
+        instance.setParameter("baseColorFactor", Colors.RgbaType.SRGB, r, g, b, 1f)
     }
 
     /** Индексы клипов по именам; текущий клип не меняет. */
@@ -806,10 +812,10 @@ private class PetModelController(
     private fun rotationXZ(degreesX: Float, degreesZ: Float): FloatArray {
         val ax = Math.toRadians(degreesX.toDouble())
         val az = Math.toRadians(degreesZ.toDouble())
-        val cx = kotlin.math.cos(ax).toFloat()
-        val sx = kotlin.math.sin(ax).toFloat()
-        val cz = kotlin.math.cos(az).toFloat()
-        val sz = kotlin.math.sin(az).toFloat()
+        val cx = cos(ax).toFloat()
+        val sx = sin(ax).toFloat()
+        val cz = cos(az).toFloat()
+        val sz = sin(az).toFloat()
         // Rx · Rz
         return floatArrayOf(
             cz, cx * sz, sx * sz, 0f,

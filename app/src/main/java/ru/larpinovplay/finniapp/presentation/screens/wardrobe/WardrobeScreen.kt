@@ -33,7 +33,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -153,7 +154,7 @@ private fun ItemTile(entry: WardrobeItem, onToggle: () -> Unit, modifier: Modifi
             .then(if (entry.worn) Modifier.border(7.dp, FinniColors.Teal, shape) else Modifier)
             .clearAndSetSemantics {
                 role = Role.Switch
-                selected = entry.worn
+                toggleableState = ToggleableState(entry.worn)
                 contentDescription = "${item.name}, ${slot?.title?.lowercase().orEmpty()}: " + if (entry.worn) "надето. Снять" else "не надето. Надеть"
             },
     ) {

@@ -4,9 +4,16 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarData
-import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.clearAndSetSemantics
+
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -26,7 +33,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -50,9 +56,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.window.DialogProperties
 
 /*
  * Общий язык игровых экранов и их окон — «наклейки»: кремовая поверхность, толстая белая обводка,
@@ -71,12 +82,13 @@ val OnRoomLabel = TextStyle(
     fontSize = 14.sp,
     fontWeight = FontWeight.Black,
     color = Color.White,
-    shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.7f), Offset(0f, 2f), blurRadius = 6f),
+    shadow = Shadow(Color.Black.copy(alpha = 0.7f), Offset(0f, 2f), blurRadius = 6f),
 )
 
 /**
  * Кольцо-показатель 0–100: цвет заполняет кольцо по часовой от верха, в середине белый круг со значком.
  * Значение всегда озвучивается словами ([description]), цвет — не единственный сигнал.
+ * Только показывает; нажимаемое кольцо — [MeterButton].
  */
 @Composable
 fun MeterRing(
@@ -87,28 +99,53 @@ fun MeterRing(
     description: String,
     modifier: Modifier = Modifier,
     size: Dp = 62.dp,
-    onClick: (() -> Unit)? = null,
-    content: @Composable () -> Unit = { Image(painterResource(icon), null, Modifier.size(size * 0.45f)) },
+    content: @Composable () -> Unit = { MeterIcon(icon, size) },
 ) {
-    val amount = value.coerceIn(0, 100)
-    val body: @Composable () -> Unit = {
-        Box(contentAlignment = Alignment.Center) {
-            Canvas(Modifier.size(size)) {
-                drawCircle(track)
-                drawArc(color, startAngle = -90f, sweepAngle = 360f * amount / 100f, useCenter = true)
-                drawCircle(Color.White, radius = this.size.minDimension * 0.355f)
-            }
-            content()
-        }
+    Box(modifier.meterFrame(size, description), contentAlignment = Alignment.Center) {
+        MeterFace(value, color, track, size, content)
     }
-    val shape = CircleShape
-    val base = modifier
-        .size(size)
-        .shadow(8.dp, shape, ambientColor = Color.Black.copy(alpha = 0.3f), spotColor = Color.Black.copy(alpha = 0.3f))
-        .border(3.dp, Color.White, shape)
-        .semantics { contentDescription = description }
-    if (onClick != null) Surface(onClick = onClick, shape = shape, color = Color.Transparent, modifier = base, content = body)
-    else Surface(shape = shape, color = Color.Transparent, modifier = base, content = body)
+}
+
+/** То же кольцо, но кнопка: по нажатию объяснение показателя (главный экран). */
+@Composable
+fun MeterButton(
+    value: Int,
+    color: Color,
+    track: Color,
+    @DrawableRes icon: Int,
+    description: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    size: Dp = 62.dp,
+) {
+    IconButton(onClick = onClick, modifier = modifier.meterFrame(size, description)) {
+        MeterFace(value, color, track, size) { MeterIcon(icon, size) }
+    }
+}
+
+private fun Modifier.meterFrame(size: Dp, description: String): Modifier = this
+    .size(size)
+    .shadow(8.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.3f), spotColor = Color.Black.copy(alpha = 0.3f))
+    .clip(CircleShape)
+    .border(3.dp, Color.White, CircleShape)
+    .semantics { contentDescription = description }
+
+@Composable
+private fun MeterFace(value: Int, color: Color, track: Color, size: Dp, content: @Composable () -> Unit) {
+    val amount = value.coerceIn(0, 100)
+    Box(contentAlignment = Alignment.Center) {
+        Canvas(Modifier.size(size)) {
+            drawCircle(track)
+            drawArc(color, startAngle = -90f, sweepAngle = 360f * amount / 100f, useCenter = true)
+            drawCircle(Color.White, radius = this.size.minDimension * 0.355f)
+        }
+        content()
+    }
+}
+
+@Composable
+private fun MeterIcon(@DrawableRes icon: Int, size: Dp) {
+    Image(painterResource(icon), null, Modifier.size(size * 0.45f))
 }
 
 /** Круглая наклейка меню: тонированный круг в белой обводке. */
@@ -137,14 +174,16 @@ fun PillButton(
     ink: Color = FinniColors.ActionPeachInk,
     arrow: Boolean = false,
 ) {
-    Surface(onClick = onClick, shape = CircleShape, color = color, modifier = modifier.height(48.dp)) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text, color = ink, fontSize = 15.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (arrow) Image(painterResource(R.drawable.ic_arrow_right), null, Modifier.size(16.dp), colorFilter = ColorFilter.tint(ink))
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = color, contentColor = ink),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        modifier = modifier.height(48.dp),
+    ) {
+        Text(text, fontSize = 15.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        if (arrow) {
+            Image(painterResource(R.drawable.ic_arrow_right), null, Modifier.padding(start = 6.dp).size(16.dp), colorFilter = ColorFilter.tint(ink))
         }
     }
 }
@@ -152,14 +191,15 @@ fun PillButton(
 /** Круглая служебная кнопка 48 dp: закрыть, настройки. */
 @Composable
 fun PebbleButton(@DrawableRes icon: Int, description: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = FinniColors.Pebble) {
-    Surface(
+    FilledIconButton(
         onClick = onClick,
         shape = CircleShape,
-        color = color,
-        modifier = modifier.size(48.dp).semantics { contentDescription = description },
+        colors = IconButtonDefaults.filledIconButtonColors(containerColor = color),
+        modifier = modifier.size(48.dp),
     ) {
-        Box(contentAlignment = Alignment.Center) { Image(painterResource(icon), null, Modifier.size(22.dp)) }
+        Image(painterResource(icon), contentDescription = description, modifier = Modifier.size(22.dp))
     }
+
 }
 
 /**
@@ -198,7 +238,7 @@ fun BubbleTail(modifier: Modifier = Modifier, pointsLeft: Boolean = true) {
     Canvas(modifier.size(26.dp, 20.dp)) {
         val w = size.width
         val h = size.height
-        fun tail(inset: Float) = androidx.compose.ui.graphics.Path().apply {
+        fun tail(inset: Float) = Path().apply {
             val tip = if (pointsLeft) w * 0.2f else w * 0.5f
             moveTo(inset, 0f)
             lineTo(w - inset, 0f)
@@ -222,19 +262,26 @@ fun CardSticker(@DrawableRes icon: Int, tint: Color, modifier: Modifier = Modifi
 /** Главная кнопка карточки: бирюзовая, во всю ширину. Выключенная — серая, без тени. */
 @Composable
 fun TealButton(text: String, @DrawableRes icon: Int?, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
-    Surface(
+    Button(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        color = if (enabled) FinniColors.Teal else FinniColors.Pebble,
-        shadowElevation = if (enabled) 6.dp else 0.dp,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = FinniColors.Teal,
+            contentColor = Color.White,
+            disabledContainerColor = FinniColors.Pebble,
+            disabledContentColor = FinniColors.InkMuted,
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 6.dp, pressedElevation = 6.dp, focusedElevation = 6.dp, hoveredElevation = 6.dp, disabledElevation = 0.dp,
+        ),
         modifier = modifier.fillMaxWidth().height(56.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
-            icon?.let { Image(painterResource(it), null, Modifier.size(24.dp).alpha(if (enabled) 1f else 0.5f)) }
-            Text(text, fontSize = 17.sp, fontWeight = FontWeight.Black, color = if (enabled) Color.White else FinniColors.InkMuted)
-        }
+        // Значок — картинка, а не текст: у выключенной кнопки его приглушает alpha
+        icon?.let { Image(painterResource(it), null, Modifier.padding(end = 10.dp).size(24.dp).alpha(if (enabled) 1f else 0.5f)) }
+        Text(text, fontSize = 17.sp, fontWeight = FontWeight.Black)
     }
+
 }
 
 /** Пунктир на кремовом: отделяет части карточки. */
@@ -255,11 +302,11 @@ fun DashedDivider(modifier: Modifier = Modifier) {
 @Composable
 fun CardDialog(
     onDismiss: (() -> Unit)? = null,
-    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    androidx.compose.ui.window.Dialog(
+    Dialog(
         onDismissRequest = { onDismiss?.invoke() },
-        properties = androidx.compose.ui.window.DialogProperties(
+        properties = DialogProperties(
             dismissOnBackPress = onDismiss != null, dismissOnClickOutside = onDismiss != null, usePlatformDefaultWidth = false,
         ),
     ) {
@@ -270,7 +317,7 @@ fun CardDialog(
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .creamCard(androidx.compose.foundation.shape.RoundedCornerShape(34.dp), elevation = 20.dp)
+                    .creamCard(RoundedCornerShape(34.dp), elevation = 20.dp)
                     .verticalScroll(rememberScrollState())
                     .padding(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -283,7 +330,7 @@ fun CardDialog(
 /** Заголовок карточки: крупная строка и бирюзовая подстрока, как у дел недели. */
 @Composable
 fun CardTitle(title: String, subtitle: String) {
-    androidx.compose.foundation.layout.Column {
+    Column {
         Text(
             title, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
             modifier = Modifier.semantics { heading() },
@@ -292,54 +339,71 @@ fun CardTitle(title: String, subtitle: String) {
     }
 }
 
-/** Монеты: жёлтая плашка-наклейка с монетой и числом. Одна и та же на главном экране и в магазине. */
+/**
+ * Монеты: жёлтая плашка-наклейка с монетой и числом — в шапках магазина и копилки.
+ * Только показывает; нажимаемые монеты главного экрана — [CoinButton].
+ */
 @Composable
-fun CoinPill(coins: Int, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
-    val shape = CircleShape
-    val body: @Composable () -> Unit = {
-        Row(
-            Modifier.background(FinniColors.CoinPill).padding(start = 6.dp, end = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Image(painterResource(R.drawable.ic_coin), null, Modifier.size(36.dp))
-            Text("$coins", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.CoinInk)
-        }
+fun CoinPill(coins: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier.coinFrame(coins).background(FinniColors.CoinPill).padding(CoinPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CoinCount(coins, FinniColors.CoinInk)
     }
-    val base = modifier
-        .height(52.dp)
-        .creamCard(shape, elevation = 8.dp, border = 3.dp)
-        .semantics { contentDescription = "Монеты: $coins" }
-    if (onClick != null) Surface(onClick = onClick, shape = shape, color = Color.Transparent, modifier = base, content = body)
-    else Surface(shape = shape, color = Color.Transparent, modifier = base, content = body)
+}
+
+/** Те же монеты, но кнопка: по нажатию объяснение, откуда они берутся (главный экран). */
+@Composable
+fun CoinButton(coins: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = FinniColors.CoinPill, contentColor = FinniColors.CoinInk),
+        contentPadding = CoinPadding,
+        modifier = modifier.coinFrame(coins),
+    ) {
+        CoinCount(coins)
+    }
+}
+
+private val CoinPadding = PaddingValues(start = 6.dp, end = 16.dp)
+
+private fun Modifier.coinFrame(coins: Int): Modifier = this
+    .height(52.dp)
+    .creamCard(CircleShape, elevation = 8.dp, border = 3.dp)
+    .semantics { contentDescription = "Монеты: $coins" }
+
+/** Монета и число. Число озвучено в описании рамки, поэтому сам текст TalkBack не читает второй раз. */
+@Composable
+private fun CoinCount(coins: Int, color: Color = Color.Unspecified) {
+    Image(painterResource(R.drawable.ic_coin), null, Modifier.padding(end = 6.dp).size(36.dp))
+    Text("$coins", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = color, modifier = Modifier.clearAndSetSemantics {})
 }
 
 /** Назад: круглая кремовая наклейка со стрелкой, как шестерёнка на главном экране. */
 @Composable
 fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = Color.Transparent,
-        modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp).semantics { contentDescription = "Назад" },
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Image(
-                painterResource(R.drawable.ic_arrow_right), null,
-                Modifier.size(22.dp).graphicsLayer(scaleX = -1f),
-                colorFilter = ColorFilter.tint(FinniColors.Ink),
-            )
-        }
+    IconButton(onClick = onClick, modifier = modifier.size(48.dp).creamCard(CircleShape, elevation = 8.dp, border = 3.dp)) {
+        Image(
+            painterResource(R.drawable.ic_arrow_right),
+            contentDescription = "Назад",
+            modifier = Modifier.size(22.dp).graphicsLayer(scaleX = -1f),
+            colorFilter = ColorFilter.tint(FinniColors.Ink),
+        )
     }
 }
 
 /** Вторая кнопка карточки рядом с [TealButton]: спокойная, серо-кремовая, во всю ширину. */
 @Composable
 fun SoftButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(onClick = onClick, shape = CircleShape, color = FinniColors.Pebble, modifier = modifier.fillMaxWidth().height(52.dp)) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(text, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted)
-        }
+    Button(
+        onClick = onClick,
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(containerColor = FinniColors.Pebble, contentColor = FinniColors.InkMuted),
+        modifier = modifier.fillMaxWidth().height(52.dp),
+    ) {
+        Text(text, fontSize = 16.sp, fontWeight = FontWeight.Black)
     }
 }
 
@@ -358,19 +422,34 @@ fun EffectChip(@DrawableRes icon: Int, value: Int, tint: Color, modifier: Modifi
 
 /** «−» и «+» — такие же круглые кнопки, как «закрыть» у карточек. */
 @Composable
-fun StepButton(symbol: String, description: String, enabled: Boolean, onClick: () -> Unit) {
-    Surface(
+fun StepButton(
+    symbol: String,
+    description: String,
+    enabled: Boolean,
+    color: Color = FinniColors.Pebble,
+    ink: Color = FinniColors.Ink,
+    disabledColor: Color = color.copy(alpha = color.alpha * DISABLED_ALPHA),
+    disabledInk: Color = ink.copy(alpha = DISABLED_ALPHA),
+    onClick: () -> Unit,
+) {
+    FilledIconButton(
         onClick = onClick,
         enabled = enabled,
         shape = CircleShape,
-        color = FinniColors.Pebble,
-        modifier = Modifier.size(48.dp).alpha(if (enabled) 1f else 0.4f).semantics { contentDescription = description },
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = color,
+            contentColor = ink,
+            disabledContainerColor = disabledColor,
+            disabledContentColor = disabledInk,
+        ),
+        modifier = Modifier.size(48.dp).semantics { contentDescription = description },
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-        }
+        // Знак — только картинка кнопки: TalkBack читает [description], а не «минус»
+        Text(symbol, fontSize = 24.sp, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics {})
     }
 }
+
+private const val DISABLED_ALPHA = 0.4f
 
 /** Строка «что изменится»: подпись слева, число справа; предупреждение — на тёплой пилюле и со словами. */
 @Composable
@@ -442,17 +521,14 @@ fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)?
             Text("Финни", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal)
             Text(text, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0B5E4F))
             onSkip?.let {
-                Text(
-                    "Пропустить шаг",
-                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .heightIn(min = 48.dp)
-                        .then(skipModifier)
-                        .clip(CircleShape)
-                        .clickable(role = Role.Button, onClick = it)
-                        .padding(horizontal = 8.dp, vertical = 14.dp),
-                )
+                TextButton(
+                    onClick = it,
+                    colors = ButtonDefaults.textButtonColors(contentColor = FinniColors.InkMuted),
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.align(Alignment.End).then(skipModifier),
+                ) {
+                    Text("Пропустить шаг", fontSize = 13.sp, fontWeight = FontWeight.Black)
+                }
             }
         }
     }
@@ -480,16 +556,13 @@ fun FinniSnackbar(data: SnackbarData) {
             modifier = Modifier.weight(1f).padding(vertical = 8.dp),
         )
         data.visuals.actionLabel?.let { label ->
-            Text(
-                label,
-                fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .heightIn(min = 48.dp)
-                    .clip(CircleShape)
-                    .clickable(role = Role.Button, onClick = data::performAction)
-                    .padding(horizontal = 12.dp, vertical = 14.dp),
-            )
+            TextButton(
+                onClick = data::performAction,
+                colors = ButtonDefaults.textButtonColors(contentColor = FinniColors.Teal),
+                modifier = Modifier.padding(start = 8.dp),
+            ) {
+                Text(label, fontSize = 15.sp, fontWeight = FontWeight.Black)
+            }
         }
     }
 }

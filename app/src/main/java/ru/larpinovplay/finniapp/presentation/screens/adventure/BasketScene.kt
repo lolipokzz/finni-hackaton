@@ -29,7 +29,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,7 +76,8 @@ internal fun BasketScene(scene: AdventureScene.Basket, state: AdventureUiState, 
         scene.items.forEachIndexed { index, item ->
             val picked = index in state.inBasket
             Surface(
-                onClick = { onAction(AdventureAction.ToggleBasketItem(index)) },
+                checked = picked,
+                onCheckedChange = { onAction(AdventureAction.ToggleBasketItem(index)) },
                 enabled = !locked,
                 shape = RoundedCornerShape(20.dp),
                 color = if (picked) FinniColors.CardMint else Color.White,
@@ -85,7 +85,7 @@ internal fun BasketScene(scene: AdventureScene.Basket, state: AdventureUiState, 
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 56.dp)
-                    .semantics { role = Role.Checkbox; selected = picked },
+                    .semantics { role = Role.Checkbox },
             ) {
                 Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     PickMark(picked)
