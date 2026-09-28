@@ -13,36 +13,23 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.content.Content
-import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
-import ru.larpinovplay.finniapp.domain.game.model.TopicProgress
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.domain.util.result.Result
 import kotlin.random.Random
 
-enum class AdultConfirmation { RESET_PROFILE, DELETE_ALL, DEMO }
-
-data class AdultUiState(
-    val first: Int = Random.nextInt(10, 50),
-    val second: Int = Random.nextInt(10, 50),
-    val answer: String = "",
-    val attempts: Int = 0,
-    val unlocked: Boolean = false,
-    val error: String? = null,
-    val pending: AdultConfirmation? = null,
-    val busy: Boolean = false,
-    val snapshot: GameSnapshot? = null,
-    val topics: List<TopicProgress> = emptyList(),
-    val settings: AppSettings = AppSettings(),
-)
-
+/**
+ * Раздел для взрослого: пример-барьер, прогресс ребёнка, настройки, сброс и демо.
+ * [random] — откуда брать числа примера; в тестах подменяется, чтобы пример был известен заранее.
+ */
 class AdultViewModel(
     private val game: GameRepository,
     private val settings: SettingsRepository,
     content: Content,
+    private val random: Random = Random.Default,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AdultUiState())
+    private val _state = MutableStateFlow(AdultUiState(example = newExample()))
     val state = _state.asStateFlow()
 
     private val _events = Channel<AdultEvent>(Channel.BUFFERED)
@@ -75,18 +62,21 @@ class AdultViewModel(
         _state.update { it.copy(answer = value.filter(Char::isDigit).take(2), error = null) }
     }
 
+    /** Верно — раздел открыт; неверно — ещё попытка; после третьей ошибки — новый пример. */
     private fun unlock() {
         val current = _state.value
-        if (current.answer.toIntOrNull() == current.first + current.second) {
-            _state.update { it.copy(unlocked = true, answer = "", error = null) }
-        } else if (current.attempts >= 2) {
-            _state.update { it.copy(first = Random.nextInt(10, 50), second = Random.nextInt(10, 50),
-                attempts = 0, answer = "", error = "Попробуйте решить новый пример.") }
-        } else {
-            _state.update { it.copy(attempts = it.attempts + 1, answer = "", error = "Проверьте сумму и попробуйте ещё раз.") }
+        when {
+            current.answer.toIntOrNull() == current.example.sum ->
+                _state.update { it.copy(unlocked = true, answer = "", error = null) }
+            current.attempts >= MAX_ATTEMPTS - 1 ->
+                _state.update { it.copy(example = newExample(), attempts = 0, answer = "", error = AdultError.NEW_EXAMPLE) }
+            else ->
+                _state.update { it.copy(attempts = it.attempts + 1, answer = "", error = AdultError.WRONG_ANSWER) }
         }
     }
 
+    /** Два двузначных числа от 10 до 49: сумма не больше 98, ответ — две цифры. */
+    private fun newExample() = AdultExample(random.nextInt(10, 50), random.nextInt(10, 50))
 
     private fun updateSettings(transform: (AppSettings) -> AppSettings) {
         if (!_state.value.unlocked || _state.value.busy) return
@@ -123,9 +113,14 @@ class AdultViewModel(
                 }
                 is Result.Error -> {
                     result.error.snackbar(retry = null)
-                    _state.update { it.copy(busy = false, pending = null, error = "Не удалось выполнить действие. Попробуйте ещё раз.") }
+                    _state.update { it.copy(busy = false, pending = null, error = AdultError.ACTION_FAILED) }
                 }
             }
         }
     }
+
+    private companion object {
+        const val MAX_ATTEMPTS = 3
+    }
 }
+

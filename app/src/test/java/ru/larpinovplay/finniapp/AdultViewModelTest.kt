@@ -12,6 +12,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import kotlin.random.Random
 import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
 import ru.larpinovplay.finniapp.data.game.store.InMemoryGameStore
@@ -32,7 +33,7 @@ class AdultViewModelTest {
     private val pet = Pet.newborn("Кот", PetLook(PetColor.MINT))
     private fun adult() = AdultViewModel(game, settings, defaultContent())
     private fun unlock(vm: AdultViewModel) {
-        vm.onAction(AdultAction.ChangeAnswer((vm.state.value.first + vm.state.value.second).toString()))
+        vm.onAction(AdultAction.ChangeAnswer((vm.state.value.example.sum).toString()))
         vm.onAction(AdultAction.Unlock)
     }
 
@@ -56,7 +57,7 @@ class AdultViewModelTest {
         repeat(3) { vm.onAction(AdultAction.ChangeAnswer("0")); vm.onAction(AdultAction.Unlock) }
         assertFalse(vm.state.value.unlocked)
         assertEquals(0, vm.state.value.attempts)
-        assertTrue(vm.state.value.first + vm.state.value.second <= 99)
+        assertTrue(vm.state.value.example.sum <= 99)
         unlock(vm)
         assertTrue(vm.state.value.unlocked)
         assertFalse(adult().state.value.unlocked)
@@ -117,5 +118,17 @@ class AdultViewModelTest {
             assertTrue(game.finishWeek().dataOrNull() is FinishWeekResult.Finished)
             assertTrue(checkNotNull(game.snapshot.value).state.demoMode)
         }
+    }
+
+    @Test fun wrongAnswersAreExplainedAndThirdOneBringsNewExample() {
+        val vm = AdultViewModel(game, settings, defaultContent(), Random(seed = 7))
+        vm.onAction(AdultAction.ChangeAnswer("0")); vm.onAction(AdultAction.Unlock)
+        assertEquals(AdultError.WRONG_ANSWER, vm.state.value.error)
+        repeat(2) { vm.onAction(AdultAction.ChangeAnswer("0")); vm.onAction(AdultAction.Unlock) }
+        assertEquals(AdultError.NEW_EXAMPLE, vm.state.value.error)
+        assertEquals(0, vm.state.value.attempts)
+        vm.onAction(AdultAction.ChangeAnswer(vm.state.value.example.sum.toString())); vm.onAction(AdultAction.Unlock)
+        assertTrue(vm.state.value.unlocked)
+        assertNull(vm.state.value.error)
     }
 }
