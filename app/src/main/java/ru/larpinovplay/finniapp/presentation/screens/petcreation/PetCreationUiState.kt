@@ -13,9 +13,14 @@ sealed interface PetCreationUiState {
     /** Питомец уже есть; сам он живёт в репозитории, а не здесь. */
     data object Loaded : PetCreationUiState
 
+    /**
+     * Знакомство с Финни: [step] — где ребёнок сейчас. Раскраска сразу видна на 3D-питомце, поэтому она выбрана
+     * с самого начала; имя по умолчанию — «Финни», его можно оставить.
+     */
     data class Creation(
-        val name: String = "",
-        val color: PetColor? = null,
+        val step: CreationStep = CreationStep.HELLO,
+        val name: String = DEFAULT_NAME,
+        val color: PetColor = PetColor.CORAL,
         val isCreating: Boolean = false,
         /** Почему начинаем заново или не удалось создать: сохранение повреждено, не записалось. */
         val notice: StorageError? = null,
@@ -24,3 +29,15 @@ sealed interface PetCreationUiState {
     /** Сохранённую игру не удалось прочитать; сама она цела, можно повторить. */
     data class LoadFailed(val error: StorageError) : PetCreationUiState
 }
+
+/**
+ * Шаги знакомства: Финни здоровается, ребёнок выбирает раскраску и имя, потом три коротких урока —
+ * карманные и план, дела недели, мечта. Уроки можно пропустить.
+ */
+enum class CreationStep {
+    HELLO, COLOR, NAME, PLAN, GROW, DREAM;
+
+    val isLesson: Boolean get() = this == PLAN || this == GROW || this == DREAM
+}
+
+const val DEFAULT_NAME = "Финни"

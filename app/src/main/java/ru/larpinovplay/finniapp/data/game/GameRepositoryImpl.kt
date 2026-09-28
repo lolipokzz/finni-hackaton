@@ -65,10 +65,13 @@ class GameRepositoryImpl(
         store.load().onSuccess { _snapshot.value = it }
     }
 
-    override suspend fun createPet(pet: Pet): EmptyResult<StorageError> = mutex.withLock {
+    override suspend fun createPet(pet: Pet, withTutorial: Boolean): EmptyResult<StorageError> = mutex.withLock {
         check(_snapshot.value == null) { "Игра уже начата" }
-        persist(GameSnapshot(GameEngine.newGame(today(), startBalance), pet))
+        persist(GameSnapshot(GameEngine.newGame(today(), startBalance).copy(tutorial = withTutorial), pet))
     }
+
+    override suspend fun finishTutorial(): EmptyResult<StorageError> =
+        execute { Transition(it.copy(state = it.state.copy(tutorial = false)), Unit) }
 
     override suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError> =
         execute { GameEngine.buy(it, item) }

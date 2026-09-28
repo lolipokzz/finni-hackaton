@@ -35,6 +35,7 @@ data class GameState(
     val tasksDoneThisWeek: Int = 0,
     val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),
+    val tutorial: Boolean = false,                  // идёт обучение на главном экране (см. tutorialStep)
 ) {
     fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id }
 

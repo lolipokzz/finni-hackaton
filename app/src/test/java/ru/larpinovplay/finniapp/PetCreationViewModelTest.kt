@@ -16,6 +16,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.storage.StorageError
+import ru.larpinovplay.finniapp.presentation.screens.petcreation.CreationStep
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationAction
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationViewModel
 import ru.larpinovplay.finniapp.presentation.screens.petcreation.PetCreationUiState
@@ -109,6 +110,32 @@ class PetCreationViewModelTest {
         assertEquals("Финни", state.name)   // введённое не потеряно
         assertTrue(!state.isCreating)
         assertNull(store.saved)
+    }
+
+    /** Знакомство идёт по шагам; без имени дальше не пройти, а после последнего урока питомец создаётся. */
+    @Test
+    fun introductionWalksThroughStepsAndCreatesPetAtTheEnd() {
+        val viewModel = viewModel()
+        fun step() = (viewModel.state.value as PetCreationUiState.Creation).step
+
+        viewModel.onAction(PetCreationAction.NextStep)
+        viewModel.onAction(PetCreationAction.ColorSelected(PetColor.MINT))
+        viewModel.onAction(PetCreationAction.NextStep)
+        assertEquals(CreationStep.NAME, step())
+
+        viewModel.onAction(PetCreationAction.NameChanged("  "))
+        viewModel.onAction(PetCreationAction.NextStep)
+        assertEquals(CreationStep.NAME, step())   // пустое имя не пускает дальше
+
+        viewModel.onAction(PetCreationAction.NameChanged("Барсик "))
+        viewModel.onAction(PetCreationAction.NextStep)
+        viewModel.onAction(PetCreationAction.PreviousStep)
+        assertEquals(CreationStep.NAME, step())
+
+        repeat(4) { viewModel.onAction(PetCreationAction.NextStep) }   // три урока и «Начнём!»
+
+        assertEquals(PetCreationUiState.Loaded, viewModel.state.value)
+        assertEquals(Pet.newborn("Барсик", PetLook(PetColor.MINT)), store.saved?.pet)
     }
 
     @Test

@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.savings
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +63,7 @@ class SavingsViewModel(
             is SavingsAction.ChangeWithdraw -> changeWithdraw(action.increase)
             SavingsAction.ConfirmWithdraw -> confirmWithdraw()
             SavingsAction.DismissWithdraw -> _state.update { it.copy(withdraw = null) }
+            SavingsAction.SkipTutorial -> viewModelScope.launch { game.finishTutorial() }
         }
     }
 
@@ -121,5 +124,6 @@ class SavingsViewModel(
         goals = content.goals,
         weeksToGoal = game.weeksToGoal(),
         completedGoalIds = game.completedGoals.map { it.id }.toSet(),
+        coach = game.tutorialStep == TutorialStep.GOAL,
     )
 }

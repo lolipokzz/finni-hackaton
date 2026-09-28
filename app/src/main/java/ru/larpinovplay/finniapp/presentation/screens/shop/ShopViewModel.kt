@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.shop
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +35,7 @@ class ShopViewModel(
             items = itemsOf(ShopCategory.MANDATORY),
             owned = ownedIds(),
             budgets = budgetsOf(game.requireSnapshot().state),
+            coach = game.requireSnapshot().state.tutorialStep == TutorialStep.SHOP,
         )
     )
     val state: StateFlow<ShopUiState> = _state.asStateFlow()
@@ -42,7 +45,7 @@ class ShopViewModel(
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { snapshot ->
                 val g = snapshot.state
-                _state.update { it.copy(balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g)) }
+                _state.update { it.copy(balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g), coach = g.tutorialStep == TutorialStep.SHOP) }
             }
         }
     }
@@ -56,6 +59,7 @@ class ShopViewModel(
             is ShopAction.PickCheaper -> _state.update { it.copy(feedback = null, pending = action.item) }
             ShopAction.ConfirmPurchase -> confirmPurchase()
             ShopAction.BuyWithSavings -> buyWithSavings()
+            ShopAction.SkipTutorial -> viewModelScope.launch { game.finishTutorial() }
         }
     }
 

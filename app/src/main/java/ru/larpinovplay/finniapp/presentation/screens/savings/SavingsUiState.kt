@@ -15,6 +15,7 @@ data class SavingsUiState(
     val reached: SavingsGoal? = null,       // цель только что достигнута: показываем праздник
     val depositError: DepositResult.Rejected? = null,   // последняя попытка отложить не удалась
     val withdraw: Withdraw? = null,         // открыто окно «Забрать из копилки»
+    val coach: Boolean = false,             // обучение: Финни просит выбрать мечту
 ) {
     /**
      * Окно снятия: сколько забрать и что от этого изменится (docs: «экран подтверждения показывает последствия»).

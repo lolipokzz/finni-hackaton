@@ -40,15 +40,17 @@ import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
-import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.BubbleTail
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CoachNote
 import ru.larpinovplay.finniapp.presentation.components.DashedDivider
 import ru.larpinovplay.finniapp.presentation.components.Paws
 import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.PillButton
 import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.growth
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.game.todoText
@@ -127,6 +129,9 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
             PebbleButton(R.drawable.ic_close, "Закрыть", onClose)
         }
 
+        if (state.tutorial == TutorialStep.DEEDS) {
+            CoachNote("Каждое дело — шаг роста. Сделаешь все четыре за неделю — я подрасту! Дальше ты справишься сам, а я буду подсказывать.")
+        }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Deed.entries.forEach { DeedSticker(it, deeds[it]) }
         }

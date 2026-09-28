@@ -58,6 +58,7 @@ internal data class GameStateDto(
     val tasksDoneThisWeek: Int = 0,
     val adventureResults: List<AdventureResultDto> = emptyList(),
     val history: List<WeekSummaryDto> = emptyList(),
+    val tutorial: Boolean = false,   // в старых сохранениях поля нет: обучения там уже не будет
 )
 
 @Serializable

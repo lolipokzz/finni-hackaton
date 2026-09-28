@@ -52,6 +52,7 @@ enum class FeedbackKey(val id: String) {
     WITHDRAW_NO_GOAL("withdraw.no_goal"),
 
     // Реплика Финни на главном экране: одно самое важное дело сейчас
+    SAY_PLAN_WEEK("say.plan_week"),
     SAY_WEEK_READY("say.week_ready"),
     SAY_HUNGRY("say.hungry"),
     SAY_ADVENTURE("say.adventure"),

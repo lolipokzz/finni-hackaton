@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.presentation.screens.shop
 
+import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
+import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
+import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -28,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -107,6 +111,9 @@ fun ShopScreenContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Обучение: нажать можно только еду, а какую купить — решает ребёнок
+    val goods = remember { SpotlightTargets() }
+    val coaching = state.coach && state.pending == null && state.feedback == null
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
@@ -143,9 +150,18 @@ fun ShopScreenContent(
                         affordable = item.price <= state.balance,
                         owned = item.id in state.owned,
                         onBuy = { onAction(ShopAction.BuyClicked(item)) },
+                        modifier = if (coaching) Modifier.spotlightTarget(goods, item.id) else Modifier,
                     )
                 }
             }
+        }
+        if (coaching) {
+            // Магазин всегда открывается на «Обязательном», а вкладки под затемнением не нажать
+            TutorialSpotlight(
+                "Еда — это обязательное: без неё мне плохо. Выбери, что мне купить!",
+                goods.all,
+                onSkip = { onAction(ShopAction.SkipTutorial) },
+            )
         }
     }
 
@@ -378,14 +394,14 @@ private fun EffectChips(item: ShopItem, modifier: Modifier = Modifier) {
  * тогда цена просто спокойнее. Одежду, которая уже есть, второй раз не купить.
  */
 @Composable
-private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit) {
+private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(24.dp)
     Surface(
         onClick = onBuy,
         enabled = !owned,
         shape = shape,
         color = Color.Transparent,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .creamCard(shape, elevation = 8.dp)
             .clearAndSetSemantics {

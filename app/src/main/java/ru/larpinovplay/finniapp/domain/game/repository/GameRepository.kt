@@ -48,10 +48,13 @@ interface GameRepository {
     suspend fun load(): Result<GameSnapshot?, StorageError>
 
     /**
-     * Начинает игру с питомцем [pet].
+     * Начинает игру с питомцем [pet]; [withTutorial] — первую неделю Финни подсказывает на главном экране.
      * @throws IllegalStateException если игра уже начата.
      */
-    suspend fun createPet(pet: Pet): EmptyResult<StorageError>
+    suspend fun createPet(pet: Pet, withTutorial: Boolean = false): EmptyResult<StorageError>
+
+    /** Обучение закончено или пропущено: подсказок больше не будет. */
+    suspend fun finishTutorial(): EmptyResult<StorageError>
 
     suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError>
 

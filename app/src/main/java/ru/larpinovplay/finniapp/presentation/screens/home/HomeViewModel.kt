@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import kotlin.math.roundToInt
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,16 +71,25 @@ class HomeViewModel(
             }
             HomeAction.DismissWeekSummary -> _state.update { it?.copy(weekSummary = null) }
             is HomeAction.ChangePlan -> changePlan(action.direction, action.increase)
+            is HomeAction.SetPlan -> setPlan(action.direction, action.amount)
+            HomeAction.OpenPlan -> _state.update { it?.copy(planOpen = it.planDraft != null || it.activePlan != null) }
+            HomeAction.ClosePlan -> _state.update { it?.copy(planOpen = false) }
             HomeAction.ConfirmPlan -> viewModelScope.launch {
                 val draft = _state.value?.planDraft ?: return@launch
                 if (draft.unallocated != 0) return@launch
-                // Окно закроется само: подтверждённый план переводит неделю в ACTIVE, и черновик пропадёт из состояния
+                // Окно закрываем сразу: после подтверждения за той же кнопкой уже окно идущей недели
+                _state.update { it?.copy(planOpen = false) }
                 game.confirmPlan(draft.plan)
             }
             is HomeAction.ShowInfo -> _state.update { it?.copy(info = action.info) }
             HomeAction.DismissInfo -> _state.update { it?.copy(info = null) }
             HomeAction.ShowDeeds -> _state.update { it?.copy(deedsOpen = true) }
-            HomeAction.DismissDeeds -> _state.update { it?.copy(deedsOpen = false) }
+            HomeAction.DismissDeeds -> {
+                // Дела недели — последний шаг обучения: посмотрел — дальше Финни не подсказывает
+                if (_state.value?.tutorial == TutorialStep.DEEDS) viewModelScope.launch { game.finishTutorial() }
+                _state.update { it?.copy(deedsOpen = false) }
+            }
+            HomeAction.SkipTutorial -> viewModelScope.launch { game.finishTutorial() }
             HomeAction.PetTapped -> Unit       // TODO: реакция питомца
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
@@ -93,6 +105,17 @@ class HomeViewModel(
             current - minOf(GameRules.PLAN_STEP, current)
         }
         state.copy(planDraft = draft.copy(plan = draft.plan.with(direction, amount)))
+    }
+
+    /**
+     * Ползунок шагает по [GameRules.PLAN_STEP] и не заходит дальше, чем осталось разложить, —
+     * но до «всё, что осталось» дотягивается, даже если остаток не кратен шагу.
+     */
+    private fun setPlan(direction: BudgetDirection, amount: Int) = _state.update { state ->
+        val draft = state?.planDraft ?: return@update state
+        val snapped = (amount.toFloat() / GameRules.PLAN_STEP).roundToInt() * GameRules.PLAN_STEP
+        val max = draft.plan[direction] + draft.unallocated
+        state.copy(planDraft = draft.copy(plan = draft.plan.with(direction, snapped.coerceIn(0, max))))
     }
 
     /**
@@ -133,6 +156,17 @@ class HomeViewModel(
         } else {
             null
         }
+        val activePlan = game.plan?.takeIf { game.phase != PeriodPhase.PLANNING }?.let { plan ->
+            HomeUiState.ActivePlan(
+                week = game.week,
+                plan = plan,
+                used = BudgetPlan(
+                    mandatory = game.spentThisWeek(ShopCategory.MANDATORY),
+                    optional = game.spentThisWeek(ShopCategory.OPTIONAL),
+                    savings = game.savedThisWeek,
+                ),
+            )
+        }
         return HomeUiState(
             pet = pet,
             demoMode = game.demoMode,
@@ -149,18 +183,21 @@ class HomeViewModel(
             weekSummary = current?.weekSummary,
             finishBlock = finishBlock,
             deeds = deeds,
+            tutorial = game.tutorialStep,
             weekSatiety = game.weekSatiety,
             deedsOpen = current?.deedsOpen ?: false,
             planDraft = planDraft,
+            activePlan = activePlan,
+            planOpen = (planDraft != null || activePlan != null) && current?.planOpen == true,
         )
     }
 
     /**
-     * Одно самое важное дело сейчас — от того, что нельзя отложить, к приятному. Пока идёт план недели,
-     * Финни молчит: всё внимание окну плана.
+     * Одно самое важное дело сейчас — от того, что нельзя отложить, к приятному. Пока неделя не началась,
+     * Финни зовёт составить план: без него ничего другого не сделать.
      */
     private fun speech(game: GameState, deeds: WeekDeeds, finishBlock: FinishBlock?, tasks: Int): HomeUiState.Speech? = when {
-        game.phase == PeriodPhase.PLANNING -> null
+        game.phase == PeriodPhase.PLANNING -> HomeUiState.Speech.PLAN_WEEK
         finishBlock == null -> HomeUiState.Speech.WEEK_READY
         game.currentTrip != null -> HomeUiState.Speech.ON_TRIP   // Финни в поездке: звать в магазин и к заданиям некого
         !deeds.fed -> HomeUiState.Speech.HUNGRY
