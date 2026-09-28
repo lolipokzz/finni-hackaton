@@ -53,15 +53,31 @@ class ShopViewModel(
 
     fun onAction(action: ShopAction) {
         when (action) {
-            is ShopAction.TabSelected -> _state.update { it.copy(tab = action.category, items = itemsOf(action.category)) }
-            is ShopAction.BuyClicked -> _state.update { it.copy(pending = action.item) }
-            ShopAction.DismissPending -> _state.update { it.copy(pending = null) }
-            ShopAction.DismissFeedback -> _state.update { it.copy(feedback = null) }
-            is ShopAction.PickCheaper -> _state.update { it.copy(feedback = null, pending = action.item) }
+            is ShopAction.TabSelected -> selectTab(action.category)
+            is ShopAction.BuyClicked -> askToBuy(action.item)
+            ShopAction.DismissPending -> dismissPending()
+            ShopAction.DismissFeedback -> dismissFeedback()
+            is ShopAction.PickCheaper -> pickCheaper(action.item)
             ShopAction.ConfirmPurchase -> confirmPurchase()
             ShopAction.BuyWithSavings -> buyWithSavings()
-            ShopAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.SHOP).orSnackbar { onAction(ShopAction.SkipTutorialStep) } }
+            ShopAction.SkipTutorialStep -> skipTutorialStep()
         }
+    }
+
+    private fun selectTab(category: ShopCategory) = _state.update { it.copy(tab = category, items = itemsOf(category)) }
+
+    /** Окно подтверждения покупки. */
+    private fun askToBuy(item: ShopItem) = _state.update { it.copy(pending = item) }
+
+    private fun dismissPending() = _state.update { it.copy(pending = null) }
+
+    private fun dismissFeedback() = _state.update { it.copy(feedback = null) }
+
+    /** «Не хватает монет» → выбрал вещь подешевле: сразу её окно подтверждения. */
+    private fun pickCheaper(item: ShopItem) = _state.update { it.copy(feedback = null, pending = item) }
+
+    private fun skipTutorialStep() {
+        viewModelScope.launch { game.skipTutorialStep(TutorialStep.SHOP).orSnackbar { skipTutorialStep() } }
     }
 
     /** Окно подтверждения сменяется итогом одним обновлением: между ними не мелькнёт магазин (и подсветка обучения). */

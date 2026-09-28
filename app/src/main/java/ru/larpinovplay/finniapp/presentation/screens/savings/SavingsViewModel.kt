@@ -49,22 +49,38 @@ class SavingsViewModel(
         when (action) {
             is SavingsAction.GoalClicked -> onGoalClicked(action.goal)
             SavingsAction.ConfirmSwitch -> confirmSwitch()
-            SavingsAction.DismissSwitch -> _state.update { it.copy(switchTo = null) }
+            SavingsAction.DismissSwitch -> dismissSwitch()
             is SavingsAction.Deposit -> deposit(action.amount)
-            SavingsAction.ReachGoalClicked -> viewModelScope.launch {
-                val reached = game.reachGoal().orSnackbar { onAction(SavingsAction.ReachGoalClicked) } ?: return@launch   // второй тап: мечта уже куплена
-                _state.update { it.copy(reached = reached) }
-            }
-            SavingsAction.DismissReached -> _state.update { it.copy(reached = null) }
-            SavingsAction.WithdrawClicked -> {
-                val game = game.requireSnapshot().state
-                _state.update { it.copy(withdraw = withdrawDraft(game, minOf(GameRules.PLAN_STEP, game.savings))) }
-            }
+            SavingsAction.ReachGoalClicked -> reachGoal()
+            SavingsAction.DismissReached -> dismissReached()
+            SavingsAction.WithdrawClicked -> openWithdraw()
             is SavingsAction.ChangeWithdraw -> changeWithdraw(action.increase)
             SavingsAction.ConfirmWithdraw -> confirmWithdraw()
-            SavingsAction.DismissWithdraw -> _state.update { it.copy(withdraw = null) }
-            SavingsAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.GOAL).orSnackbar { onAction(SavingsAction.SkipTutorialStep) } }
+            SavingsAction.DismissWithdraw -> dismissWithdraw()
+            SavingsAction.SkipTutorialStep -> skipTutorialStep()
         }
+    }
+
+    private fun dismissSwitch() = _state.update { it.copy(switchTo = null) }
+
+    private fun reachGoal() {
+        viewModelScope.launch {
+            val reached = game.reachGoal().orSnackbar { reachGoal() } ?: return@launch   // второй тап: мечта уже куплена
+            _state.update { it.copy(reached = reached) }
+        }
+    }
+
+    private fun dismissReached() = _state.update { it.copy(reached = null) }
+
+    private fun openWithdraw() {
+        val game = game.requireSnapshot().state
+        _state.update { it.copy(withdraw = withdrawDraft(game, minOf(GameRules.PLAN_STEP, game.savings))) }
+    }
+
+    private fun dismissWithdraw() = _state.update { it.copy(withdraw = null) }
+
+    private fun skipTutorialStep() {
+        viewModelScope.launch { game.skipTutorialStep(TutorialStep.GOAL).orSnackbar { skipTutorialStep() } }
     }
 
     private fun onGoalClicked(goal: SavingsGoal) {
