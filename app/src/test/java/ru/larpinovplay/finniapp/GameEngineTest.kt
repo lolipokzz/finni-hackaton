@@ -538,6 +538,42 @@ class GameEngineTest {
         assertEquals(game, again)
     }
 
+    private val choiceTasks = content.tasks.filter { it.payload is TaskPayload.Choice }
+    private fun rightAnswer(task: ru.larpinovplay.finniapp.domain.task.model.Task) =
+        TaskAnswer.Choice((task.payload as TaskPayload.Choice).options.first { it.correct }.id)
+    private fun wrongAnswer(task: ru.larpinovplay.finniapp.domain.task.model.Task) =
+        TaskAnswer.Choice((task.payload as TaskPayload.Choice).options.first { !it.correct }.id)
+
+    /** ТЗ 2.5.8: в демо все задания доступны сразу — без недельного лимита и без ожидания после ошибки. */
+    @Test
+    fun demoLiftsWeeklyLimitAndLetsRetryAtOnce() {
+        var game = newGame().let { it.copy(state = it.state.copy(demoMode = true)) }
+        choiceTasks.take(GameRules.TASKS_PER_WEEK).forEach { game = GameEngine.answerTask(game, it, rightAnswer(it)).game }
+        val next = choiceTasks[GameRules.TASKS_PER_WEEK]
+        assertEquals(TaskStatus.AVAILABLE, game.state.taskStatus(next))
+        assertEquals(null, game.state.tasksPerWeek)
+
+        // Ошибочный вариант, и сразу же правильный — в ту же неделю
+        val (afterMistake, wrong) = GameEngine.answerTask(game, next, wrongAnswer(next))
+        assertFalse(checkNotNull(wrong).success)
+        assertEquals(TaskStatus.AVAILABLE, afterMistake.state.taskStatus(next))
+        val (afterRight, right) = GameEngine.answerTask(afterMistake, next, rightAnswer(next))
+        assertTrue(checkNotNull(right).success)
+        assertEquals(TaskStatus.DONE, afterRight.state.taskStatus(next))
+    }
+
+    @Test
+    fun outsideDemoWeeklyLimitAndRetryWaitStay() {
+        var game = newGame()
+        choiceTasks.take(GameRules.TASKS_PER_WEEK).forEach { game = GameEngine.answerTask(game, it, rightAnswer(it)).game }
+        assertEquals(TaskStatus.LIMIT_REACHED, game.state.taskStatus(choiceTasks[GameRules.TASKS_PER_WEEK]))
+        assertEquals(GameRules.TASKS_PER_WEEK, game.state.tasksPerWeek)
+
+        val task = choiceTasks.first()
+        val mistaken = newGame().then { GameEngine.answerTask(it, task, wrongAnswer(task)) }
+        assertEquals(TaskStatus.RETRY_NEXT_WEEK, mistaken.state.taskStatus(task))
+    }
+
     @Test
     fun topicProgressCountsDoneTasksPerTopic() {
         val choice = content.tasks.first { it.payload is TaskPayload.Choice }

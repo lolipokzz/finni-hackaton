@@ -49,7 +49,8 @@ data class GameState(
     /** Сколько за эту неделю отложено за вычетом снятого; может быть меньше нуля. Покупка цели сюда не входит. */
     val savedThisWeek: Int get() = depositsThisWeek.sum() - withdrawalsThisWeek.sum()
 
-    val tasksPerWeek: Int get() = GameRules.TASKS_PER_WEEK
+    /** Сколько заданий можно решить за неделю; null — лимита нет (демо). */
+    val tasksPerWeek: Int? get() = GameRules.TASKS_PER_WEEK.takeUnless { demoMode }
 
     /** Карманные (или стартовые) монеты, пришедшие в начале этой недели. */
     val weekIncome: Int
@@ -87,12 +88,17 @@ data class GameState(
         else -> null
     }
 
+    /**
+     * Можно ли сейчас решать [task]. В обычной игре — не больше [GameRules.TASKS_PER_WEEK] заданий в неделю,
+     * а после ошибки задание ждёт следующей недели. В демо (ТЗ 2.5.8) все задания доступны сразу и после ошибки
+     * задание можно сразу решить ещё раз: эксперт проходит ошибочный и правильный вариант подряд.
+     */
     fun taskStatus(task: Task): TaskStatus {
         val last = taskResults.lastOrNull { it.taskId == task.id }
         return when {
             last?.success == true -> TaskStatus.DONE
-            last != null && last.week == week -> TaskStatus.RETRY_NEXT_WEEK
-            tasksDoneThisWeek >= GameRules.TASKS_PER_WEEK -> TaskStatus.LIMIT_REACHED
+            !demoMode && last != null && last.week == week -> TaskStatus.RETRY_NEXT_WEEK
+            !demoMode && tasksDoneThisWeek >= GameRules.TASKS_PER_WEEK -> TaskStatus.LIMIT_REACHED
             else -> TaskStatus.AVAILABLE
         }
     }

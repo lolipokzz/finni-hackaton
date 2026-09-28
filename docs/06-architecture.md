@@ -314,8 +314,8 @@ Jetpack Navigation 3: один `NavDisplay` (`presentation/navigation/MainNaviga
 
 ## Сборка релиза
 
-- `applicationId = ru.larpinovplay.finniapp`, `minSdk = 27` (ТЗ просит Android 8.0 = API 26; при
-  наличии времени опустить до 26), `targetSdk = 36`.
+- `applicationId = ru.larpinovplay.finniapp`, `minSdk = 26` (Android 8.0, ТЗ 3.1),
+  `targetSdk = 37`.
 - Релизный keystore хранится **вне репозитория**, путь и пароли через `keystore.properties`
   в `.gitignore` или через переменные окружения. В README — инструкция по сборке APK.
 - `isMinifyEnabled = false` для финальной сдачи (ТЗ 7.2 требует код без обфускации; APK всё равно

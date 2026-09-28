@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.pet.title
@@ -94,7 +95,7 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
                     VoiceRepeatSwitch(state.settings.voiceRepeatEnabled, !state.busy, viewModel::setVoiceRepeat)
                 }
                 AdultCard("Демонстрационный режим") {
-                    Text("Тестовый питомец, 100 монет, первая неделя. Игровые недели завершаются кнопкой, без ожидания реального времени.")
+                    Text("Тестовый питомец, ${GameRules.START_BALANCE} монет, первая неделя. Игровые недели завершаются кнопкой, без ожидания реального времени.")
                     Text("Включение демо заменит текущий профиль и его прогресс.")
                     OutlinedButton(onClick = { viewModel.request(AdultConfirmation.DEMO) }, enabled = !state.busy) {
                         Text(if (state.snapshot?.state?.demoMode == true) "Сбросить демо" else "Включить демо")
@@ -118,7 +119,7 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
         val explanation = when (action) {
             AdultConfirmation.RESET_PROFILE -> "Питомец, монеты, покупки, накопления и учебный прогресс будут удалены. Настройки сохранятся. Откроется создание нового питомца."
             AdultConfirmation.DELETE_ALL -> "Питомец и весь игровой прогресс будут удалены. Настройки звука, анимаций и подсказок вернутся к исходным. Откроется создание нового питомца."
-            AdultConfirmation.DEMO -> "Текущий питомец и весь игровой прогресс будут заменены тестовым профилем: Финни Демо, 100 монет, неделя 1."
+            AdultConfirmation.DEMO -> "Текущий питомец и весь игровой прогресс будут заменены тестовым профилем: Финни Демо, ${GameRules.START_BALANCE} монет, неделя 1."
         }
         AlertDialog(
             onDismissRequest = viewModel::dismissConfirmation,
