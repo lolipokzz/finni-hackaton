@@ -83,8 +83,11 @@ const val PetTapAnimation = "Greeting"
 /** Поглаживание: водят пальцем по питомцу. */
 const val PetPettingAnimation = "Petting"
 
-/** Удары по голове и ногам (HitHead, HitFoot.L/R в моделях кота). */
-val PetHits = PetHitAnimations(head = "HitHead", footLeft = "HitFoot.L", footRight = "HitFoot.R")
+/**
+ * Удары по голове и ногам (HitHead, HitFoot.L/R в моделях кота) и редкий жест по нажатию на лапу:
+ * в 10 % случаев вместо приветствия — «six seven» (клип SixSeven: лапы ладонями вверх по очереди вверх-вниз).
+ */
+val PetHits = PetHitAnimations(head = "HitHead", footLeft = "HitFoot.L", footRight = "HitFoot.R", handTap = "SixSeven", handTapChance = 0.1f)
 
 /** Узел вещи [itemId] в 3D-модели кота (одинаковый на всех стадиях); null — эта вещь на модели не показывается. */
 fun accessoryNode(itemId: String): String? = when (itemId) {

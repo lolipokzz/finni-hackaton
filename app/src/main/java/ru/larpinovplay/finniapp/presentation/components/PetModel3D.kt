@@ -28,8 +28,10 @@ import com.google.android.filament.Colors
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.hypot
 import kotlin.math.log2
 import kotlin.math.sin
+import kotlin.random.Random
 
 /**
  * Показывает glTF-модель питомца из assets и анимирует её.
@@ -40,6 +42,8 @@ import kotlin.math.sin
  * - Нажатие по голове или по ноге проигрывает клип удара из [hitAnimations] (как в «Моём Говорящем Томе»).
  *   Зона определяется по суставам модели, спроецированным на экран (см. [PetHitAnimations]); если суставов или
  *   клипа нет, играет [tapAnimation].
+ * - Нажатие по лапе (руке) с шансом [PetHitAnimations.handTapChance] проигрывает редкий клип
+ *   [PetHitAnimations.handTap] («six seven»), иначе — обычное [tapAnimation].
  * - Если провести по питомцу пальцем, по кругу играет [pettingAnimation] — пока палец двигается; потом клип
  *   доигрывает цикл и питомец возвращается в idle. Нажатием такое касание не считается.
  * - [soundEnabled]: мурчание, пока гладят, и звуки ударов (см. [PetSounds]).
@@ -214,6 +218,7 @@ private class PetModelController(
     private var footLeftIndex = -1
     private var footRightIndex = -1
     private var pettingIndex = -1
+    private var handTapIndex = -1
 
     /** Касание стало поглаживанием: палец ушёл дальше порога. Сбрасывается на следующем касании. */
     private var stroking = false
@@ -458,6 +463,8 @@ private class PetModelController(
             TapZone.HEAD -> headIndex
             TapZone.FOOT_LEFT -> footLeftIndex
             TapZone.FOOT_RIGHT -> footRightIndex
+            // Редкий сюрприз: иногда вместо приветствия питомец показывает «six seven»
+            TapZone.HAND -> handTapIndex.takeIf { Random.nextFloat() < hitAnimations.handTapChance } ?: tapIndex
             null -> -1
         }.takeIf { it >= 0 } ?: tapIndex
         // Повторный удар перезапускает клип с начала, как в «Томе»
@@ -471,13 +478,17 @@ private class PetModelController(
     }
 
     /**
-     * По какой части тела пришлось нажатие. Голова — выше шеи, нога — ниже тазобедренного сустава; какая именно,
-     * решает ближайшая по горизонтали стопа. Суставы берутся в текущей позе, поэтому зоны следуют за анимацией.
+     * По какой части тела пришлось нажатие. Лапа — рядом с кистью (проверяется первой: поднятая лапа бывает и
+     * выше шеи), голова — выше шеи, нога — ниже тазобедренного сустава; какая именно, решает ближайшая по
+     * горизонтали стопа. Суставы берутся в текущей позе, поэтому зоны следуют за анимацией.
      */
     private fun tapZone(x: Float, y: Float, width: Int, height: Int): TapZone? {
         val viewer = modelViewer ?: return null
         if (width <= 0 || height <= 0) return null
         val bones = hitAnimations
+        if (onHand(viewer, x, y, width, height, bones.handLeftJoint, bones.forearmLeftJoint) ||
+            onHand(viewer, x, y, width, height, bones.handRightJoint, bones.forearmRightJoint)
+        ) return TapZone.HAND
         val neck = projectJoint(viewer, bones.neckJoint, width, height) ?: return null
         if (y < neck[1]) return TapZone.HEAD
         val left = projectJoint(viewer, bones.footLeftJoint, width, height)
@@ -488,6 +499,22 @@ private class PetModelController(
         val hipY = minOf(hipLeft[1], hipRight[1])
         if (y < hipY) return null
         return if (abs(x - left[0]) <= abs(x - right[0])) TapZone.FOOT_LEFT else TapZone.FOOT_RIGHT
+    }
+
+    /**
+     * Нажатие пришлось на кисть: в круге вокруг сустава [hand] радиусом с кисть. Кисть на экране — отрезок от
+     * [forearm] до [hand] (сустав кисти стоит у запястья, сама лапа — дальше), поэтому центр круга сдвинут
+     * от запястья наружу, а радиус — по длине предплечья, но не меньше пальца.
+     */
+    private fun onHand(viewer: ModelViewer, x: Float, y: Float, width: Int, height: Int, hand: String, forearm: String): Boolean {
+        val wrist = projectJoint(viewer, hand, width, height) ?: return false
+        val elbow = projectJoint(viewer, forearm, width, height) ?: return false
+        val dx = wrist[0] - elbow[0]
+        val dy = wrist[1] - elbow[1]
+        val cx = wrist[0] + dx * 0.5f
+        val cy = wrist[1] + dy * 0.5f
+        val radius = maxOf(hypot(dx, dy) * 0.75f, width * 0.05f)
+        return hypot(x - cx, y - cy) <= radius
     }
 
     /** Экранная точка (x, y в пикселях вида) сустава [name]; null, если такого узла в модели нет. */
@@ -686,6 +713,7 @@ private class PetModelController(
         footLeftIndex = hitAnimations.footLeft?.let(names::indexOf) ?: -1
         footRightIndex = hitAnimations.footRight?.let(names::indexOf) ?: -1
         pettingIndex = pettingAnimation?.let(names::indexOf) ?: -1
+        handTapIndex = hitAnimations.handTap?.let(names::indexOf) ?: -1
         modelViewer?.let { viewer ->
             fun joint(name: String) = viewer.asset?.getFirstEntityByName(name)?.takeIf { it != 0 }
                 ?.let { viewer.engine.transformManager.getInstance(it) } ?: 0
@@ -898,9 +926,16 @@ data class PetHitAnimations(
     val hipRightJoint: String = "Thigh.R",
     val footLeftJoint: String = "Foot.L",
     val footRightJoint: String = "Foot.R",
+    /** Редкий клип по нажатию на лапу (с шансом [handTapChance]); null — лапа ведёт себя как всё тело. */
+    val handTap: String? = null,
+    val handTapChance: Float = 0.1f,
+    val handLeftJoint: String = "Paw.L",
+    val handRightJoint: String = "Paw.R",
+    val forearmLeftJoint: String = "Forearm.L",
+    val forearmRightJoint: String = "Forearm.R",
 )
 
-private enum class TapZone { HEAD, FOOT_LEFT, FOOT_RIGHT }
+private enum class TapZone { HEAD, FOOT_LEFT, FOOT_RIGHT, HAND }
 
 /** Узлы модели с этим префиксом — вещи гардероба (Acc_Cap, Acc_Glasses, Acc_BowTie в моделях кота). */
 const val ACCESSORY_PREFIX = "Acc_"
