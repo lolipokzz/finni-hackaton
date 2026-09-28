@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.adult
 
+import ru.larpinovplay.finniapp.presentation.storage.snackbar
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,7 +74,7 @@ class AdultViewModel(
 
     private fun updateSettings(transform: (AppSettings) -> AppSettings) {
         if (!_state.value.unlocked || _state.value.busy) return
-        viewModelScope.launch { settings.updateSettings(transform) }
+        viewModelScope.launch { settings.updateSettings(transform).orSnackbar { updateSettings(transform) } }
     }
 
     fun request(action: AdultConfirmation) {
@@ -102,8 +104,9 @@ class AdultViewModel(
                     _state.update { it.copy(busy = false, pending = null) }
                     onComplete()
                 }
-                is Result.Error -> _state.update {
-                    it.copy(busy = false, pending = null, error = "Не удалось выполнить действие. Попробуйте ещё раз.")
+                is Result.Error -> {
+                    result.error.snackbar(retry = null)
+                    _state.update { it.copy(busy = false, pending = null, error = "Не удалось выполнить действие. Попробуйте ещё раз.") }
                 }
             }
         }

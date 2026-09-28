@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
@@ -26,9 +27,13 @@ data class HomeUiState(
     val info: HomeInfo? = null,                          // открытое окно «что это значит» у монет/сытости/настроения
     val weekSummary: WeekSummary? = null,     // итог только что закрытой недели; null — окно не показывается
     val finishBlock: FinishBlock? = null,     // почему неделю пока нельзя закончить; null — можно
-    val planDraft: PlanDraft? = null,         // окно плана недели; null — план уже подтверждён
+    val planDraft: PlanDraft? = null,         // черновик плана недели; null — план уже подтверждён
+    val activePlan: ActivePlan? = null,       // план идущей недели для окна «План»; null — план ещё не составлен
+    val planOpen: Boolean = false,            // окно плана открыто: только по кнопке «План», само не всплывает
     val deeds: WeekDeeds = WeekDeeds(fed = false, notBored = false, savingsOnPlan = false, spendingOnPlan = false),   // дела недели сейчас
     val weekSatiety: Int = 0,                 // сколько сытости куплено за неделю: для подсказки «Финни сыт»
+    val tutorial: TutorialStep? = null,       // обучение первой недели: где Финни подсказывает; null — обучения нет
+    val tutorialDone: Boolean = false,        // окно «Обучение пройдено»: последний шаг пройден, ждём «Да, всё понятно!»
     val deedsOpen: Boolean = false,           // открыто окно «Дела недели» (там же — конец недели)
 ) {
     /**
@@ -47,6 +52,9 @@ data class HomeUiState(
         val mandatoryLow: Boolean get() = plan.mandatory < need
     }
 
+    /** Подтверждённый план недели и [used] — сколько по каждому направлению уже потрачено или отложено. */
+    data class ActivePlan(val week: Int, val plan: BudgetPlan, val used: BudgetPlan)
+
     /** Цель копилки в том виде, в каком её показывает главный экран. */
     data class Goal(val name: String, val cost: Int)
 
@@ -54,5 +62,5 @@ data class HomeUiState(
      * Реплика Финни: одно самое важное дело сейчас. Порядок выбора — в [HomeViewModel];
      * куда ведёт кнопка реплики, решает экран (HomeUiText.kt).
      */
-    enum class Speech { WEEK_READY, ON_TRIP, HUNGRY, ADVENTURE, CHOOSE_GOAL, BORED, NEW_TASK, TOMORROW }
+    enum class Speech { PLAN_WEEK, WEEK_READY, ON_TRIP, HUNGRY, ADVENTURE, CHOOSE_GOAL, BORED, NEW_TASK, TOMORROW }
 }

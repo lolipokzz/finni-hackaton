@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.tasks
 
+import ru.larpinovplay.finniapp.presentation.storage.snackbar
+import ru.larpinovplay.finniapp.domain.util.result.Result
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
@@ -10,7 +12,6 @@ import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.task.model.Task
 import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
-import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 /** Прохождение одного задания. Само задание не меняется, поэтому состояния нет, есть только разовое событие. */
 class TaskPlayViewModel(
@@ -38,8 +39,14 @@ class TaskPlayViewModel(
         if (submitted) return   // двойной тап по «Готово» не должен засчитать ответ дважды
         submitted = true
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
-            _effects.send(TaskPlayEffect.Completed(task.id, game.answerTask(task, answer).dataOrNull()))
+            when (val result = game.answerTask(task, answer)) {
+                is Result.Success -> _effects.send(TaskPlayEffect.Completed(task.id, result.data))
+                // Ответ не сохранился и не засчитан: остаёмся в задании, можно ответить ещё раз
+                is Result.Error -> {
+                    submitted = false
+                    result.error.snackbar { submit(answer) }
+                }
+            }
         }
     }
 }

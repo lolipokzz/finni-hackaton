@@ -15,4 +15,7 @@ sealed interface SavingsAction {
     data class ChangeWithdraw(val increase: Boolean) : SavingsAction
     data object ConfirmWithdraw : SavingsAction
     data object DismissWithdraw : SavingsAction
+
+    /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
+    data object SkipTutorialStep : SavingsAction
 }

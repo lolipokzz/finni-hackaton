@@ -1,5 +1,11 @@
 package ru.larpinovplay.finniapp.presentation.components
 
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.SnackbarData
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.clickable
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -7,6 +13,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -258,7 +266,7 @@ fun CardDialog(
             Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp),
             contentAlignment = Alignment.Center,
         ) {
-            androidx.compose.foundation.layout.Column(
+            Column(
                 Modifier
                     .fillMaxWidth()
                     .creamCard(androidx.compose.foundation.shape.RoundedCornerShape(34.dp), elevation = 20.dp)
@@ -412,3 +420,75 @@ fun DoneBadge(modifier: Modifier = Modifier, size: Dp = 24.dp) {
         contentAlignment = Alignment.Center,
     ) { Image(painterResource(R.drawable.ic_check), null, Modifier.size(size * 0.46f)) }
 }
+
+/**
+ * Подсказка Финни во время обучения: мятная плашка с лапкой — «это говорит Финни», текст и, если нужно,
+ * «Пропустить шаг». Стоит прямо там, где нужно действие, а не отдельным окном.
+ */
+@Composable
+fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)? = null) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .creamCard(RoundedCornerShape(24.dp), elevation = 8.dp)
+            .background(FinniColors.CardMint)
+            .padding(start = 12.dp, end = 14.dp, top = 12.dp, bottom = if (onSkip == null) 12.dp else 4.dp),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        CardSticker(R.drawable.ic_paw, Color.White, size = 40.dp, iconScale = 0.56f)
+        Column(Modifier.weight(1f)) {
+            Text("Финни", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal)
+            Text(text, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0B5E4F))
+            onSkip?.let {
+                Text(
+                    "Пропустить шаг",
+                    fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .heightIn(min = 48.dp)
+                        .clip(CircleShape)
+                        .clickable(role = Role.Button, onClick = it)
+                        .padding(horizontal = 8.dp, vertical = 14.dp),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Сообщение внизу экрана в стиле наклеек: кремовая плашка в белой обводке, текст и бирюзовая текстовая кнопка
+ * (например, «Повторить»). TalkBack зачитывает его сам: область «живая».
+ */
+@Composable
+fun FinniSnackbar(data: SnackbarData) {
+    Row(
+        Modifier
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .fillMaxWidth()
+            .creamCard(RoundedCornerShape(24.dp), elevation = 10.dp)
+            .padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp)
+            .heightIn(min = 52.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            data.visuals.message,
+            fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink,
+            modifier = Modifier.weight(1f).padding(vertical = 8.dp),
+        )
+        data.visuals.actionLabel?.let { label ->
+            Text(
+                label,
+                fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .heightIn(min = 48.dp)
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = data::performAction)
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
+            )
+        }
+    }
+}
+

@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +53,8 @@ class DataStoreGameStoreTest {
     @Test
     fun savedGameIsLoadedBack() = runBlocking {
         val store = openStore()
-        val game = SampleGames.rich()
+        // Игра посреди обучения: пропущенные шаги тоже сохраняются
+        val game = SampleGames.rich().let { it.copy(state = it.state.copy(tutorial = true, tutorialSkipped = setOf(TutorialStep.TASKS))) }
 
         assertTrue(store.save(game) is Result.Success)
 
@@ -207,5 +209,45 @@ class DataStoreGameStoreTest {
         assertEquals(Result.Error(StorageError.READ_FAILED), store.load())
         flaky.failReads = false
         assertEquals(Result.Success(game), restart().load())   // файл цел: сбой был временным
+    }
+
+    // ---------- Причины сбоя: что лечится само, а что должен исправить пользователь ----------
+
+    @Test
+    fun noSpaceIsReportedAtOnceWithoutRetries() = runBlocking {
+        val store = openStore()
+        flaky.failWrites = true
+        flaky.writeFailure = "write failed: ENOSPC (No space left on device)"
+
+        assertEquals(Result.Error(StorageError.NO_SPACE), store.save(SampleGames.rich()))
+        assertEquals(1, flaky.writeAttempts)   // повторять бесполезно: место само не появится
+    }
+
+    @Test
+    fun noAccessIsReportedAtOnce() = runBlocking {
+        val store = openStore()
+        flaky.failWrites = true
+        flaky.writeFailure = "open failed: EACCES (Permission denied)"
+
+        assertEquals(Result.Error(StorageError.NO_ACCESS), store.save(SampleGames.rich()))
+    }
+
+    @Test
+    fun unknownFailureIsRetriedBeforeGivingUp() = runBlocking {
+        val store = openStore()
+        flaky.failWrites = true
+
+        assertEquals(Result.Error(StorageError.WRITE_FAILED), store.save(SampleGames.rich()))
+        assertEquals(3, flaky.writeAttempts)   // первая попытка и два повтора
+    }
+
+    @Test
+    fun missingFolderIsCreatedAgain() = runBlocking {
+        val folder = File(tmp.root, "saves")
+        val store = DataStoreGameStore.create(newScope(), { File(folder, "game.json") }, flaky)
+        assertTrue(store.save(SampleGames.rich()) is Result.Success)
+        folder.deleteRecursively()   // кто-то удалил папку сохранений
+
+        assertTrue(store.save(SampleGames.richer()) is Result.Success)
     }
 }

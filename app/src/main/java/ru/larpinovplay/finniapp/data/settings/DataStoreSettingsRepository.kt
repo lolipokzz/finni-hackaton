@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.data.settings
 
+import ru.larpinovplay.finniapp.domain.util.result.map
+import ru.larpinovplay.finniapp.data.storage.onDisk
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Serializer
@@ -12,9 +14,7 @@ import kotlinx.coroutines.flow.retry
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.domain.storage.StorageError
-import ru.larpinovplay.finniapp.domain.util.result.EmptyDataSuccess
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
-import ru.larpinovplay.finniapp.domain.util.result.Result
 import java.io.File
 import java.io.IOException
 
@@ -23,11 +23,12 @@ import java.io.IOException
  * звук и подсказки.
  *
  * Сбои читаются мягко: настройки не стоят прерванной игры, поэтому повреждённый файл заменяется значениями по
- * умолчанию, а неудачное чтение после двух повторов даёт те же значения. Сбой записи возвращается как
- * [StorageError.WRITE_FAILED]: экран может сказать, что настройка не сохранилась.
+ * умолчанию, а неудачное чтение после двух повторов даёт те же значения. Запись лечит сбои на месте (onDisk),
+ * а что не вылечилось — возвращает: [StorageError.NO_SPACE], [StorageError.NO_ACCESS] или [StorageError.WRITE_FAILED].
  */
 class DataStoreSettingsRepository internal constructor(
     private val dataStore: DataStore<SettingsSaveFile>,
+    private val file: () -> File,
 ) : SettingsRepository {
 
     override fun observeSettings(): Flow<AppSettings> = dataStore.data
@@ -35,12 +36,8 @@ class DataStoreSettingsRepository internal constructor(
         .catch { if (it is IOException) emit(SettingsSaveFile()) else throw it }
         .map { it.toDomain() }
 
-    override suspend fun updateSettings(transform: (AppSettings) -> AppSettings): EmptyResult<StorageError> = try {
-        dataStore.updateData { transform(it.toDomain()).toDto() }
-        EmptyDataSuccess
-    } catch (e: IOException) {
-        Result.Error(StorageError.WRITE_FAILED)
-    }
+    override suspend fun updateSettings(transform: (AppSettings) -> AppSettings): EmptyResult<StorageError> =
+        onDisk(file, StorageError.WRITE_FAILED) { dataStore.updateData { transform(it.toDomain()).toDto() } }.map { }
 
     companion object {
 
@@ -64,7 +61,8 @@ class DataStoreSettingsRepository internal constructor(
                 corruptionHandler = ReplaceFileCorruptionHandler { SettingsSaveFile() },
                 scope = scope,
                 produceFile = produceFile,
-            )
+            ),
+            produceFile,
         )
     }
 }

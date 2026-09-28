@@ -50,7 +50,7 @@ data class PetSpec(
 )
 
 /** Экраны, на которых виден питомец. Показывает тот, кто последним стал верхним экраном. */
-enum class PetHostOwner { HOME, WARDROBE }
+enum class PetHostOwner { CREATION, HOME, WARDROBE }
 
 /**
  * Мост между экранами с питомцем и [PetHost]. Экран пишет сюда, что показать ([spec]) и где ([setSlot]),
@@ -75,6 +75,13 @@ class PetHostState(
     var slot by mutableStateOf<LayoutCoordinates?>(null)
         private set
 
+    /**
+     * Где слот в окне при последней раскладке. Координаты слота — один и тот же объект, даже когда слот
+     * поменял размер или место, поэтому хост следит за этим прямоугольником, а не за [slot].
+     */
+    var slotBounds by mutableStateOf<Rect?>(null)
+        private set
+
     /** true, когда экран с питомцем наверху; иначе питомец скрыт и стоит на паузе. */
     var shown by mutableStateOf(false)
         private set
@@ -96,7 +103,10 @@ class PetHostState(
     /** [visible] = true — [owner] стал верхним экраном; false — перестал (чужой false ничего не делает). */
     fun show(owner: PetHostOwner, visible: Boolean) {
         if (visible) {
-            if (this.owner != owner) slot = null   // слот прошлого экрана здесь не годится
+            if (this.owner != owner) {   // слот прошлого экрана здесь не годится
+                slot = null
+                slotBounds = null
+            }
             this.owner = owner
             shown = true
         } else if (this.owner == owner) {
@@ -105,7 +115,10 @@ class PetHostState(
     }
 
     fun setSlot(owner: PetHostOwner, coordinates: LayoutCoordinates) {
-        if (this.owner == owner || this.owner == null) slot = coordinates
+        if (this.owner == owner || this.owner == null) {
+            slot = coordinates
+            slotBounds = coordinates.boundsInWindow()
+        }
     }
 }
 
@@ -157,7 +170,7 @@ fun PetHost(
 
         // Слот читаем заново на каждом показе: во время анимации перехода его координаты не итоговые.
         // Когда Home ушёл, слот отсоединён; берём последнее известное место, питомец всё равно скрыт.
-        val live = if (state.shown) state.slot?.takeIf { it.isAttached }?.boundsInWindow() else null
+        val live = if (state.shown && state.slot?.isAttached == true) state.slotBounds else null
         if (live != null) lastBounds.value = live
         val bounds = live ?: lastBounds.value
 

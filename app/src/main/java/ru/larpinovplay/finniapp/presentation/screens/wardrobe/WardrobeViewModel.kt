@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.wardrobe
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -27,8 +28,7 @@ class WardrobeViewModel(private val game: GameRepository) : ViewModel() {
         val slot = item.slot ?: return
         val worn = game.requireSnapshot().pet.outfit[slot] == item.id
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю, как и в остальных экранах
-            if (worn) game.takeOff(slot) else game.wear(item)
+            (if (worn) game.takeOff(slot) else game.wear(item)).orSnackbar { onToggle(item) }
         }
     }
 

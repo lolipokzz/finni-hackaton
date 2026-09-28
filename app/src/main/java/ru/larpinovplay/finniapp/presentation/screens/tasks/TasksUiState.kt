@@ -10,6 +10,7 @@ data class TasksUiState(
     val perWeek: Int,
     val adventure: Adventure? = null,        // приключение, которое ждёт на этой неделе
     val adventureDone: Boolean = false,      // приключение этой недели уже пройдено
+    val coach: Boolean = false,              // обучение: Финни просит решить задание
 )
 
 /** Задание и его статус на этой неделе. */

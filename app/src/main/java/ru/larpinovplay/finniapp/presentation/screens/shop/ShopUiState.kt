@@ -13,6 +13,7 @@ data class ShopUiState(
     val budgets: Map<ShopCategory, CategoryBudget> = emptyMap(),   // план недели по категориям; пусто — плана нет
     val pending: ShopItem? = null,                // ждёт подтверждения
     val feedback: PurchaseFeedback? = null,
+    val coach: Boolean = false,                   // обучение: Финни просит купить еду
 ) {
     /** Сколько на категорию запланировано и сколько уже потрачено за неделю. */
     data class CategoryBudget(val planned: Int, val spent: Int) {

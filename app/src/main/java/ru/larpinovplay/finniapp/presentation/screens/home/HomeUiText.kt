@@ -9,6 +9,7 @@ import ru.larpinovplay.finniapp.presentation.screens.home.HomeUiState.Speech
 @Composable
 fun Speech.text(): String = LocalFeedback.current.text(
     when (this) {
+        Speech.PLAN_WEEK -> FeedbackKey.SAY_PLAN_WEEK
         Speech.WEEK_READY -> FeedbackKey.SAY_WEEK_READY
         Speech.ON_TRIP -> FeedbackKey.SAY_ON_TRIP
         Speech.HUNGRY -> FeedbackKey.SAY_HUNGRY
@@ -23,6 +24,7 @@ fun Speech.text(): String = LocalFeedback.current.text(
 /** Кнопка под репликой: подпись и действие; null — на сегодня всё, звать некуда. */
 val Speech.button: Pair<String, HomeAction>?
     get() = when (this) {
+        Speech.PLAN_WEEK -> "Составим план" to HomeAction.OpenPlan
         Speech.WEEK_READY -> "Смотрим!" to HomeAction.ShowDeeds
         Speech.HUNGRY -> "Сходим в магазин" to HomeAction.OpenSection(HomeSection.SHOP)
         Speech.ADVENTURE -> "Вперёд!" to HomeAction.OpenSection(HomeSection.TASKS)

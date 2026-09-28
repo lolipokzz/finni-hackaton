@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.presentation.screens.shop
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +36,7 @@ class ShopViewModel(
             items = itemsOf(ShopCategory.MANDATORY),
             owned = ownedIds(),
             budgets = budgetsOf(game.requireSnapshot().state),
+            coach = game.requireSnapshot().state.tutorialStep == TutorialStep.SHOP,
         )
     )
     val state: StateFlow<ShopUiState> = _state.asStateFlow()
@@ -42,30 +46,50 @@ class ShopViewModel(
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { snapshot ->
                 val g = snapshot.state
-                _state.update { it.copy(balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g)) }
+                _state.update { it.copy(balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g), coach = g.tutorialStep == TutorialStep.SHOP) }
             }
         }
     }
 
     fun onAction(action: ShopAction) {
         when (action) {
-            is ShopAction.TabSelected -> _state.update { it.copy(tab = action.category, items = itemsOf(action.category)) }
-            is ShopAction.BuyClicked -> _state.update { it.copy(pending = action.item) }
-            ShopAction.DismissPending -> _state.update { it.copy(pending = null) }
-            ShopAction.DismissFeedback -> _state.update { it.copy(feedback = null) }
-            is ShopAction.PickCheaper -> _state.update { it.copy(feedback = null, pending = action.item) }
+            is ShopAction.TabSelected -> selectTab(action.category)
+            is ShopAction.BuyClicked -> askToBuy(action.item)
+            ShopAction.DismissPending -> dismissPending()
+            ShopAction.DismissFeedback -> dismissFeedback()
+            is ShopAction.PickCheaper -> pickCheaper(action.item)
             ShopAction.ConfirmPurchase -> confirmPurchase()
             ShopAction.BuyWithSavings -> buyWithSavings()
+            ShopAction.SkipTutorialStep -> skipTutorialStep()
         }
     }
 
+    private fun selectTab(category: ShopCategory) = _state.update { it.copy(tab = category, items = itemsOf(category)) }
+
+    /** Окно подтверждения покупки. */
+    private fun askToBuy(item: ShopItem) = _state.update { it.copy(pending = item) }
+
+    private fun dismissPending() = _state.update { it.copy(pending = null) }
+
+    private fun dismissFeedback() = _state.update { it.copy(feedback = null) }
+
+    /** «Не хватает монет» → выбрал вещь подешевле: сразу её окно подтверждения. */
+    private fun pickCheaper(item: ShopItem) = _state.update { it.copy(feedback = null, pending = item) }
+
+    private fun skipTutorialStep() {
+        viewModelScope.launch { game.skipTutorialStep(TutorialStep.SHOP).orSnackbar { skipTutorialStep() } }
+    }
+
+    /** Окно подтверждения сменяется итогом одним обновлением: между ними не мелькнёт магазин (и подсветка обучения). */
     private fun confirmPurchase() {
-        val item = _state.value.pending ?: return
-        _state.update { it.copy(pending = null) }   // диалог закрываем сразу: повторный тап не купит дважды
+        _state.value.pending?.let(::buy)
+    }
+
+    private fun buy(item: ShopItem) {
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
-            val result = game.buy(item).dataOrNull() ?: return@launch
+            val result = game.buy(item).orSnackbar { buy(item) }
             val feedback = when (result) {
+                null -> null
                 is PurchaseResult.Success -> PurchaseFeedback.Bought(item, result.balanceAfter)
                 is PurchaseResult.NotEnough -> {
                     val state = game.requireSnapshot().state
@@ -80,9 +104,9 @@ class ShopViewModel(
                     )
                 }
                 // Кнопка у купленной одежды выключена; сюда попадём только при двойном нажатии
-                PurchaseResult.AlreadyOwned -> return@launch
+                PurchaseResult.AlreadyOwned -> null
             }
-            _state.update { it.copy(feedback = feedback) }
+            _state.update { it.copy(pending = null, feedback = feedback) }
         }
     }
 
@@ -92,16 +116,18 @@ class ShopViewModel(
 
     /** Берёт из копилки ровно недостающее (не весь остаток) и сразу покупает. */
     private fun buyWithSavings() {
-        val notEnough = _state.value.feedback as? PurchaseFeedback.NotEnough ?: return
-        _state.update { it.copy(feedback = null) }   // окно закрываем сразу: повторный тап не снимет дважды
+        (_state.value.feedback as? PurchaseFeedback.NotEnough)?.let(::buyWithSavings)
+    }
+
+    private fun buyWithSavings(notEnough: PurchaseFeedback.NotEnough) {
+        // Окно «Не хватает» сменится итогом покупки сразу, без мелькания магазина между ними
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
             val item = notEnough.item
             // Баланс мог измениться, пока было открыто окно: считаем недостающее заново
             val missing = (item.price - game.requireSnapshot().state.balance).coerceAtLeast(0)
-            if (missing > 0 && game.withdraw(missing).dataOrNull() != WithdrawResult.Success) return@launch
-            val bought = game.buy(item).dataOrNull() as? PurchaseResult.Success ?: return@launch
-            _state.update { it.copy(feedback = PurchaseFeedback.Bought(item, bought.balanceAfter, fromSavings = missing)) }
+            val withdrawn = missing == 0 || game.withdraw(missing).orSnackbar { buyWithSavings(notEnough) } == WithdrawResult.Success
+            val bought = if (withdrawn) game.buy(item).orSnackbar { buyWithSavings(notEnough) } as? PurchaseResult.Success else null
+            _state.update { it.copy(feedback = bought?.let { b -> PurchaseFeedback.Bought(item, b.balanceAfter, fromSavings = missing) }) }
         }
     }
 

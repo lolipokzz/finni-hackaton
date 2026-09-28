@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.settings
 
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,6 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
     }
 
     fun onSettingsChange(settings: AppSettings) {
-        viewModelScope.launch { repository.updateSettings { settings } }
+        viewModelScope.launch { repository.updateSettings { settings }.orSnackbar { onSettingsChange(settings) } }
     }
 }

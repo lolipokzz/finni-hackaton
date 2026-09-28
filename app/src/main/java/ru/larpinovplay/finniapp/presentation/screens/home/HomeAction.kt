@@ -12,7 +12,20 @@ sealed interface HomeAction {
     data object ShowDeeds : HomeAction
     data object DismissDeeds : HomeAction
 
+    /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
+    data object SkipTutorialStep : HomeAction
+
+    /** «Да, всё понятно!» в окне конца обучения. */
+    data object FinishTutorial : HomeAction
+
     /** «+» или «−» у строки плана. */
     data class ChangePlan(val direction: BudgetDirection, val increase: Boolean) : HomeAction
+
+    /** Ползунок у строки плана: сумма, куда его дотянули. */
+    data class SetPlan(val direction: BudgetDirection, val amount: Int) : HomeAction
     data object ConfirmPlan : HomeAction
+
+    /** Кнопка «План» и окно плана: открыть и закрыть, не подтверждая. */
+    data object OpenPlan : HomeAction
+    data object ClosePlan : HomeAction
 }

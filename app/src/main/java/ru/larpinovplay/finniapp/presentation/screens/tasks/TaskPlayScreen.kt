@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.tasks
 
+import ru.larpinovplay.finniapp.presentation.events.ObserveAsEvents
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,11 +53,9 @@ fun TaskPlayScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(viewModel) {
-        viewModel.effects.collect { effect ->
-            when (effect) {
-                is TaskPlayEffect.Completed -> onCompleted(effect.outcome)
-            }
+    ObserveAsEvents(viewModel.effects) { effect ->
+        when (effect) {
+            is TaskPlayEffect.Completed -> onCompleted(effect.outcome)
         }
     }
     val task = viewModel.task

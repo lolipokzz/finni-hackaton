@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.data.game.store
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
@@ -58,6 +59,8 @@ internal data class GameStateDto(
     val tasksDoneThisWeek: Int = 0,
     val adventureResults: List<AdventureResultDto> = emptyList(),
     val history: List<WeekSummaryDto> = emptyList(),
+    val tutorial: Boolean = false,   // в старых сохранениях поля нет: обучения там уже не будет
+    val tutorialSkipped: Set<TutorialStep> = emptySet(),
 )
 
 @Serializable

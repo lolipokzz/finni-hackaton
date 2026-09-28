@@ -10,17 +10,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -37,16 +40,20 @@ import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.presentation.components.CardDialog
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.CardTitle
+import ru.larpinovplay.finniapp.presentation.components.CoachNote
 import ru.larpinovplay.finniapp.presentation.components.DashedDivider
+import ru.larpinovplay.finniapp.presentation.components.MeterBar
 import ru.larpinovplay.finniapp.presentation.components.StepButton
 import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.game.label
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
+import kotlin.math.roundToInt
 
 /**
  * План недели (ТЗ 2.5.5): в начале недели ребёнок раскладывает все монеты — карманные и остаток —
- * по трём направлениям. Закрыть окно, не составив план, нельзя: без плана неделя не начинается.
+ * по трём направлениям. Окно открывается кнопкой «План» и закрывается без подтверждения: неделя начнётся,
+ * только когда план подтверждён.
  * Слишком мало на обязательное — только предупреждение, решает ребёнок.
  *
  * Та же карточка, что у дел недели: кремовая наклейка, те же наклейки-кружки и бирюзовая кнопка.
@@ -56,11 +63,21 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 fun WeekPlanDialog(
     draft: HomeUiState.PlanDraft,
     onChange: (BudgetDirection, increase: Boolean) -> Unit,
+    onSet: (BudgetDirection, amount: Int) -> Unit,
     onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    coach: Boolean = false,
 ) {
     val feedback = LocalFeedback.current
-    CardDialog {
+    CardDialog(onDismiss = onDismiss) {
         CardTitle("План недели", "Неделя ${draft.week} · у тебя ${draft.budget} монет")
+        if (coach) {
+            // Обучение: зачем вообще план — коротко, до первого решения
+            CoachNote(
+                "Монет немного, а хочется всего. План — чтобы хватило и на еду, и на радости, и на мечту. " +
+                    "Начни с еды: положи на обязательное хотя бы ${draft.need}.",
+            )
+        }
 
         SplitBar(draft)
 
@@ -79,12 +96,63 @@ fun WeekPlanDialog(
                 amount = draft.plan[direction],
                 hint = hint,
                 warning = direction == BudgetDirection.MANDATORY && draft.mandatoryLow,
+                budget = draft.budget,
                 canIncrease = draft.unallocated > 0,
                 onChange = { increase -> onChange(direction, increase) },
+                onSet = { amount -> onSet(direction, amount) },
             )
         }
 
         TealButton("Начать неделю", R.drawable.ic_sun_small, onConfirm, enabled = draft.unallocated == 0)
+    }
+}
+
+/**
+ * План идущей недели по кнопке «План»: что решили в начале недели и сколько уже ушло по каждому направлению.
+ * Только смотреть — план меняется в начале следующей недели. Сверх плана помечено знаком и словами, не только цветом.
+ */
+@Composable
+fun ActivePlanDialog(active: HomeUiState.ActivePlan, onDismiss: () -> Unit) {
+    CardDialog(onDismiss = onDismiss) {
+        CardTitle("План недели", "Неделя ${active.week} · решили в начале недели")
+        BudgetDirection.entries.forEachIndexed { index, direction ->
+            if (index > 0) DashedDivider()
+            ActivePlanRow(direction, planned = active.plan[direction], used = active.used[direction])
+        }
+        Text(
+            "Новый план составим в начале следующей недели",
+            fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        TealButton("Понятно", R.drawable.ic_check, onDismiss)
+    }
+}
+
+@Composable
+private fun ActivePlanRow(direction: BudgetDirection, planned: Int, used: Int) {
+    val (icon, tint) = direction.deed.sticker
+    val saving = direction == BudgetDirection.SAVINGS
+    // У трат плохо — выйти за план, у копилки — отложить меньше плана (например, забрать обратно)
+    val warning = if (saving) used < planned else used > planned
+    val text = when {
+        saving -> "Отложено $used из $planned"
+        used > planned -> "! Потрачено $used из $planned — сверх плана на ${used - planned}"
+        else -> "Потрачено $used из $planned · осталось ${planned - used}"
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        CardSticker(icon, tint, size = 48.dp)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(direction.label, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+            MeterBar(
+                fraction = if (planned > 0) used.toFloat() / planned else if (used > 0) 1f else 0f,
+                color = if (warning && !saving) FinniColors.WarnInk else direction.barColor,
+            )
+            Text(
+                (if (warning && saving) "! " else "") + text,
+                fontSize = 13.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold,
+                color = if (warning) Color(0xFFB4471B) else FinniColors.InkMuted,
+            )
+        }
     }
 }
 
@@ -139,15 +207,22 @@ private fun SplitBar(draft: HomeUiState.PlanDraft) {
     }
 }
 
-/** Строка направления: наклейка, название и подсказка; под ними «−», сумма и «+». */
+/**
+ * Строка направления: наклейка, название с подсказкой и сумма; под ними ползунок между «−» и «+».
+ * Ползунком — быстро и крупно, кнопками — точно, по шагу. Шкала ползунка — весь бюджет недели,
+ * дальше остатка он не пускает.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlanRow(
     direction: BudgetDirection,
     amount: Int,
     hint: String?,
     warning: Boolean,
+    budget: Int,
     canIncrease: Boolean,
     onChange: (increase: Boolean) -> Unit,
+    onSet: (amount: Int) -> Unit,
 ) {
     val (icon, tint) = direction.deed.sticker
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -162,14 +237,32 @@ private fun PlanRow(
                     )
                 }
             }
-        }
-        Row(Modifier.padding(start = 60.dp), verticalAlignment = Alignment.CenterVertically) {
-            StepButton("−", "Убавить: ${direction.label}", enabled = amount > 0) { onChange(false) }
             Text(
                 "$amount",
-                fontSize = 22.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(64.dp).semantics { contentDescription = "${direction.label}: $amount" },
+                fontSize = 24.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink,
+                textAlign = TextAlign.End,
+                modifier = Modifier.widthIn(min = 48.dp).clearAndSetSemantics {},
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StepButton("−", "Убавить: ${direction.label}", enabled = amount > 0) { onChange(false) }
+            Slider(
+                value = amount.toFloat(),
+                onValueChange = { onSet(it.roundToInt()) },
+                valueRange = 0f..budget.coerceAtLeast(1).toFloat(),
+                modifier = Modifier.weight(1f).semantics { contentDescription = "${direction.label}: $amount" },
+                // Та же шкала, что в карточках: бежевая дорожка, цвет направления; ручка — белая наклейка
+                thumb = {
+                    Box(
+                        Modifier
+                            .size(30.dp)
+                            .shadow(4.dp, CircleShape)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .border(6.dp, direction.barColor, CircleShape),
+                    )
+                },
+                track = { MeterBar(amount.toFloat() / budget.coerceAtLeast(1), direction.barColor, height = 12.dp) },
             )
             StepButton("+", "Прибавить: ${direction.label}", enabled = canIncrease) { onChange(true) }
         }

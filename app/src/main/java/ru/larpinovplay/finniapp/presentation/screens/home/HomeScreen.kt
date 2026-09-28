@@ -1,6 +1,13 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
-import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.text.style.TextAlign
+import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CardTitle
+import ru.larpinovplay.finniapp.presentation.components.CardDialog
+import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
+import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
+import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -58,6 +65,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -80,6 +88,7 @@ import ru.larpinovplay.finniapp.domain.content.Feedback
 import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
@@ -150,6 +159,9 @@ fun HomeScreenContent(
     petHost: PetHostState? = null,   // null — превью и тесты: 3D-питомец не рисуется
 ) {
     val room = rememberRoomAnchor()
+    // Обучение: где на экране то, на что Финни просит нажать
+    val targets = remember { SpotlightTargets() }
+    val coachStep = state.tutorial
     // Облачко открыто при входе на экран и при каждом новом деле; потом само садится в значок над Финни
     var speechOpen by remember(state.speech) { mutableStateOf(true) }
     if (petHost != null) {
@@ -173,10 +185,14 @@ fun HomeScreenContent(
             Row(verticalAlignment = Alignment.Top) {
                 Column(Modifier.width(62.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     PetButton(state.pet, onClick = { onAction(HomeAction.OpenSection(HomeSection.PROGRESS)) })
+                    // Кнопка плана: до начала недели — составить план (окно открывается только по ней), потом — как он идёт
+                    if (state.planDraft != null || state.activePlan != null) {
+                        PlanButton(Modifier.spotlightTarget(targets, TutorialStep.PLAN)) { onAction(HomeAction.OpenPlan) }
+                    }
                     if (state.demoMode) DemoChip()
                 }
                 SpeechZone(
-                    speech = state.speech,
+                    speech = state.speech.takeIf { coachStep == null },
                     open = speechOpen,
                     onOpenChange = { speechOpen = it },
                     animate = state.animationsEnabled,
@@ -189,13 +205,22 @@ fun HomeScreenContent(
                     state, petHost, room,
                     modifier = Modifier.align(Alignment.BottomCenter),
                     // Финни молчит, но ему есть что сказать: маленькое облачко «…» у головы
-                    hint = state.speech?.takeIf { !speechOpen }?.let { speech ->
+                    hint = state.speech?.takeIf { !speechOpen && coachStep == null }?.let { speech ->
                         { TypingBubble(important = speech.important, onClick = { speechOpen = true }) }
                     },
                 )
             }
-            BottomMenu(state, onAction)
+            BottomMenu(state, onAction, target = { step -> Modifier.spotlightTarget(targets, step) })
             Spacer(Modifier.height(8.dp))
+        }
+        // Окна важнее подсказки: пока открыто окно, подсветки нет
+        val dialogOpen = state.info != null || state.deedsOpen || state.weekSummary != null || state.planOpen || state.tutorialDone
+        if (coachStep != null && !dialogOpen) {
+            TutorialSpotlight(
+                coachStep.coachText, targets[coachStep],
+                onSkip = { onAction(HomeAction.SkipTutorialStep) }.takeIf { coachStep != TutorialStep.PLAN },
+                round = true,
+            )
         }
     }
     state.info?.let {
@@ -207,16 +232,62 @@ fun HomeScreenContent(
         )
     }
     if (state.deedsOpen) DeedsCard(state, onAction)
+    if (state.tutorialDone) TutorialDoneDialog(onDone = { onAction(HomeAction.FinishTutorial) })
     // Сначала итоги прошлой недели, потом план новой
     val summary = state.weekSummary
     val draft = state.planDraft
     when {
         summary != null -> WeekSummaryDialog(summary, onDismiss = { onAction(HomeAction.DismissWeekSummary) })
-        draft != null -> WeekPlanDialog(
+        draft != null && state.planOpen -> WeekPlanDialog(
             draft = draft,
+            coach = state.tutorial == TutorialStep.PLAN,
             onChange = { direction, increase -> onAction(HomeAction.ChangePlan(direction, increase)) },
+            onSet = { direction, amount -> onAction(HomeAction.SetPlan(direction, amount)) },
             onConfirm = { onAction(HomeAction.ConfirmPlan) },
+            onDismiss = { onAction(HomeAction.ClosePlan) },
         )
+        state.planOpen -> state.activePlan?.let { ActivePlanDialog(it, onDismiss = { onAction(HomeAction.ClosePlan) }) }
+    }
+}
+
+// ---------- Обучение первой недели ----------
+
+/** Что Финни просит сделать на шаге обучения, пока ребёнок на главном экране. */
+private val TutorialStep.coachText: String
+    get() = when (this) {
+        TutorialStep.PLAN -> "Каждую неделю мне дают монеты. Сначала решим, на что их потратить. Нажми на «План»!"
+        TutorialStep.GOAL -> "Давай выберем мечту, на которую будем копить! Нажми на копилку."
+        TutorialStep.SHOP -> "Мур, я проголодался! Пойдём в магазин — купим мне еды."
+        TutorialStep.TASKS -> "Монеты можно заработать! Нажми на «Задания» — там задачки про деньги."
+        TutorialStep.DEEDS -> "Это солнышко недели. Нажми — покажу дела, от которых я расту!"
+    }
+
+/**
+ * Конец обучения: коротко всё, что узнали, — теми же наклейками, что в меню, — и вопрос «Всё понятно?».
+ * Закрыть можно только ответом: так ясно, что обучение закончилось и дальше ребёнок играет сам.
+ */
+@Composable
+private fun TutorialDoneDialog(onDone: () -> Unit) {
+    CardDialog {
+        CardTitle("Обучение пройдено!", "Мур! Спасибо, что помогаешь мне с монетами")
+        listOf(
+            Triple(R.drawable.ic_deed_plan, Color(0xFFE6EEFF), "План — в начале недели раздели монеты"),
+            Triple(R.drawable.ic_nav_savings, Color(0xFFFFE6F0), "Копилка — копим на мечту"),
+            Triple(R.drawable.ic_nav_shop, Color(0xFFFFF0E6), "Магазин — еда и радости для меня"),
+            Triple(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2), "Задания — решай и зарабатывай монеты"),
+            Triple(R.drawable.ic_week_sun, Color(0xFFFFF5C9), "Солнышко — дела недели, от них я расту"),
+        ).forEach { (icon, tint, text) ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CardSticker(icon, tint, size = 44.dp)
+                Text(text, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+            }
+        }
+        Text(
+            "Всё понятно?",
+            fontSize = 20.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        )
+        TealButton("Да, всё понятно!", R.drawable.ic_check, onDone)
     }
 }
 
@@ -269,6 +340,31 @@ private fun PetButton(pet: Pet, onClick: () -> Unit) {
     ) {
         Box(contentAlignment = Alignment.Center) {
             Image(painterResource(R.drawable.ic_cat), null, Modifier.size(26.dp), colorFilter = ColorFilter.tint(FinniColors.TealBright))
+        }
+    }
+}
+
+/** «План недели»: голубая наклейка дела «Траты по плану», как соседняя кнопка питомца — без подписи. */
+@Composable
+private fun PlanButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        // Отступ сверху — чтобы круг подсветки обучения не задевал кнопку питомца
+        modifier = Modifier
+            .padding(top = 6.dp)
+            .then(modifier)
+            .size(48.dp)
+            .creamCard(CircleShape, elevation = 8.dp, border = 3.dp)
+            .background(Color(0xFFE6EEFF))
+            .clearAndSetSemantics {
+                contentDescription = "План недели"
+                role = Role.Button
+            },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Image(painterResource(R.drawable.ic_deed_plan), null, Modifier.size(26.dp))
         }
     }
 }
@@ -326,7 +422,8 @@ private fun SpeechZone(
 }
 
 private val HomeUiState.Speech.important: Boolean
-    get() = this == HomeUiState.Speech.HUNGRY || this == HomeUiState.Speech.ADVENTURE || this == HomeUiState.Speech.WEEK_READY
+    get() = this == HomeUiState.Speech.PLAN_WEEK || this == HomeUiState.Speech.HUNGRY || this == HomeUiState.Speech.ADVENTURE ||
+        this == HomeUiState.Speech.WEEK_READY
 
 /** Облачко: короткая фраза и текстовая ссылка на дело. Нажатие мимо ссылки прячет облачко. */
 @Composable
@@ -478,16 +575,16 @@ private fun rememberMicrophone(ask: Boolean): Boolean {
 private val MenuHeight = 124.dp
 
 @Composable
-private fun BottomMenu(state: HomeUiState, onAction: (HomeAction) -> Unit) {
+private fun BottomMenu(state: HomeUiState, onAction: (HomeAction) -> Unit, target: (TutorialStep) -> Modifier = { Modifier }) {
     val open = { section: HomeSection -> onAction(HomeAction.OpenSection(section)) }
     Row(Modifier.fillMaxWidth().height(MenuHeight), verticalAlignment = Alignment.Bottom) {
-        MenuItem("Задания", Modifier.weight(1f), badge = state.tasksBadge, onClick = { open(HomeSection.TASKS) }) {
+        MenuItem("Задания", Modifier.weight(1f), badge = state.tasksBadge, iconModifier = target(TutorialStep.TASKS), onClick = { open(HomeSection.TASKS) }) {
             Sticker(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2))
         }
-        MenuItem("Магазин", Modifier.weight(1f), onClick = { open(HomeSection.SHOP) }) {
+        MenuItem("Магазин", Modifier.weight(1f), iconModifier = target(TutorialStep.SHOP), onClick = { open(HomeSection.SHOP) }) {
             Sticker(R.drawable.ic_nav_shop, Color(0xFFFFF0E6))
         }
-        WeekSun(state, Modifier.weight(1f)) { onAction(HomeAction.ShowDeeds) }
+        WeekSun(state, Modifier.weight(1f), sunModifier = target(TutorialStep.DEEDS)) { onAction(HomeAction.ShowDeeds) }
         MenuItem("Гардероб", Modifier.weight(1f), onClick = { open(HomeSection.WARDROBE) }) {
             Sticker(R.drawable.ic_nav_wardrobe, Color(0xFFE4F3FF))
         }
@@ -496,6 +593,7 @@ private fun BottomMenu(state: HomeUiState, onAction: (HomeAction) -> Unit) {
             "Копилка",
             Modifier.weight(1f),
             description = goal?.let { "Копилка. Мечта: ${it.name}, ${state.savings} из ${it.cost}" },
+            iconModifier = target(TutorialStep.GOAL),
             onClick = { open(HomeSection.SAVINGS) },
         ) {
             if (goal == null) {
@@ -525,6 +623,7 @@ private fun MenuItem(
     modifier: Modifier = Modifier,
     badge: Int = 0,
     description: String? = null,
+    iconModifier: Modifier = Modifier,
     onClick: () -> Unit,
     icon: @Composable () -> Unit,
 ) {
@@ -544,7 +643,7 @@ private fun MenuItem(
         contentAlignment = Alignment.BottomCenter,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Box(Modifier.padding(top = 8.dp)) {
+            Box(Modifier.padding(top = 8.dp).then(iconModifier)) {
                 icon()
                 if (badge > 0) {
                     Surface(
@@ -570,7 +669,7 @@ private fun MenuItem(
  * Когда неделю можно закончить, вместо номера — «Готово!». Нажатие открывает дела недели.
  */
 @Composable
-private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, sunModifier: Modifier = Modifier, onClick: () -> Unit) {
     val deeds = state.deeds
     val ready = state.finishBlock == null
     // Солнышко шире своей ячейки и чуть заходит на соседей, поэтому рисуется поверх них
@@ -582,6 +681,7 @@ private fun WeekSun(state: HomeUiState, modifier: Modifier = Modifier, onClick: 
             shadowElevation = 8.dp,
             modifier = Modifier
                 .requiredSize(88.dp)
+                .then(sunModifier)
                 .semantics {
                     contentDescription = "Неделя ${state.week}: сделано ${deeds.steps} из ${WeekDeeds.MAX_STEPS} дел" +
                         if (ready) ". Неделю можно завершить" else ". Открыть дела недели"

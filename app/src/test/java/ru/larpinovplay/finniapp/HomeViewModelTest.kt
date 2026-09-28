@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp
 
+import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
+import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -20,6 +22,8 @@ import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
 import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
@@ -65,6 +69,33 @@ class HomeViewModelTest {
         assertEquals(FinishBlock.PLAN_NOT_CONFIRMED, vm.state.value?.finishBlock)
     }
 
+    /** Окно плана само не всплывает: Финни зовёт, ребёнок открывает кнопкой «План», закрыть можно и без плана. */
+    @Test
+    fun planWindowOpensOnlyByButton() {
+        val vm = viewModel()
+        assertEquals(false, vm.state.value?.planOpen)
+        assertEquals(HomeUiState.Speech.PLAN_WEEK, vm.state.value?.speech)
+
+        vm.onAction(HomeAction.OpenPlan)
+        assertEquals(true, vm.state.value?.planOpen)
+        vm.onAction(HomeAction.ClosePlan)
+        assertEquals(false, vm.state.value?.planOpen)
+        assertEquals(PeriodPhase.PLANNING, game.requireSnapshot().state.phase)
+
+        vm.onAction(HomeAction.OpenPlan)
+        vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
+        vm.onAction(HomeAction.ConfirmPlan)
+        assertEquals(false, vm.state.value?.planOpen)
+
+        // Неделя идёт — та же кнопка показывает, как идёт план
+        runBlocking { game.buy(content.shopItems.first { it.category == ShopCategory.OPTIONAL && it.price <= 50 }) }
+        vm.onAction(HomeAction.OpenPlan)
+        assertEquals(true, vm.state.value?.planOpen)
+        val active = checkNotNull(vm.state.value?.activePlan)
+        assertEquals(BudgetPlan(optional = 50), active.plan)
+        assertEquals(content.shopItems.first { it.category == ShopCategory.OPTIONAL && it.price <= 50 }.price, active.used.optional)
+    }
+
     @Test
     fun plusStopsAtBudgetAndMinusStopsAtZero() {
         val vm = viewModel()
@@ -75,6 +106,22 @@ class HomeViewModelTest {
 
         assertEquals(BudgetPlan(savings = GameRules.START_BALANCE), vm.draft.plan)
         assertEquals(0, vm.draft.unallocated)
+    }
+
+    /** Ползунок шагает по 5 и не заходит дальше, чем осталось разложить. */
+    @Test
+    fun sliderSnapsToStepAndStopsAtWhatIsLeft() {
+        val vm = viewModel()
+
+        vm.onAction(HomeAction.SetPlan(BudgetDirection.OPTIONAL, 23))
+        assertEquals(25, vm.draft.plan.optional)
+
+        vm.onAction(HomeAction.SetPlan(BudgetDirection.MANDATORY, 100))
+        assertEquals(GameRules.START_BALANCE - 25, vm.draft.plan.mandatory)
+        assertEquals(0, vm.draft.unallocated)
+
+        vm.onAction(HomeAction.SetPlan(BudgetDirection.MANDATORY, -3))
+        assertEquals(0, vm.draft.plan.mandatory)
     }
 
     @Test
@@ -109,10 +156,71 @@ class HomeViewModelTest {
         assertEquals(false, vm.state.value?.deedsOpen)
     }
 
+    /** Обучение новой игры идёт по настоящим действиям: план → мечта → еда → дела недели, и заканчивается. */
+    @Test
+    fun tutorialFollowsRealActionsAndEnds() {
+        runBlocking { game.createPet(SampleGames.newborn, withTutorial = true) }
+        val vm = HomeViewModel(game, content, InMemorySettingsRepository())
+        fun step() = vm.state.value?.tutorial
+        assertEquals(TutorialStep.PLAN, step())
+
+        vm.press(BudgetDirection.MANDATORY, increase = true, times = 4)
+        vm.press(BudgetDirection.OPTIONAL, increase = true, times = 6)
+        vm.onAction(HomeAction.ConfirmPlan)
+        assertEquals(TutorialStep.GOAL, step())
+
+        runBlocking { game.chooseGoal(content.goals.first()) }
+        assertEquals(TutorialStep.SHOP, step())
+
+        runBlocking { game.buy(content.shopItems.first { it.category == ShopCategory.MANDATORY }) }
+        assertEquals(TutorialStep.TASKS, step())
+
+        // Любой ответ засчитывает шаг: важно попробовать, а не угадать
+        val task = content.tasks.first { it.payload is TaskPayload.Choice }
+        runBlocking { game.answerTask(task, TaskAnswer.Choice("не-тот-ответ")) }
+        assertEquals(TutorialStep.DEEDS, step())
+
+        vm.onAction(HomeAction.ShowDeeds)
+        vm.onAction(HomeAction.DismissDeeds)
+        assertEquals(true, vm.state.value?.tutorialDone)   // «Обучение пройдено. Всё понятно?»
+        assertEquals(TutorialStep.DEEDS, step())
+
+        vm.onAction(HomeAction.FinishTutorial)
+        assertNull(step())
+        assertEquals(false, vm.state.value?.tutorialDone)
+    }
+
+    /** Шаги можно пропускать по одному — кроме плана; конец обучения всё равно спрашивает «Всё понятно?». */
+    @Test
+    fun tutorialStepsCanBeSkippedButNotThePlan() {
+        assertNull(viewModel().state.value?.tutorial)   // обычная игра — без обучения
+
+        val fresh = GameRepositoryImpl(FakeGameStore(), clock = clock)
+        runBlocking { fresh.createPet(SampleGames.newborn, withTutorial = true) }
+        val vm = HomeViewModel(fresh, content, InMemorySettingsRepository())
+        fun step() = vm.state.value?.tutorial
+
+        vm.onAction(HomeAction.SkipTutorialStep)
+        assertEquals(TutorialStep.PLAN, step())   // план обязателен
+
+        vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
+        vm.onAction(HomeAction.ConfirmPlan)
+        listOf(TutorialStep.GOAL, TutorialStep.SHOP, TutorialStep.TASKS).forEach {
+            assertEquals(it, step())
+            vm.onAction(HomeAction.SkipTutorialStep)
+        }
+        assertEquals(TutorialStep.DEEDS, step())
+        vm.onAction(HomeAction.SkipTutorialStep)
+        assertEquals(true, vm.state.value?.tutorialDone)
+
+        vm.onAction(HomeAction.FinishTutorial)
+        assertNull(step())
+    }
+
     @Test
     fun finniAsksForTheMostImportantThing() {
         val vm = viewModel()
-        assertNull(vm.state.value?.speech)   // пока идёт план, Финни молчит
+        assertEquals(HomeUiState.Speech.PLAN_WEEK, vm.state.value?.speech)   // пока нет плана, Финни зовёт его составить
 
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
         vm.onAction(HomeAction.ConfirmPlan)
@@ -144,5 +252,6 @@ class HomeViewModelTest {
         vm.onAction(HomeAction.DismissWeekSummary)
         assertNull(vm.state.value?.weekSummary)
         assertNotNull(vm.state.value?.planDraft)
+        assertEquals(false, vm.state.value?.planOpen)   // план новой недели ждёт кнопки «План»
     }
 }

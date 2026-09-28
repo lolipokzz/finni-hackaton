@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.adventure
 
+import ru.larpinovplay.finniapp.presentation.storage.snackbar
+import ru.larpinovplay.finniapp.domain.util.result.Result
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +14,6 @@ import ru.larpinovplay.finniapp.domain.adventure.checkPayment
 import ru.larpinovplay.finniapp.domain.adventure.model.AdventureScene
 import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
-import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 import ru.larpinovplay.finniapp.presentation.screens.adventure.AdventureUiState.SceneCheck
 
 /**
@@ -32,55 +33,71 @@ class AdventureViewModel(
 
     fun onAction(action: AdventureAction) {
         when (action) {
-            is AdventureAction.TogglePiece -> update {
-                if (scene !is AdventureScene.Pay || check != null) return@update this
-                val counter = if (action.index in onCounter) onCounter - action.index else onCounter + action.index
-                copy(onCounter = counter)
-            }
-            AdventureAction.Pay -> update {
-                val pay = scene as? AdventureScene.Pay ?: return@update this
-                if (onCounter.isEmpty() || check != null) return@update this
-                val result = checkPayment(pay.price, onCounter.map { pay.wallet[it] })
-                copy(check = SceneCheck.Payment(result), mistakes = if (result.correct) mistakes else mistakes + 1)
-            }
-            AdventureAction.Retry -> update {
-                val wrong = when (val c = check) {
-                    is SceneCheck.Payment -> !c.result.correct
-                    is SceneCheck.Basket -> !c.result.correct
-                    else -> false
-                }
-                if (wrong) copy(check = null) else this
-            }
-            is AdventureAction.ToggleBasketItem -> update {
-                if (scene !is AdventureScene.Basket || check != null) return@update this
-                val basket = if (action.index in inBasket) inBasket - action.index else inBasket + action.index
-                copy(inBasket = basket)
-            }
-            AdventureAction.CheckBasket -> update {
-                val basket = scene as? AdventureScene.Basket ?: return@update this
-                if (check != null) return@update this
-                val result = checkBasket(basket, inBasket)
-                copy(check = SceneCheck.Basket(result), mistakes = if (result.correct) mistakes else mistakes + 1)
-            }
-            is AdventureAction.ChooseOption -> update {
-                val choice = scene as? AdventureScene.Choice ?: return@update this
-                val option = choice.options.firstOrNull { it.id == action.optionId } ?: return@update this
-                if (check != null) return@update this
-                copy(
-                    check = SceneCheck.Choice(option),
-                    chosenOptions = chosenOptions + option.id,
-                    mistakes = if (option.correct) mistakes else mistakes + 1,
-                )
-            }
-            is AdventureAction.ChooseChange -> update {
-                val change = scene as? AdventureScene.Change ?: return@update this
-                val paid = paid ?: return@update this
-                if (check != null) return@update this
-                val answer = SceneCheck.Change(action.amount, paid - change.price, paid, change.price)
-                copy(check = answer, mistakes = if (answer.right) mistakes else mistakes + 1)
-            }
+            is AdventureAction.TogglePiece -> togglePiece(action.index)
+            AdventureAction.Pay -> pay()
+            AdventureAction.Retry -> retry()
+            is AdventureAction.ToggleBasketItem -> toggleBasketItem(action.index)
+            AdventureAction.CheckBasket -> submitBasket()
+            is AdventureAction.ChooseOption -> chooseOption(action.optionId)
+            is AdventureAction.ChooseChange -> chooseChange(action.amount)
             AdventureAction.Next -> next()
         }
+    }
+
+    /** Переложить купюру или монету [index] кошелька на прилавок или обратно. */
+    private fun togglePiece(index: Int) = update {
+        if (scene !is AdventureScene.Pay || check != null) return@update this
+        val counter = if (index in onCounter) onCounter - index else onCounter + index
+        copy(onCounter = counter)
+    }
+
+    private fun pay() = update {
+        val pay = scene as? AdventureScene.Pay ?: return@update this
+        if (onCounter.isEmpty() || check != null) return@update this
+        val result = checkPayment(pay.price, onCounter.map { pay.wallet[it] })
+        copy(check = SceneCheck.Payment(result), mistakes = if (result.correct) mistakes else mistakes + 1)
+    }
+
+    /** После неверной оплаты или корзины: убрать разбор и поправить. */
+    private fun retry() = update {
+        val wrong = when (val c = check) {
+            is SceneCheck.Payment -> !c.result.correct
+            is SceneCheck.Basket -> !c.result.correct
+            else -> false
+        }
+        if (wrong) copy(check = null) else this
+    }
+
+    private fun toggleBasketItem(index: Int) = update {
+        if (scene !is AdventureScene.Basket || check != null) return@update this
+        val basket = if (index in inBasket) inBasket - index else inBasket + index
+        copy(inBasket = basket)
+    }
+
+    private fun submitBasket() = update {
+        val basket = scene as? AdventureScene.Basket ?: return@update this
+        if (check != null) return@update this
+        val result = checkBasket(basket, inBasket)
+        copy(check = SceneCheck.Basket(result), mistakes = if (result.correct) mistakes else mistakes + 1)
+    }
+
+    private fun chooseOption(optionId: String) = update {
+        val choice = scene as? AdventureScene.Choice ?: return@update this
+        val option = choice.options.firstOrNull { it.id == optionId } ?: return@update this
+        if (check != null) return@update this
+        copy(
+            check = SceneCheck.Choice(option),
+            chosenOptions = chosenOptions + option.id,
+            mistakes = if (option.correct) mistakes else mistakes + 1,
+        )
+    }
+
+    private fun chooseChange(amount: Int) = update {
+        val change = scene as? AdventureScene.Change ?: return@update this
+        val paid = paid ?: return@update this
+        if (check != null) return@update this
+        val answer = SceneCheck.Change(amount, paid - change.price, paid, change.price)
+        copy(check = answer, mistakes = if (answer.right) mistakes else mistakes + 1)
     }
 
     private fun next() {
@@ -106,9 +123,14 @@ class AdventureViewModel(
         if (completing) return
         completing = true
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
-            val result = game.completeAdventure(done.adventure, done.mistakes).dataOrNull()
-            _state.value = done.copy(finish = AdventureUiState.Finish(result))
+            when (val result = game.completeAdventure(done.adventure, done.mistakes)) {
+                is Result.Success -> _state.value = done.copy(finish = AdventureUiState.Finish(result.data))
+                // Итог не сохранился и не засчитан: «Дальше» можно нажать ещё раз
+                is Result.Error -> {
+                    completing = false
+                    result.error.snackbar { complete(done) }
+                }
+            }
         }
     }
 

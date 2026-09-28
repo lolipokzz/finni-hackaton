@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.data.game
 
+import ru.larpinovplay.finniapp.domain.util.result.map
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,7 +34,6 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
 import ru.larpinovplay.finniapp.domain.util.result.Result
-import ru.larpinovplay.finniapp.domain.util.result.map
 import ru.larpinovplay.finniapp.domain.util.result.onSuccess
 import java.time.Clock
 import java.time.LocalDate
@@ -42,9 +43,9 @@ import java.time.LocalDate
  * (игра + питомец), отдаёт его [GameEngine], записывает результат целиком одной записью.
  *
  * Запись идёт раньше публикации: [snapshot] меняется только после успешной записи, поэтому он всегда равен
- * тому, что лежит на диске, а при сбое команда просто не применяется и возвращает [StorageError]. Команды идут
- * строго по одной, чтобы два быстрых нажатия не породили гонку чтения и записи; ожидание записи (единицы
- * миллисекунд) на них тоже лежит.
+ * тому, что лежит на диске, а при сбое команда не применяется и возвращает [StorageError] — его обрабатывает
+ * ViewModel. Сама запись — suspend и идёт на Dispatchers.IO внутри [store]. Команды идут строго по одной,
+ * чтобы два быстрых нажатия не породили гонку чтения и записи.
  *
  * Сегодняшнюю дату для правил недели берёт из [clock]; в тестах его подменяют. [adventures] — приключения из
  * контента: от них зависит, можно ли закончить неделю.
@@ -65,10 +66,16 @@ class GameRepositoryImpl(
         store.load().onSuccess { _snapshot.value = it }
     }
 
-    override suspend fun createPet(pet: Pet): EmptyResult<StorageError> = mutex.withLock {
+    override suspend fun createPet(pet: Pet, withTutorial: Boolean): EmptyResult<StorageError> = mutex.withLock {
         check(_snapshot.value == null) { "Игра уже начата" }
-        persist(GameSnapshot(GameEngine.newGame(today(), startBalance), pet))
+        persist(GameSnapshot(GameEngine.newGame(today(), startBalance).copy(tutorial = withTutorial), pet))
     }
+
+    override suspend fun finishTutorial(): EmptyResult<StorageError> =
+        execute { Transition(it.copy(state = it.state.copy(tutorial = false)), Unit) }
+
+    override suspend fun skipTutorialStep(step: TutorialStep): EmptyResult<StorageError> =
+        execute { Transition(it.copy(state = it.state.copy(tutorialSkipped = it.state.tutorialSkipped + step)), Unit) }
 
     override suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError> =
         execute { GameEngine.buy(it, item) }
@@ -129,7 +136,7 @@ class GameRepositoryImpl(
 
     private fun today(): LocalDate = LocalDate.now(clock)
 
-    /** Записывает [new] и только после успеха делает его текущим. */
+    /** Записывает [new] и только после успеха делает его текущим; ошибка записи уходит вызывающему. */
     private suspend fun persist(new: GameSnapshot): EmptyResult<StorageError> =
         store.save(new).onSuccess { _snapshot.value = new }
 }

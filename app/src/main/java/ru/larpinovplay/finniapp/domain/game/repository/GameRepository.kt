@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.domain.game.repository
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.coroutines.flow.StateFlow
 import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
@@ -30,9 +31,10 @@ import ru.larpinovplay.finniapp.domain.util.result.Result
  *
  * Игра хранится на диске, поэтому у каждой команды два независимых исхода:
  * - что решили правила игры (например, [PurchaseResult.NotEnough]) лежит внутри [Result.Success];
- * - что не удалось сохранить — это [Result.Error] с [StorageError]. Команда применяется только вместе с записью:
- *   при ошибке [snapshot] остаётся прежним, то есть равным тому, что лежит на диске.
+ * - что не удалось сохранить — это [Result.Error] с [StorageError], его обрабатывает ViewModel. Команда
+ *   применяется только вместе с записью: при ошибке [snapshot] остаётся прежним, то есть равным тому, что на диске.
  *
+ * Запись — suspend на Dispatchers.IO: главный поток она не держит.
  * Правило, отклонённое игрой, ничего не пишет и потому ошибки хранения дать не может.
  */
 interface GameRepository {
@@ -48,10 +50,16 @@ interface GameRepository {
     suspend fun load(): Result<GameSnapshot?, StorageError>
 
     /**
-     * Начинает игру с питомцем [pet].
+     * Начинает игру с питомцем [pet]; [withTutorial] — первую неделю Финни подсказывает на главном экране.
      * @throws IllegalStateException если игра уже начата.
      */
-    suspend fun createPet(pet: Pet): EmptyResult<StorageError>
+    suspend fun createPet(pet: Pet, withTutorial: Boolean = false): EmptyResult<StorageError>
+
+    /** Обучение закончено: подсказок больше не будет. */
+    suspend fun finishTutorial(): EmptyResult<StorageError>
+
+    /** Ребёнок пропустил шаг обучения: Финни переходит к следующему. */
+    suspend fun skipTutorialStep(step: TutorialStep): EmptyResult<StorageError>
 
     suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError>
 

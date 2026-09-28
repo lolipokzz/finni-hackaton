@@ -1,5 +1,9 @@
 package ru.larpinovplay.finniapp.presentation.screens.savings
 
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
+import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
+import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -70,8 +74,8 @@ import ru.larpinovplay.finniapp.presentation.components.SoftButton
 import ru.larpinovplay.finniapp.presentation.components.StatRow
 import ru.larpinovplay.finniapp.presentation.components.StepButton
 import ru.larpinovplay.finniapp.presentation.components.TealButton
-import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.components.changesRoom
+import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
@@ -98,6 +102,9 @@ fun SavingsScreenContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Обучение: мечты — единственное, что можно нажать; какую выбрать — решает ребёнок
+    val dreams = remember { SpotlightTargets() }
+    val list = rememberLazyGridState()
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
@@ -109,6 +116,7 @@ fun SavingsScreenContent(
             }
             Spacer(Modifier.height(14.dp))
             LazyVerticalGrid(
+                state = list,
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -139,9 +147,18 @@ fun SavingsScreenContent(
                         selected = goal.id == state.goal?.id,
                         completed = goal.id in state.completedGoalIds,
                         onClick = { onAction(SavingsAction.GoalClicked(goal)) },
+                        modifier = if (state.coach) Modifier.spotlightTarget(dreams, goal.id) else Modifier,
                     )
                 }
             }
+        }
+        if (state.coach) {
+            TutorialSpotlight(
+                "Выбери мечту — любую, какую хочешь! Монеты из копилки будут копиться на неё.",
+                dreams.all,
+                scroll = list,
+                onSkip = { onAction(SavingsAction.SkipTutorialStep) },
+            )
         }
     }
 
@@ -307,13 +324,13 @@ private fun NoDreamCard(savings: Int, onWithdraw: () -> Unit) {
 
 /** Плитка мечты: картинка, название и цена. Выбранная — в бирюзовой рамке и со словом «копим», не только цветом. */
 @Composable
-private fun GoalTile(goal: SavingsGoal, selected: Boolean, completed: Boolean, onClick: () -> Unit) {
+private fun GoalTile(goal: SavingsGoal, selected: Boolean, completed: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(26.dp)
     Surface(
         onClick = onClick,
         shape = shape,
         color = Color.Transparent,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .creamCard(shape, elevation = 8.dp)
             // Белая обводка наклейки рисуется поверх, поэтому бирюзовая рамка шире: видны её внутренние 3 dp

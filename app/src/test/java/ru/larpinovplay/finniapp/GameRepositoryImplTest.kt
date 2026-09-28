@@ -24,7 +24,8 @@ import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
 /**
  * Репозиторий связывает правила игры и хранилище: правила проверяет GameEngineTest, диск подменён
- * [FakeGameStore]. Главное здесь порядок «сначала запись, потом публикация» и то, что сбой хранения не портит игру.
+ * [FakeGameStore]. Главное здесь порядок «сначала запись, потом публикация» и то, что сбой хранения
+ * не портит игру, а возвращается вызывающему как [Result.Error].
  */
 class GameRepositoryImplTest {
 
@@ -153,7 +154,7 @@ class GameRepositoryImplTest {
 
         val result = game.buy(food)
 
-        assertEquals(Result.Error(StorageError.WRITE_FAILED), result)
+        assertEquals(Result.Error(StorageError.WRITE_FAILED), result)   // ошибка уходит в ViewModel
         assertEquals(before, game.requireSnapshot())   // покупка не применилась ни в памяти, ни на диске
         assertEquals(before, store.saved)
     }
@@ -169,6 +170,7 @@ class GameRepositoryImplTest {
 
         assertTrue(result is PurchaseResult.Success)
         assertEquals(100 - food.price, game.requireSnapshot().state.balance)   // ровно одна покупка, не две
+        assertEquals(game.requireSnapshot(), store.saved)
     }
 
     @Test

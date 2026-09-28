@@ -52,6 +52,7 @@ enum class FeedbackKey(val id: String) {
     WITHDRAW_NO_GOAL("withdraw.no_goal"),
 
     // Реплика Финни на главном экране: одно самое важное дело сейчас
+    SAY_PLAN_WEEK("say.plan_week"),
     SAY_WEEK_READY("say.week_ready"),
     SAY_HUNGRY("say.hungry"),
     SAY_ADVENTURE("say.adventure"),
@@ -68,6 +69,8 @@ enum class FeedbackKey(val id: String) {
     STORAGE_WRITE_FAILED("storage.write_failed"),
     STORAGE_CORRUPTED("storage.corrupted"),
     STORAGE_INCOMPATIBLE("storage.incompatible"),
+    STORAGE_NO_SPACE("storage.no_space"),
+    STORAGE_NO_ACCESS("storage.no_access"),
 
     // Приключение недели: разбор каждого шага
     ADVENTURE_PAY_EXACT("adventure.pay_exact"),
