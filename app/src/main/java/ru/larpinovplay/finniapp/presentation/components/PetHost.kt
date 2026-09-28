@@ -186,16 +186,20 @@ fun PetHost(
         .fillMaxSize()
         .onGloballyPositioned { origin = it.positionInWindow() }
     ) {
-        // Пока главный экран не показан, вместо его модели можно прогревать любую: шейдеры общие
-        val spec = state.spec ?: state.warmUp.takeIf { warm && !state.shown }
+        // Пока экран не сообщил, какой питомец нужен (при запуске главный экран уже открыт, а игра ещё читается
+        // с диска), вид стоит за экраном и ничего не рисует: пустые кадры только отодвигали загрузку настоящей
+        // модели. Если ждать долго, в это время прогревается любая модель — материалы и шейдеры у всех общие
+        val warming = state.spec == null
+        val spec = state.spec ?: state.warmUp.takeIf { warm }
 
         // Слот читаем заново на каждом показе: во время анимации перехода его координаты не итоговые.
         // Когда Home ушёл, слот отсоединён; берём последнее известное место, питомец всё равно скрыт.
-        val live = if (state.shown && state.slot?.isAttached == true) state.slotBounds else null
+        val live = if (!warming && state.shown && state.slot?.isAttached == true) state.slotBounds else null
         if (live != null) lastBounds.value = live
         val bounds = live ?: lastBounds.value
 
         val density = LocalDensity.current
+        val started = LocalLifecycleOwner.current.lifecycle.currentStateAsState().value.isAtLeast(Lifecycle.State.STARTED)
         val place = Modifier
             .offset {
                 if (live != null) IntOffset((live.left - origin.x).roundToInt(), (live.top - origin.y).roundToInt())
@@ -227,7 +231,7 @@ fun PetHost(
             accessories = spec?.accessories.orEmpty(),
             onShadow = { shadow.value = it },
             // Свёрнутое приложение — пауза: не рисует, молчит и не слушает микрофон; видимое (STARTED и выше) — работает
-            active = state.shown && LocalLifecycleOwner.current.lifecycle.currentStateAsState().value.isAtLeast(Lifecycle.State.STARTED),
+            active = !warming && state.shown && started,
             onTap = { state.onTap() },
             shieldAt = state::shieldAt,
 

@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import com.google.android.filament.Fence
 import com.google.android.filament.IndirectLight
 import android.graphics.BitmapFactory
 import com.google.android.filament.Renderer
@@ -246,6 +247,15 @@ private class PetModelController(
     /** Модель загружена, приветствие ждёт первого показанного кадра. */
     private var greetingPending = false
 
+    /**
+     * Модель загружена, но её первый кадр ещё не на экране: GPU компилирует шейдеры. Тень тем временем не рисуется,
+     * иначе она появилась бы на пустом полу раньше питомца.
+     */
+    private var firstFramePending = false
+
+    /** Отметка за первым показанным кадром: когда GPU до неё дошёл, кадр на экране и можно здороваться. */
+    private var greetingFence: Fence? = null
+
     /** Создаёт вид и движок. Модели пока нет, отрисовка стоит на паузе до [setActive]. */
     fun createView(context: Context): SurfaceView {
         appContext = context.applicationContext
@@ -270,6 +280,9 @@ private class PetModelController(
         modelViewer = viewer
 
         viewer.view.blendMode = View.BlendMode.TRANSLUCENT
+        // Без карты теней: тень на полу рисует тот, кто показывает питомца (см. [PetShadow]), а своя тень модели
+        // почти не видна, зато её шейдеры — самая долгая часть первого кадра (на эмуляторе ~2,4 с против ~0,7 с)
+        viewer.view.setShadowingEnabled(false)
         viewer.scene.skybox = null
         viewer.renderer.clearOptions = Renderer.ClearOptions().apply { clear = true }
         setupLighting(viewer)
@@ -302,6 +315,8 @@ private class PetModelController(
             currentIndex = -1
             fadeFromIndex = -1
             greetingPending = false
+            firstFramePending = false
+            dropGreetingFence()
             return
         }
         val bytes = appContext.assets.open(assetName).use { it.readBytes() }
@@ -318,6 +333,8 @@ private class PetModelController(
         // реально показанного кадра (см. doFrame), а не сейчас: пока шейдеры модели компилируются, Filament
         // пропускает кадры, и начало приветствия прошло бы вхолостую
         greetingPending = animationsEnabled && tapIndex >= 0
+        firstFramePending = true
+        dropGreetingFence()
         // Пока на паузе, время анимации не идёт: отсчёт паузы с момента загрузки, чтобы при показе не было скачка
         if (!active) pausedAtNanos = System.nanoTime()
         warmFrames = WARM_FRAMES
@@ -592,7 +609,7 @@ private class PetModelController(
      */
     private fun updateShadow(viewer: ModelViewer) {
         val v = view
-        if (v == null || v.width <= 0 || floorY.isNaN() || viewer.asset == null) return onShadow(null)
+        if (v == null || v.width <= 0 || floorY.isNaN() || viewer.asset == null || firstFramePending) return onShadow(null)
         val w = v.width
         val h = v.height
         val left = jointPosition(viewer, hitAnimations.footLeftJoint)
@@ -663,6 +680,7 @@ private class PetModelController(
     fun release() {
         choreographer.removeFrameCallback(frameCallback)
         framePosted = false
+        dropGreetingFence()
         sounds?.release()
         sounds = null
         voice?.stop()
@@ -748,6 +766,11 @@ private class PetModelController(
         sounds?.setPurring(index >= 0 && index == pettingIndex)
     }
 
+    private fun dropGreetingFence() {
+        greetingFence?.let { fence -> modelViewer?.engine?.destroyFence(fence) }
+        greetingFence = null
+    }
+
     /** Не больше одного колбэка на кадр: второй postFrameCallback удвоил бы скорость анимации. */
     private fun requestFrame() {
         if (framePosted) return
@@ -767,12 +790,17 @@ private class PetModelController(
             viewer.animator?.let { animator -> advance(animator, frameTimeNanos) }
             updateShadow(viewer)
             viewer.render(frameTimeNanos)
-            if (greetingPending && active) {
-                // Первый кадр на экране: дожидаемся, пока GPU его доделает (в том числе скомпилирует шейдеры
-                // материалов модели), и только тогда здороваемся — с самого начала клипа
-                viewer.engine.flushAndWait()
-                greetingPending = false
-                if (animationsEnabled && tapIndex >= 0) switchTo(tapIndex, System.nanoTime())
+            if (firstFramePending && active) {
+                // Первый кадр на экране: ждём, пока GPU его доделает (в том числе скомпилирует шейдеры материалов
+                // модели), и только тогда показываем тень и здороваемся — с самого начала клипа. Ждём без
+                // блокировки: главный поток тем временем рисует остальной экран, а отметку проверяем на следующих кадрах
+                val fence = greetingFence ?: viewer.engine.createFence().also { greetingFence = it }
+                if (fence.wait(Fence.Mode.FLUSH, 0) == Fence.FenceStatus.CONDITION_SATISFIED) {
+                    dropGreetingFence()
+                    firstFramePending = false
+                    if (greetingPending && animationsEnabled && tapIndex >= 0) switchTo(tapIndex, System.nanoTime())
+                    greetingPending = false
+                }
             }
         }
     }
