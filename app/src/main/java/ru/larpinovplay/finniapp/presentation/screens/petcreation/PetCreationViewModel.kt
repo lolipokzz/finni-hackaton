@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.petcreation
 
+import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,14 +25,20 @@ class PetCreationViewModel(
 
     fun onAction(action: PetCreationAction) {
         when (action) {
-            is PetCreationAction.NameChanged -> updateCreation { it.copy(name = action.name) }
-            is PetCreationAction.ColorSelected -> updateCreation { it.copy(color = action.color) }
+            is PetCreationAction.NameChanged -> changeName(action.name)
+            is PetCreationAction.ColorSelected -> selectColor(action.color)
             PetCreationAction.NextStep -> nextStep()
-            PetCreationAction.PreviousStep -> updateCreation { it.copy(step = CreationStep.entries[(it.step.ordinal - 1).coerceAtLeast(0)]) }
+            PetCreationAction.PreviousStep -> previousStep()
             PetCreationAction.CreatePetClicked -> createPet()
             PetCreationAction.RetryLoadClicked -> loadPet()
         }
     }
+
+    private fun changeName(name: String) = updateCreation { it.copy(name = name) }
+
+    private fun selectColor(color: PetColor) = updateCreation { it.copy(color = color) }
+
+    private fun previousStep() = updateCreation { it.copy(step = CreationStep.entries[(it.step.ordinal - 1).coerceAtLeast(0)]) }
 
     /**
      * Ищет сохранённую игру, а затем следит за ней: есть игра — главный экран, нет (в том числе после

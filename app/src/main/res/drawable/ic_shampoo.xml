@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute bath_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <!-- Флакон шампуня с пеной -->
-    <path android:fillColor="#5B7BFF" android:pathData="M20,4 h8 v7 h-8Z"/>
-    <path android:fillColor="#7FD1FF" android:pathData="M14,18 q0,-7 7,-7 h6 q7,0 7,7 v20 q0,6 -6,6 h-8 q-6,0 -6,-6Z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M18,24 h12 v10 h-12Z"/>
-    <path android:fillColor="#5CD69C" android:pathData="M21,27 h6 v4 h-6Z"/>
-    <path android:fillColor="#DCEFFF" android:pathData="M30,8 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0Z"/>
-    <path android:fillColor="#DCEFFF" android:pathData="M36,15 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0Z"/>
-    <path android:fillColor="#FFFFFF" android:pathData="M16,20 v14" android:strokeColor="#FFFFFF" android:strokeWidth="2" android:strokeLineCap="round"/>
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#3FA9F5" android:pathData="M 7 6 a 1 1 0 0 1 1 -1 h 1 v 1 a 1 1 0 0 0 2 0 V 5 a 2 2 0 0 0 -2 -2 H 8 a 3 3 0 0 0 -3 3 v 5 H 4 a 2 2 0 0 0 -2 2 v 1 a 5.994 5.994 0 0 0 2.625 4.961 l -.332 .332 a 1 1 0 1 0 1.414 1.414 l .876 -.875 c .454 .11 .929 .168 1.417 .168 h 8 c .488 0 .963 -.058 1.417 -.168 l .876 .875 a 1 1 0 0 0 1.414 -1.414 l -.332 -.332 A 5.994 5.994 0 0 0 22 14 v -1 a 2 2 0 0 0 -2 -2 H 7 z"/>
 </vector>

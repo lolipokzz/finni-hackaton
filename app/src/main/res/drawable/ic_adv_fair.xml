@@ -1,22 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute ferris_wheel_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp" android:height="48dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <!-- Приключение «Ярмарка»: полосатый шатёр с флажком. -->
-    <path android:fillColor="#FFE9A8"
-        android:pathData="M12,22 h24 a2,2 0 0,1 2,2 v16 a2,2 0 0,1 -2,2 h-24 a2,2 0 0,1 -2,-2 v-16 a2,2 0 0,1 2,-2Z"/>
-    <path android:fillColor="#FF7F9F"
-        android:pathData="M6 23L24 7l18 16z"/>
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M24 7l-6 16h6zM24 7l12 16h-6z"/>
-    <path android:fillColor="#FF7F9F"
-        android:pathData="M19 42V32a5 5 0 0 1 10 0v10z"/>
-    <path android:fillColor="#000000" android:strokeColor="#8A5A70" android:strokeWidth="1.6" android:strokeLineCap="round"
-        android:pathData="M24 7V1.5"/>
-    <path android:fillColor="#2EC4A6"
-        android:pathData="M24 1.5l8 2.5-8 2.5z"/>
-    <path android:fillColor="#FFB020"
-        android:pathData="M12.4,28 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0Z"/>
-    <path android:fillColor="#FFB020"
-        android:pathData="M32.4,28 a1.6,1.6 0 1,0 3.2,0 a1.6,1.6 0 1,0 -3.2,0Z"/>
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FF6FA8" android:fillType="evenOdd" android:pathData="M 12 2 a 3 3 0 0 0 -2.931 3.642 c -.39 .18 -.762 .395 -1.11 .641 a 3 3 0 1 0 -2.931 5.077 7.09 7.09 0 0 0 0 1.28 3 3 0 1 0 2.93 5.077 c .287 .202 .588 .383 .902 .541 l -.809 2.426 a 1 1 0 0 0 1.898 .632 l .808 -2.426 a 7.048 7.048 0 0 0 2.486 0 l .808 2.426 a 1 1 0 0 0 1.898 -.632 l -.809 -2.426 a 7.1 7.1 0 0 0 .9 -.54 3 3 0 1 0 2.93 -5.077 7.094 7.094 0 0 0 .001 -1.281 3 3 0 1 0 -2.931 -5.077 6.99 6.99 0 0 0 -1.109 -.641 A 3 3 0 0 0 12 2 m 2.498 14.332 a 5.02 5.02 0 0 0 .595 -.403 2.987 2.987 0 0 1 .37 -1.929 2.987 2.987 0 0 1 1.487 -1.286 5.043 5.043 0 0 0 0 -1.428 A 2.987 2.987 0 0 1 15.463 10 a 2.987 2.987 0 0 1 -.371 -1.929 4.993 4.993 0 0 0 -1.236 -.715 A 2.987 2.987 0 0 1 12 8 c -.701 0 -1.346 -.24 -1.857 -.644 -.447 .18 -.863 .421 -1.236 .715 A 2.987 2.987 0 0 1 8.536 10 a 2.987 2.987 0 0 1 -1.485 1.286 5.043 5.043 0 0 0 0 1.428 2.995 2.995 0 0 1 1.856 3.216 c .188 .147 .387 .282 .595 .402 l 1.55 -4.648 a 1 1 0 0 1 1.897 0 l 1.55 4.648 Z"/>
 </vector>

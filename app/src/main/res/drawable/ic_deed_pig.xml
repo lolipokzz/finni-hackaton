@@ -1,18 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute pig_money_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <!-- Дело «Копилка по плану». -->
-    <path android:fillColor="#FF9EC7"
-        android:pathData="M7,26 a17,17 0 1,0 34,0 a17,17 0 1,0 -34,0Z"/>
-    <path android:fillColor="#FF7FB0"
-        android:pathData="M16,31 a8,6 0 1,0 16,0 a8,6 0 1,0 -16,0Z"/>
-    <path android:fillColor="#B8406F"
-        android:pathData="M19.2,31 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0Z"/>
-    <path android:fillColor="#B8406F"
-        android:pathData="M25.2,31 a1.8,1.8 0 1,0 3.6,0 a1.8,1.8 0 1,0 -3.6,0Z"/>
-    <path android:fillColor="#5A2A45"
-        android:pathData="M14.6,21 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0Z"/>
-    <path android:fillColor="#5A2A45"
-        android:pathData="M28.6,21 a2.4,2.4 0 1,0 4.8,0 a2.4,2.4 0 1,0 -4.8,0Z"/>
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FF6FA8" android:fillType="evenOdd" android:pathData="M 11.5 3 a 4.502 4.502 0 0 1 4.336 3.292 l .052 .205 1.87 -.467 a 1 1 0 0 1 1.233 .84 L 19 7 v 1.81 a 6.517 6.517 0 0 1 1.364 1.882 l .138 .308 H 21 a 1 1 0 0 1 .993 .883 L 22 12 v 3 a 1 1 0 0 1 -.445 .832 l -.108 .062 -1.168 .585 a 6.525 6.525 0 0 1 -2.02 2.325 l -.259 .174 V 20 a 1 1 0 0 1 -.883 .993 L 17 21 h -3 a 1 1 0 0 1 -.993 -.883 L 13 20 h -1 a 1 1 0 0 1 -.883 .993 L 11 21 H 8 a 1 1 0 0 1 -.993 -.883 L 7 20 v -1.022 a 6.508 6.508 0 0 1 -2.854 -4.101 3.002 3.002 0 0 1 -2.14 -2.693 L 2 12 v -.5 a 1 1 0 0 1 1.993 -.117 L 4 11.5 v .5 c 0 .148 .032 .289 .09 .415 a 6.504 6.504 0 0 1 2.938 -4.411 A 4.5 4.5 0 0 1 11.5 3 m 4.5 8 a 1 1 0 1 0 0 2 1 1 0 0 0 0 -2 m -4.5 -6 a 2.5 2.5 0 0 0 -2.478 2.169 A 6.52 6.52 0 0 1 10.5 7 h 3.377 l .07 -.017 A 2.5 2.5 0 0 0 11.5 5"/>
 </vector>

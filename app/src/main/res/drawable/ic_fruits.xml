@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Phosphor orange-slice-fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <path android:fillColor="#FFA24C" android:pathData="M4,28 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0Z"/>
-    <path android:strokeColor="#FFD3A3" android:strokeWidth="3" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M9,26 a10,10 0 0 1 5,-8"/>
-    <path android:fillColor="#FF5A4E" android:pathData="M20,26 a12,12 0 1,0 24,0 a12,12 0 1,0 -24,0Z"/>
-    <path android:strokeColor="#7A4A2B" android:strokeWidth="2.5" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M32,15 c0,-3 1,-5 3,-7"/>
-    <path android:fillColor="#6CC47A" android:pathData="M33,13 c3,-4 8,-4 10,-2 c-2,3 -6,5 -10,2Z"/>
-    <path android:strokeColor="#FFB3AD" android:strokeWidth="2.5" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M24,22 a8,8 0 0 1 4,-5"/>
+    android:viewportWidth="256" android:viewportHeight="256">
+    <path android:fillColor="#FF8A4C" android:pathData="M 51.18 145.51 A 95.5 95.5 0 0 1 32 88 c 0 -1.41 0 -2.81 .09 -4.21 a 4 4 0 0 1 4 -3.79 H 107 a 4 4 0 0 1 2.83 6.83 Z M 120 183.66 V 99.31 L 61.83 157.49 A 95.68 95.68 0 0 0 120 183.66 Z m 84.82 -38.15 A 95.5 95.5 0 0 0 224 88 c 0 -1.41 0 -2.81 -.09 -4.21 a 4 4 0 0 0 -4 -3.79 H 149 a 4 4 0 0 0 -2.83 6.83 Z M 248 80 h -4.08 a 4 4 0 0 0 -4 4.14 c 0 1.28 .07 2.57 .07 3.86 A 112 112 0 0 1 16 88 c 0 -1.29 0 -2.58 .07 -3.86 a 4 4 0 0 0 -4 -4.14 H 8 a 8 8 0 0 0 -8 8 128 128 0 1 0 256 0 A 8 8 0 0 0 248 80 Z M 136 99.31 v 84.35 a 95.68 95.68 0 0 0 58.17 -26.17 Z"/>
 </vector>
