@@ -246,7 +246,7 @@ private fun DreamCard(state: ProgressUiState) {
                     }
                     MeterBar(state.savings.toFloat() / goal.cost, FinniColors.DreamRing)
                     Text(
-                        "Осталось ${(goal.cost - state.savings).coerceAtLeast(0)}",
+                        "Осталось ${state.goalRemaining ?: 0}",
                         fontSize = 13.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
                     )
                 }

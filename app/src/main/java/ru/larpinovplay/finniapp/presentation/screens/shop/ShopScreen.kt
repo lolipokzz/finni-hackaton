@@ -619,7 +619,8 @@ private fun OptionRow(icon: Int, tint: Color, title: String, subtitle: String?, 
 
 /** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Кроватки» не хватит 60». */
 private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
-    val after = fb.savings - fb.missing
-    val goal = fb.goal ?: return "В копилке ${fb.savings} → станет $after"
-    return "В копилке ${fb.savings} → станет $after. До «${goal.name}» будет не хватать ${(goal.cost - after).coerceAtLeast(0)}"
+    val change = "В копилке ${fb.savings} → станет ${fb.savingsAfter}"
+    val goal = fb.goal ?: return change
+    return "$change. До «${goal.name}» будет не хватать ${fb.goalRemainingAfter}"
 }
+

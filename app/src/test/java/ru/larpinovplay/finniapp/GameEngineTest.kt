@@ -176,6 +176,17 @@ class GameEngineTest {
     }
 
     @Test
+    fun goalRemainingNeverGoesBelowZero() {
+        assertNull(newGame().state.goalRemaining())   // цели нет
+
+        val saved = newGame().then { GameEngine.chooseGoal(it, goal) }.then { GameEngine.deposit(it, 30) }
+
+        assertEquals(goal.cost - 30, saved.state.goalRemaining())
+        assertEquals(goal.cost - 10, saved.state.goalRemaining(10))       // «если заберу 20»
+        assertEquals(0, saved.state.goalRemaining(goal.cost + 5))         // накоплено больше цены
+    }
+
+    @Test
     fun tripGoalSendsPetAwayOnlyForThatWeek() {
         val sea = content.goals.first { it.trip }
         val saved = newGame(startBalance = 200).then { GameEngine.chooseGoal(it, sea) }.then { GameEngine.deposit(it, sea.cost) }

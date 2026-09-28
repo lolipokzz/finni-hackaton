@@ -34,9 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -129,7 +127,8 @@ fun SavingsScreenContent(
                     else DreamCard(
                         goal = goal,
                         state = state,
-                        onDeposit = { onAction(SavingsAction.Deposit(it)) },
+                        onChangeDeposit = { onAction(SavingsAction.ChangeDeposit(it)) },
+                        onDeposit = { onAction(SavingsAction.Deposit) },
                         onReach = { onAction(SavingsAction.ReachGoalClicked) },
                         onWithdraw = { onAction(SavingsAction.WithdrawClicked) },
                     )
@@ -217,16 +216,14 @@ private fun DreamRing(progress: Float, icon: Int, modifier: Modifier = Modifier,
 private fun DreamCard(
     goal: SavingsGoal,
     state: SavingsUiState,
-    onDeposit: (Int) -> Unit,
+    onChangeDeposit: (increase: Boolean) -> Unit,
+    onDeposit: () -> Unit,
     onReach: () -> Unit,
     onWithdraw: () -> Unit,
 ) {
-    val remaining = (goal.cost - state.savings).coerceAtLeast(0)
-    val reached = state.savings >= goal.cost
-    // Сколько отложить: пока не нажато «Отложить», это не состояние экрана
-    var picked by remember { mutableIntStateOf(10) }
-    val maxAmount = state.balance.coerceAtLeast(GameRules.PLAN_STEP)
-    val amount = picked.coerceIn(GameRules.PLAN_STEP, maxAmount)   // кошелёк мог опустеть после выбора
+    val remaining = state.goalRemaining ?: 0
+    val reached = remaining == 0
+    val amount = state.depositAmount
 
     Column(
         Modifier
@@ -274,19 +271,15 @@ private fun DreamCard(
             TealButton("Получить мечту!", R.drawable.ic_sun_small, onReach)
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepButton("−", "Отложить меньше", enabled = amount > GameRules.PLAN_STEP) {
-                    picked = (amount - GameRules.PLAN_STEP).coerceAtLeast(GameRules.PLAN_STEP)
-                }
+                StepButton("−", "Отложить меньше", enabled = state.canDepositLess) { onChangeDeposit(false) }
                 Text(
                     "$amount",
                     fontSize = 22.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, textAlign = TextAlign.Center,
                     modifier = Modifier.width(52.dp).semantics { contentDescription = "Отложить: $amount" },
                 )
-                StepButton("+", "Отложить больше", enabled = amount < maxAmount) {
-                    picked = (amount + GameRules.PLAN_STEP).coerceAtMost(maxAmount)
-                }
+                StepButton("+", "Отложить больше", enabled = state.canDepositMore) { onChangeDeposit(true) }
                 Spacer(Modifier.width(10.dp))
-                TealButton("Отложить", R.drawable.ic_coin, { onDeposit(amount) }, modifier = Modifier.weight(1f))
+                TealButton("Отложить", R.drawable.ic_coin, onDeposit, modifier = Modifier.weight(1f))
             }
             state.depositError?.let {
                 Text(it.text(), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk, textAlign = TextAlign.Center)

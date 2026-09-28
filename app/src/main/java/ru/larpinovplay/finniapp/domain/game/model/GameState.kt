@@ -105,6 +105,9 @@ data class GameState(
             TopicProgress(topic, total = ofTopic.size, done = ofTopic.count { taskStatus(it) == TaskStatus.DONE })
         }
 
+    /** Сколько не хватает до цели, если бы в копилке было [savingsIfAny]; 0 — хватает, null — цели нет. */
+    fun goalRemaining(savingsIfAny: Int = savings): Int? = goal?.let { (it.cost - savingsIfAny).coerceAtLeast(0) }
+
     /** Срок в неделях по среднему пополнению за последние 3 закрытые недели, иначе по текущей. */
     fun weeksToGoal(): Int? = weeksToGoal(savings)
 

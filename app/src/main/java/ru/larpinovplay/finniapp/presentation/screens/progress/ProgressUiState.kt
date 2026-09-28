@@ -15,6 +15,7 @@ data class ProgressUiState(
     val week: Int,
     val goal: SavingsGoal?,
     val savings: Int,
+    val goalRemaining: Int?,           // сколько не хватает до цели; null — цели нет
     val completedGoals: List<SavingsGoal>,
     val taskTopics: List<TopicProgress>,
     val lastWeek: WeekSummary?,

@@ -67,9 +67,9 @@ fun WithdrawDialog(
         DashedDivider()
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             StatRow("В копилке станет", "${draft.savingsAfter}", coin = true)
-            if (goal != null) {
-                val before = (goal.cost - draft.savingsBefore).coerceAtLeast(0)
-                val after = (goal.cost - draft.savingsAfter).coerceAtLeast(0)
+            val before = draft.remainingBefore
+            val after = draft.remainingAfter
+            if (goal != null && before != null && after != null) {
                 Text(
                     feedback.text(FeedbackKey.WITHDRAW_GOAL_FURTHER, "goal" to goal.name, "before" to before, "after" to after),
                     fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted,
