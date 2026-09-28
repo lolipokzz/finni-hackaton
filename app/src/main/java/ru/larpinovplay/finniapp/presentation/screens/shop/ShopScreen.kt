@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.shop
 
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
 import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
 import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
@@ -113,6 +114,7 @@ fun ShopScreenContent(
 ) {
     // Обучение: нажать можно только еду, а какую купить — решает ребёнок
     val goods = remember { SpotlightTargets() }
+    val list = rememberLazyGridState()
     val coaching = state.coach && state.pending == null && state.feedback == null
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
@@ -132,6 +134,7 @@ fun ShopScreenContent(
             Spacer(Modifier.height(12.dp))
             // Товары — плитки по три: картинка, название, цена. Что даёт вещь, видно в окне покупки
             LazyVerticalGrid(
+                state = list,
                 columns = GridCells.Fixed(3),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -160,7 +163,8 @@ fun ShopScreenContent(
             TutorialSpotlight(
                 "Еда — это обязательное: без неё мне плохо. Выбери, что мне купить!",
                 goods.all,
-                onSkip = { onAction(ShopAction.SkipTutorial) },
+                scroll = list,
+                onSkip = { onAction(ShopAction.SkipTutorialStep) },
             )
         }
     }

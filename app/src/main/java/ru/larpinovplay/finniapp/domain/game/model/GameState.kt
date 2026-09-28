@@ -36,6 +36,7 @@ data class GameState(
     val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),
     val tutorial: Boolean = false,                  // идёт обучение на главном экране (см. tutorialStep)
+    val tutorialSkipped: Set<TutorialStep> = emptySet(),   // шаги обучения, которые ребёнок пропустил
 ) {
     fun owns(item: ShopItem): Boolean = wardrobe.any { it.id == item.id }
 

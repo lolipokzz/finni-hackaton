@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +53,8 @@ class DataStoreGameStoreTest {
     @Test
     fun savedGameIsLoadedBack() = runBlocking {
         val store = openStore()
-        val game = SampleGames.rich()
+        // Игра посреди обучения: пропущенные шаги тоже сохраняются
+        val game = SampleGames.rich().let { it.copy(state = it.state.copy(tutorial = true, tutorialSkipped = setOf(TutorialStep.TASKS))) }
 
         assertTrue(store.save(game) is Result.Success)
 

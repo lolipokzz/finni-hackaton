@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.domain.game.repository
 
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import kotlinx.coroutines.flow.StateFlow
 import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.game.model.AdventureResult
@@ -28,12 +29,12 @@ import ru.larpinovplay.finniapp.domain.util.result.Result
  * поэтому экран не увидит новые монеты со старой сытостью. Читать снимок можно, менять его умеют только
  * команды ниже (правила каждой описаны в GameEngine). Команды выполняются последовательно.
  *
- * Игра хранится на диске, поэтому у каждой команды два независимых исхода:
- * - что решили правила игры (например, [PurchaseResult.NotEnough]) лежит внутри [Result.Success];
- * - что не удалось сохранить — это [Result.Error] с [StorageError]. Команда применяется только вместе с записью:
- *   при ошибке [snapshot] остаётся прежним, то есть равным тому, что лежит на диске.
+ * Действия игры экран диска не ждут: команда сразу меняет [snapshot] и возвращает, что решили правила
+ * (например, [PurchaseResult.NotEnough]) внутри [Result.Success], а запись идёт в фоне. Сбой фоновой записи
+ * игру не откатывает — несохранённое уйдёт на диск со следующим изменением.
  *
- * Правило, отклонённое игрой, ничего не пишет и потому ошибки хранения дать не может.
+ * [Result.Error] с [StorageError] возвращают только загрузка, создание игры и сбросы: они ждут диска,
+ * потому что их ошибку экран показывает.
  */
 interface GameRepository {
 
@@ -53,8 +54,11 @@ interface GameRepository {
      */
     suspend fun createPet(pet: Pet, withTutorial: Boolean = false): EmptyResult<StorageError>
 
-    /** Обучение закончено или пропущено: подсказок больше не будет. */
+    /** Обучение закончено: подсказок больше не будет. */
     suspend fun finishTutorial(): EmptyResult<StorageError>
+
+    /** Ребёнок пропустил шаг обучения: Финни переходит к следующему. */
+    suspend fun skipTutorialStep(step: TutorialStep): EmptyResult<StorageError>
 
     suspend fun buy(item: ShopItem): Result<PurchaseResult, StorageError>
 

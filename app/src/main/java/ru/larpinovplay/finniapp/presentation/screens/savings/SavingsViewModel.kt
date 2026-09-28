@@ -51,8 +51,7 @@ class SavingsViewModel(
             SavingsAction.DismissSwitch -> _state.update { it.copy(switchTo = null) }
             is SavingsAction.Deposit -> deposit(action.amount)
             SavingsAction.ReachGoalClicked -> viewModelScope.launch {
-                // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
-                val reached = game.reachGoal().dataOrNull()
+                val reached = game.reachGoal().dataOrNull() ?: return@launch   // второй тап: мечта уже куплена
                 _state.update { it.copy(reached = reached) }
             }
             SavingsAction.DismissReached -> _state.update { it.copy(reached = null) }
@@ -63,7 +62,7 @@ class SavingsViewModel(
             is SavingsAction.ChangeWithdraw -> changeWithdraw(action.increase)
             SavingsAction.ConfirmWithdraw -> confirmWithdraw()
             SavingsAction.DismissWithdraw -> _state.update { it.copy(withdraw = null) }
-            SavingsAction.SkipTutorial -> viewModelScope.launch { game.finishTutorial() }
+            SavingsAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.GOAL) }
         }
     }
 
@@ -77,15 +76,17 @@ class SavingsViewModel(
         }
     }
 
+    /** Окно смены мечты или снятия закрывается вместе с новым состоянием: старые цифры не мелькнут. */
     private fun confirmSwitch() {
         val goal = _state.value.switchTo ?: return
-        _state.update { it.copy(switchTo = null) }
-        viewModelScope.launch { game.chooseGoal(goal) }
+        viewModelScope.launch {
+            game.chooseGoal(goal)
+            _state.update { it.copy(switchTo = null) }
+        }
     }
 
     private fun deposit(amount: Int) {
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
             val rejected = game.deposit(amount).dataOrNull() as? DepositResult.Rejected
             _state.update { it.copy(depositError = rejected) }
         }
@@ -112,9 +113,10 @@ class SavingsViewModel(
 
     private fun confirmWithdraw() {
         val draft = _state.value.withdraw ?: return
-        _state.update { it.copy(withdraw = null) }
-        // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
-        viewModelScope.launch { game.withdraw(draft.amount) }
+        viewModelScope.launch {
+            game.withdraw(draft.amount)
+            _state.update { it.copy(withdraw = null) }
+        }
     }
 
     private fun fromGame(game: GameState) = SavingsUiState(

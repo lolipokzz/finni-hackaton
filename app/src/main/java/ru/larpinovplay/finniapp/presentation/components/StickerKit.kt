@@ -420,7 +420,7 @@ fun DoneBadge(modifier: Modifier = Modifier, size: Dp = 24.dp) {
 
 /**
  * Подсказка Финни во время обучения: мятная плашка с лапкой — «это говорит Финни», текст и, если нужно,
- * «Пропустить обучение». Стоит прямо там, где нужно действие, а не отдельным окном.
+ * «Пропустить шаг». Стоит прямо там, где нужно действие, а не отдельным окном.
  */
 @Composable
 fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)? = null) {
@@ -439,7 +439,7 @@ fun CoachNote(text: String, modifier: Modifier = Modifier, onSkip: (() -> Unit)?
             Text(text, fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0B5E4F))
             onSkip?.let {
                 Text(
-                    "Пропустить обучение",
+                    "Пропустить шаг",
                     fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted,
                     modifier = Modifier
                         .align(Alignment.End)

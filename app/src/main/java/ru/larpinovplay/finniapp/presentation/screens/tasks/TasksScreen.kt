@@ -1,5 +1,9 @@
 package ru.larpinovplay.finniapp.presentation.screens.tasks
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
+import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
+import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -80,7 +84,14 @@ fun TasksScreen(
     viewModel: TasksViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    TasksScreenContent(state = state, onOpenTask = onOpenTask, onOpenAdventure = onOpenAdventure, onBack = onBack, modifier = modifier)
+    TasksScreenContent(
+        state = state,
+        onOpenTask = onOpenTask,
+        onOpenAdventure = onOpenAdventure,
+        onBack = onBack,
+        onSkipTutorialStep = viewModel::skipTutorialStep,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -90,7 +101,11 @@ fun TasksScreenContent(
     onOpenAdventure: (Adventure) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onSkipTutorialStep: () -> Unit = {},
 ) {
+    // Обучение: нажать можно только доступные задания, а какое решать — выбирает ребёнок
+    val open = remember { SpotlightTargets() }
+    val list = rememberLazyListState()
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
@@ -102,6 +117,7 @@ fun TasksScreenContent(
             }
             Spacer(Modifier.height(14.dp))
             LazyColumn(
+                state = list,
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = PaddingValues(bottom = 20.dp),
                 modifier = Modifier.weight(1f),
@@ -121,9 +137,22 @@ fun TasksScreenContent(
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp).semantics { heading() },
                         )
                     }
-                    items(tasks, key = { it.task.id }) { item -> TaskRow(item.task, item.status) { onOpenTask(item.task) } }
+                    items(tasks, key = { it.task.id }) { item ->
+                        TaskRow(
+                            item.task, item.status,
+                            modifier = if (state.coach && item.status == TaskStatus.AVAILABLE) Modifier.spotlightTarget(open, item.task.id) else Modifier,
+                        ) { onOpenTask(item.task) }
+                    }
                 }
             }
+        }
+        if (state.coach) {
+            TutorialSpotlight(
+                "Задания — это задачки про деньги. Решишь — получишь монеты! Выбери любое. А раз в неделю тут ждёт приключение.",
+                open.all,
+                scroll = list,
+                onSkip = onSkipTutorialStep,
+            )
         }
     }
 }
@@ -251,7 +280,7 @@ internal val TaskTopic.sticker: Pair<Int, Color>
 
 /** Задание: наклейка темы, название, справа — награда (или «сделано»). Недоступное — спокойнее и со словами почему. */
 @Composable
-private fun TaskRow(task: Task, status: TaskStatus, onOpen: () -> Unit) {
+private fun TaskRow(task: Task, status: TaskStatus, modifier: Modifier = Modifier, onOpen: () -> Unit) {
     val available = status == TaskStatus.AVAILABLE
     val (icon, tint) = task.topic.sticker
     val note = when (status) {
@@ -266,7 +295,7 @@ private fun TaskRow(task: Task, status: TaskStatus, onOpen: () -> Unit) {
         enabled = available,
         shape = shape,
         color = Color.Transparent,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .creamCard(shape, elevation = if (available) 8.dp else 3.dp)
             .clearAndSetSemantics {

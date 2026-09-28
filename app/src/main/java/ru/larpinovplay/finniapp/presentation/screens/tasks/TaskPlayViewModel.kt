@@ -38,7 +38,6 @@ class TaskPlayViewModel(
         if (submitted) return   // двойной тап по «Готово» не должен засчитать ответ дважды
         submitted = true
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
             _effects.send(TaskPlayEffect.Completed(task.id, game.answerTask(task, answer).dataOrNull()))
         }
     }

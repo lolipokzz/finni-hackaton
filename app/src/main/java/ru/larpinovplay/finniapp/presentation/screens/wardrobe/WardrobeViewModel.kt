@@ -27,7 +27,6 @@ class WardrobeViewModel(private val game: GameRepository) : ViewModel() {
         val slot = item.slot ?: return
         val worn = game.requireSnapshot().pet.outfit[slot] == item.id
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю, как и в остальных экранах
             if (worn) game.takeOff(slot) else game.wear(item)
         }
     }

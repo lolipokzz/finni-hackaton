@@ -44,6 +44,7 @@ private fun GameState.toDto() = GameStateDto(
     adventureResults = adventureResults.map { it.toDto() },
     history = history.map { it.toDto() },
     tutorial = tutorial,
+    tutorialSkipped = tutorialSkipped,
 )
 
 private fun GameStateDto.toDomain() = GameState(
@@ -68,6 +69,7 @@ private fun GameStateDto.toDomain() = GameState(
     adventureResults = adventureResults.map { it.toDomain() },
     history = history.map { it.toDomain() },
     tutorial = tutorial,
+    tutorialSkipped = tutorialSkipped,
 )
 
 private fun Pet.toDto() = PetDto(

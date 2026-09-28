@@ -106,7 +106,6 @@ class AdventureViewModel(
         if (completing) return
         completing = true
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
             val result = game.completeAdventure(done.adventure, done.mistakes).dataOrNull()
             _state.value = done.copy(finish = AdventureUiState.Finish(result))
         }

@@ -33,6 +33,7 @@ data class HomeUiState(
     val deeds: WeekDeeds = WeekDeeds(fed = false, notBored = false, savingsOnPlan = false, spendingOnPlan = false),   // дела недели сейчас
     val weekSatiety: Int = 0,                 // сколько сытости куплено за неделю: для подсказки «Финни сыт»
     val tutorial: TutorialStep? = null,       // обучение первой недели: где Финни подсказывает; null — обучения нет
+    val tutorialDone: Boolean = false,        // окно «Обучение пройдено»: последний шаг пройден, ждём «Да, всё понятно!»
     val deedsOpen: Boolean = false,           // открыто окно «Дела недели» (там же — конец недели)
 ) {
     /**

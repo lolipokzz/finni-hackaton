@@ -1,5 +1,8 @@
 package ru.larpinovplay.finniapp.presentation.components
 
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.gestures.ScrollableState
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -75,12 +78,20 @@ private class SpotlightTargetNode(var targets: SpotlightTargets, var key: Any) :
 /**
  * Подсветка шага обучения: экран затемнён, открыто только [hole] (в координатах окна) — туда и нужно нажать,
  * всё остальное не нажимается. Подсказка Финни — сверху или снизу, там, где не закрывает подсвеченное;
- * в ней же «Пропустить обучение». [round] — круг со стрелкой для одной кнопки, иначе скруглённая рамка
+ * в ней же «Пропустить шаг» ([onSkip]; null — шаг обязательный). [round] — круг со стрелкой для одной кнопки, иначе скруглённая рамка
  * вокруг группы, из которой можно выбрать любое. Пока место не измерено, закрыто всё.
+ * [scroll] — список экрана: затемнённое не нажимается, но листать его можно откуда угодно, как без подсветки.
  * Затемнение не анимируется: под видом питомца постоянная перерисовка затемняет весь его квадрат.
  */
 @Composable
-fun TutorialSpotlight(text: String, hole: Rect?, onSkip: () -> Unit, modifier: Modifier = Modifier, round: Boolean = false) {
+fun TutorialSpotlight(
+    text: String,
+    hole: Rect?,
+    onSkip: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+    round: Boolean = false,
+    scroll: ScrollableState? = null,
+) {
     var origin by remember { mutableStateOf(Offset.Zero) }
     var size by remember { mutableStateOf(IntSize.Zero) }
     val density = LocalDensity.current
@@ -126,14 +137,15 @@ fun TutorialSpotlight(text: String, hole: Rect?, onSkip: () -> Unit, modifier: M
                 drawRoundRect(Color.White, open.topLeft, open.size, corner, style = ring)
             }
         }
-        // Нажатия мимо подсвеченного гасятся: четыре полосы вокруг открытой части
-        if (open == null) Blocker(screen)
-        else {
-            Blocker(Rect(0f, 0f, screen.right, open.top))
-            Blocker(Rect(0f, open.bottom, screen.right, screen.bottom))
-            Blocker(Rect(0f, open.top, open.left, open.bottom))
-            Blocker(Rect(open.right, open.top, screen.right, open.bottom))
-        }
+        // Нажатия мимо подсвеченного гасятся: четыре полосы вокруг открытой части. Полос всегда четыре,
+        // чтобы свайп не обрывался, когда при прокрутке подсвеченное уходит с экрана и возвращается
+        val strips = if (open == null) listOf(screen, Rect.Zero, Rect.Zero, Rect.Zero) else listOf(
+            Rect(0f, 0f, screen.right, open.top),
+            Rect(0f, open.bottom, screen.right, screen.bottom),
+            Rect(0f, open.top, open.left, open.bottom),
+            Rect(open.right, open.top, screen.right, open.bottom),
+        )
+        strips.forEach { Blocker(it, scroll) }
         val noteOnTop = open == null || open.center.y > screen.height / 2
         CoachNote(
             text,
@@ -146,17 +158,21 @@ fun TutorialSpotlight(text: String, hole: Rect?, onSkip: () -> Unit, modifier: M
 }
 
 @Composable
-private fun Blocker(r: Rect) {
-    if (r.width <= 0f || r.height <= 0f) return
+private fun Blocker(r: Rect, scroll: ScrollableState?) {
     val density = LocalDensity.current
     Box(
         Modifier
             .offset { IntOffset(r.left.roundToInt(), r.top.roundToInt()) }
-            .size(with(density) { r.width.toDp() }, with(density) { r.height.toDp() })
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) awaitPointerEvent().changes.forEach { it.consume() }
-                }
-            },
+            .size(with(density) { r.width.coerceAtLeast(0f).toDp() }, with(density) { r.height.coerceAtLeast(0f).toDp() })
+            .then(
+                // Полоса сверху, и нажатие под неё не проходит; свайп же листает список экрана — с инерцией, как обычно.
+                // Направление то же, что у самого списка: палец вверх — список вперёд
+                if (scroll != null) Modifier.scrollable(scroll, Orientation.Vertical, reverseDirection = true)
+                else Modifier.pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) awaitPointerEvent().changes.forEach { it.consume() }
+                    }
+                },
+            ),
     )
 }

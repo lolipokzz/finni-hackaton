@@ -59,17 +59,17 @@ class ShopViewModel(
             is ShopAction.PickCheaper -> _state.update { it.copy(feedback = null, pending = action.item) }
             ShopAction.ConfirmPurchase -> confirmPurchase()
             ShopAction.BuyWithSavings -> buyWithSavings()
-            ShopAction.SkipTutorial -> viewModelScope.launch { game.finishTutorial() }
+            ShopAction.SkipTutorialStep -> viewModelScope.launch { game.skipTutorialStep(TutorialStep.SHOP) }
         }
     }
 
+    /** Окно подтверждения сменяется итогом одним обновлением: между ними не мелькнёт магазин (и подсветка обучения). */
     private fun confirmPurchase() {
         val item = _state.value.pending ?: return
-        _state.update { it.copy(pending = null) }   // диалог закрываем сразу: повторный тап не купит дважды
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
-            val result = game.buy(item).dataOrNull() ?: return@launch
+            val result = game.buy(item).dataOrNull()
             val feedback = when (result) {
+                null -> null
                 is PurchaseResult.Success -> PurchaseFeedback.Bought(item, result.balanceAfter)
                 is PurchaseResult.NotEnough -> {
                     val state = game.requireSnapshot().state
@@ -84,9 +84,9 @@ class ShopViewModel(
                     )
                 }
                 // Кнопка у купленной одежды выключена; сюда попадём только при двойном нажатии
-                PurchaseResult.AlreadyOwned -> return@launch
+                PurchaseResult.AlreadyOwned -> null
             }
-            _state.update { it.copy(feedback = feedback) }
+            _state.update { it.copy(pending = null, feedback = feedback) }
         }
     }
 
@@ -97,15 +97,14 @@ class ShopViewModel(
     /** Берёт из копилки ровно недостающее (не весь остаток) и сразу покупает. */
     private fun buyWithSavings() {
         val notEnough = _state.value.feedback as? PurchaseFeedback.NotEnough ?: return
-        _state.update { it.copy(feedback = null) }   // окно закрываем сразу: повторный тап не снимет дважды
+        // Окно «Не хватает» сменится итогом покупки сразу, без мелькания магазина между ними
         viewModelScope.launch {
-            // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
             val item = notEnough.item
             // Баланс мог измениться, пока было открыто окно: считаем недостающее заново
             val missing = (item.price - game.requireSnapshot().state.balance).coerceAtLeast(0)
-            if (missing > 0 && game.withdraw(missing).dataOrNull() != WithdrawResult.Success) return@launch
-            val bought = game.buy(item).dataOrNull() as? PurchaseResult.Success ?: return@launch
-            _state.update { it.copy(feedback = PurchaseFeedback.Bought(item, bought.balanceAfter, fromSavings = missing)) }
+            val withdrawn = missing == 0 || game.withdraw(missing).dataOrNull() == WithdrawResult.Success
+            val bought = if (withdrawn) game.buy(item).dataOrNull() as? PurchaseResult.Success else null
+            _state.update { it.copy(feedback = bought?.let { b -> PurchaseFeedback.Bought(item, b.balanceAfter, fromSavings = missing) }) }
         }
     }
 

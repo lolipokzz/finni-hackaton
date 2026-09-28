@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp.presentation.screens.tasks
 
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +15,7 @@ import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 
 class TasksViewModel(
-    game: GameRepository,
+    private val game: GameRepository,
     private val content: Content,
 ) : ViewModel() {
 
@@ -32,5 +34,11 @@ class TasksViewModel(
         perWeek = game.tasksPerWeek,
         adventure = game.adventureOfWeek(content.adventures),
         adventureDone = game.adventureDoneThisWeek,
+        coach = game.tutorialStep == TutorialStep.TASKS,
     )
+
+    /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
+    fun skipTutorialStep() {
+        viewModelScope.launch { game.skipTutorialStep(TutorialStep.TASKS) }
+    }
 }

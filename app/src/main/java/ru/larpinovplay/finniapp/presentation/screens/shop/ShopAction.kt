@@ -14,6 +14,6 @@ sealed interface ShopAction {
     /** Не хватает монет: взять недостающее из копилки и купить. */
     data object BuyWithSavings : ShopAction
 
-    /** «Пропустить обучение»: подсказок больше не будет. */
-    data object SkipTutorial : ShopAction
+    /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
+    data object SkipTutorialStep : ShopAction
 }

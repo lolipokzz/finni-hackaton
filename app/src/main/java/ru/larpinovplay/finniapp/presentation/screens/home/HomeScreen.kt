@@ -1,5 +1,10 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
+import androidx.compose.ui.text.style.TextAlign
+import ru.larpinovplay.finniapp.presentation.components.TealButton
+import ru.larpinovplay.finniapp.presentation.components.CardSticker
+import ru.larpinovplay.finniapp.presentation.components.CardTitle
+import ru.larpinovplay.finniapp.presentation.components.CardDialog
 import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
 import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
 import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
@@ -209,9 +214,13 @@ fun HomeScreenContent(
             Spacer(Modifier.height(8.dp))
         }
         // Окна важнее подсказки: пока открыто окно, подсветки нет
-        val dialogOpen = state.info != null || state.deedsOpen || state.weekSummary != null || state.planOpen
+        val dialogOpen = state.info != null || state.deedsOpen || state.weekSummary != null || state.planOpen || state.tutorialDone
         if (coachStep != null && !dialogOpen) {
-            TutorialSpotlight(coachStep.coachText, targets[coachStep], onSkip = { onAction(HomeAction.SkipTutorial) }, round = true)
+            TutorialSpotlight(
+                coachStep.coachText, targets[coachStep],
+                onSkip = { onAction(HomeAction.SkipTutorialStep) }.takeIf { coachStep != TutorialStep.PLAN },
+                round = true,
+            )
         }
     }
     state.info?.let {
@@ -223,6 +232,7 @@ fun HomeScreenContent(
         )
     }
     if (state.deedsOpen) DeedsCard(state, onAction)
+    if (state.tutorialDone) TutorialDoneDialog(onDone = { onAction(HomeAction.FinishTutorial) })
     // Сначала итоги прошлой недели, потом план новой
     val summary = state.weekSummary
     val draft = state.planDraft
@@ -248,8 +258,38 @@ private val TutorialStep.coachText: String
         TutorialStep.PLAN -> "Каждую неделю мне дают монеты. Сначала решим, на что их потратить. Нажми на «План»!"
         TutorialStep.GOAL -> "Давай выберем мечту, на которую будем копить! Нажми на копилку."
         TutorialStep.SHOP -> "Мур, я проголодался! Пойдём в магазин — купим мне еды."
+        TutorialStep.TASKS -> "Монеты можно заработать! Нажми на «Задания» — там задачки про деньги."
         TutorialStep.DEEDS -> "Это солнышко недели. Нажми — покажу дела, от которых я расту!"
     }
+
+/**
+ * Конец обучения: коротко всё, что узнали, — теми же наклейками, что в меню, — и вопрос «Всё понятно?».
+ * Закрыть можно только ответом: так ясно, что обучение закончилось и дальше ребёнок играет сам.
+ */
+@Composable
+private fun TutorialDoneDialog(onDone: () -> Unit) {
+    CardDialog {
+        CardTitle("Обучение пройдено!", "Мур! Спасибо, что помогаешь мне с монетами")
+        listOf(
+            Triple(R.drawable.ic_deed_plan, Color(0xFFE6EEFF), "План — в начале недели раздели монеты"),
+            Triple(R.drawable.ic_nav_savings, Color(0xFFFFE6F0), "Копилка — копим на мечту"),
+            Triple(R.drawable.ic_nav_shop, Color(0xFFFFF0E6), "Магазин — еда и радости для меня"),
+            Triple(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2), "Задания — решай и зарабатывай монеты"),
+            Triple(R.drawable.ic_week_sun, Color(0xFFFFF5C9), "Солнышко — дела недели, от них я расту"),
+        ).forEach { (icon, tint, text) ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                CardSticker(icon, tint, size = 44.dp)
+                Text(text, fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.ExtraBold, color = FinniColors.Ink)
+            }
+        }
+        Text(
+            "Всё понятно?",
+            fontSize = 20.sp, fontWeight = FontWeight.Black, color = FinniColors.Teal, textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        )
+        TealButton("Да, всё понятно!", R.drawable.ic_check, onDone)
+    }
+}
 
 // ---------- Верх: самочувствие, монеты, настройки ----------
 
@@ -538,7 +578,7 @@ private val MenuHeight = 124.dp
 private fun BottomMenu(state: HomeUiState, onAction: (HomeAction) -> Unit, target: (TutorialStep) -> Modifier = { Modifier }) {
     val open = { section: HomeSection -> onAction(HomeAction.OpenSection(section)) }
     Row(Modifier.fillMaxWidth().height(MenuHeight), verticalAlignment = Alignment.Bottom) {
-        MenuItem("Задания", Modifier.weight(1f), badge = state.tasksBadge, onClick = { open(HomeSection.TASKS) }) {
+        MenuItem("Задания", Modifier.weight(1f), badge = state.tasksBadge, iconModifier = target(TutorialStep.TASKS), onClick = { open(HomeSection.TASKS) }) {
             Sticker(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2))
         }
         MenuItem("Магазин", Modifier.weight(1f), iconModifier = target(TutorialStep.SHOP), onClick = { open(HomeSection.SHOP) }) {

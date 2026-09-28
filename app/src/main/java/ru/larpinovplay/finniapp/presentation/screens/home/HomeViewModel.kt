@@ -60,10 +60,11 @@ class HomeViewModel(
 
     fun onAction(action: HomeAction) {
         when (action) {
-            HomeAction.FinishWeek -> viewModelScope.launch {
-                // TODO(хранилище): ошибку сохранения показать пользователю при подключении DataStore
+            // Карточка дел сменяется итогами одним обновлением: между ними не мелькнёт главный экран прошлой недели.
+            // Пока итоги открыты, второй тап по ещё не исчезнувшей кнопке не закончит (в демо) и следующую неделю
+            HomeAction.FinishWeek -> if (_state.value?.weekSummary == null) viewModelScope.launch {
                 when (val result = game.finishWeek().dataOrNull()) {
-                    is FinishWeekResult.Finished -> _state.update { it?.copy(weekSummary = result.summary) }
+                    is FinishWeekResult.Finished -> _state.update { it?.copy(weekSummary = result.summary, deedsOpen = false) }
                     // Карточка дел сама объясняет, чего не хватает
                     is FinishWeekResult.Blocked -> _state.update { it?.copy(finishBlock = result.reason, deedsOpen = true) }
                     null -> Unit
@@ -77,19 +78,22 @@ class HomeViewModel(
             HomeAction.ConfirmPlan -> viewModelScope.launch {
                 val draft = _state.value?.planDraft ?: return@launch
                 if (draft.unallocated != 0) return@launch
-                // Окно закрываем сразу: после подтверждения за той же кнопкой уже окно идущей недели
-                _state.update { it?.copy(planOpen = false) }
+                // Окно закроется само вместе с новой неделей: черновик пропадёт — и окно тоже (см. toUiState).
+                // Закрой его раньше — на миг мелькнула бы прошлая подсказка обучения
                 game.confirmPlan(draft.plan)
             }
             is HomeAction.ShowInfo -> _state.update { it?.copy(info = action.info) }
             HomeAction.DismissInfo -> _state.update { it?.copy(info = null) }
             HomeAction.ShowDeeds -> _state.update { it?.copy(deedsOpen = true) }
-            HomeAction.DismissDeeds -> {
-                // Дела недели — последний шаг обучения: посмотрел — дальше Финни не подсказывает
-                if (_state.value?.tutorial == TutorialStep.DEEDS) viewModelScope.launch { game.finishTutorial() }
-                _state.update { it?.copy(deedsOpen = false) }
+            // Дела недели — последний шаг обучения: посмотрел — окно «Обучение пройдено», закончится по «Да»
+            HomeAction.DismissDeeds -> _state.update { it?.copy(deedsOpen = false, tutorialDone = it.tutorial == TutorialStep.DEEDS) }
+            HomeAction.SkipTutorialStep -> when (val step = _state.value?.tutorial) {
+                null, TutorialStep.PLAN -> Unit   // без плана неделя не начнётся — этот шаг не пропустить
+                TutorialStep.DEEDS -> _state.update { it?.copy(tutorialDone = true) }   // сразу к «Обучение пройдено»
+                else -> viewModelScope.launch { game.skipTutorialStep(step) }
             }
-            HomeAction.SkipTutorial -> viewModelScope.launch { game.finishTutorial() }
+            // Окно закроется вместе с концом обучения (см. toUiState): закрой раньше — мелькнула бы подсветка солнышка
+            HomeAction.FinishTutorial -> viewModelScope.launch { game.finishTutorial() }
             HomeAction.PetTapped -> Unit       // TODO: реакция питомца
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
@@ -184,11 +188,14 @@ class HomeViewModel(
             finishBlock = finishBlock,
             deeds = deeds,
             tutorial = game.tutorialStep,
+            tutorialDone = current?.tutorialDone == true && game.tutorialStep != null,
             weekSatiety = game.weekSatiety,
             deedsOpen = current?.deedsOpen ?: false,
             planDraft = planDraft,
             activePlan = activePlan,
-            planOpen = (planDraft != null || activePlan != null) && current?.planOpen == true,
+            // Открытое окно остаётся открытым, пока есть что показать; подтверждённый план закрывает окно черновика,
+            // а не превращает его в окно идущей недели
+            planOpen = current?.planOpen == true && (planDraft != null || (activePlan != null && current.planDraft == null)),
         )
     }
 

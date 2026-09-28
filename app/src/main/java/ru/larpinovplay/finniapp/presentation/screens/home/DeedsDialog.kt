@@ -94,7 +94,8 @@ fun DeedsCard(state: HomeUiState, onAction: (HomeAction) -> Unit) {
         Box(Modifier.fillMaxSize().navigationBarsPadding(), contentAlignment = Alignment.BottomCenter) {
             // Карточка стоит над солнышком и хвостиком показывает на него
             Column(Modifier.padding(start = 14.dp, end = 14.dp, bottom = 112.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                DeedsCardBody(state, goTo, dismiss, onFinish = { dismiss(); onAction(HomeAction.FinishWeek) })
+                // Карточка закроется сама, когда появятся итоги; если неделю пока нельзя закончить — останется и объяснит
+                DeedsCardBody(state, goTo, dismiss, onFinish = { onAction(HomeAction.FinishWeek) })
                 BubbleTail(Modifier.offset(y = (-4).dp), pointsLeft = false)
             }
         }
@@ -130,7 +131,7 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
         }
 
         if (state.tutorial == TutorialStep.DEEDS) {
-            CoachNote("Каждое дело — шаг роста. Сделаешь все четыре за неделю — я подрасту! Дальше ты справишься сам, а я буду подсказывать.")
+            CoachNote("Каждое дело — шаг роста. Сделаешь все четыре за неделю — я подрасту! Когда всё готово, здесь же и закончим неделю.")
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Deed.entries.forEach { DeedSticker(it, deeds[it]) }

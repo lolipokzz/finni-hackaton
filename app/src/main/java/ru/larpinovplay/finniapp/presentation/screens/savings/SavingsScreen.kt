@@ -1,5 +1,6 @@
 package ru.larpinovplay.finniapp.presentation.screens.savings
 
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import ru.larpinovplay.finniapp.presentation.components.spotlightTarget
 import ru.larpinovplay.finniapp.presentation.components.TutorialSpotlight
 import ru.larpinovplay.finniapp.presentation.components.SpotlightTargets
@@ -103,6 +104,7 @@ fun SavingsScreenContent(
 ) {
     // Обучение: мечты — единственное, что можно нажать; какую выбрать — решает ребёнок
     val dreams = remember { SpotlightTargets() }
+    val list = rememberLazyGridState()
     Box(modifier = modifier.fillMaxSize()) {
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
@@ -114,6 +116,7 @@ fun SavingsScreenContent(
             }
             Spacer(Modifier.height(14.dp))
             LazyVerticalGrid(
+                state = list,
                 columns = GridCells.Fixed(2),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -153,7 +156,8 @@ fun SavingsScreenContent(
             TutorialSpotlight(
                 "Выбери мечту — любую, какую хочешь! Монеты из копилки будут копиться на неё.",
                 dreams.all,
-                onSkip = { onAction(SavingsAction.SkipTutorial) },
+                scroll = list,
+                onSkip = { onAction(SavingsAction.SkipTutorialStep) },
             )
         }
     }

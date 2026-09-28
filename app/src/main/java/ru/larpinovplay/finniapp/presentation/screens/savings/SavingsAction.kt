@@ -16,6 +16,6 @@ sealed interface SavingsAction {
     data object ConfirmWithdraw : SavingsAction
     data object DismissWithdraw : SavingsAction
 
-    /** «Пропустить обучение»: подсказок больше не будет. */
-    data object SkipTutorial : SavingsAction
+    /** «Пропустить шаг»: Финни переходит к следующей подсказке обучения. */
+    data object SkipTutorialStep : SavingsAction
 }

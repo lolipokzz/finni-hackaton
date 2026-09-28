@@ -1,5 +1,7 @@
 package ru.larpinovplay.finniapp
 
+import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
+import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -171,22 +173,48 @@ class HomeViewModelTest {
         assertEquals(TutorialStep.SHOP, step())
 
         runBlocking { game.buy(content.shopItems.first { it.category == ShopCategory.MANDATORY }) }
+        assertEquals(TutorialStep.TASKS, step())
+
+        // Любой ответ засчитывает шаг: важно попробовать, а не угадать
+        val task = content.tasks.first { it.payload is TaskPayload.Choice }
+        runBlocking { game.answerTask(task, TaskAnswer.Choice("не-тот-ответ")) }
         assertEquals(TutorialStep.DEEDS, step())
 
         vm.onAction(HomeAction.ShowDeeds)
         vm.onAction(HomeAction.DismissDeeds)
+        assertEquals(true, vm.state.value?.tutorialDone)   // «Обучение пройдено. Всё понятно?»
+        assertEquals(TutorialStep.DEEDS, step())
+
+        vm.onAction(HomeAction.FinishTutorial)
         assertNull(step())
+        assertEquals(false, vm.state.value?.tutorialDone)
     }
 
+    /** Шаги можно пропускать по одному — кроме плана; конец обучения всё равно спрашивает «Всё понятно?». */
     @Test
-    fun tutorialCanBeSkippedAndOldGamesHaveNone() {
+    fun tutorialStepsCanBeSkippedButNotThePlan() {
         assertNull(viewModel().state.value?.tutorial)   // обычная игра — без обучения
 
         val fresh = GameRepositoryImpl(FakeGameStore(), clock = clock)
         runBlocking { fresh.createPet(SampleGames.newborn, withTutorial = true) }
         val vm = HomeViewModel(fresh, content, InMemorySettingsRepository())
-        vm.onAction(HomeAction.SkipTutorial)
-        assertNull(vm.state.value?.tutorial)
+        fun step() = vm.state.value?.tutorial
+
+        vm.onAction(HomeAction.SkipTutorialStep)
+        assertEquals(TutorialStep.PLAN, step())   // план обязателен
+
+        vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
+        vm.onAction(HomeAction.ConfirmPlan)
+        listOf(TutorialStep.GOAL, TutorialStep.SHOP, TutorialStep.TASKS).forEach {
+            assertEquals(it, step())
+            vm.onAction(HomeAction.SkipTutorialStep)
+        }
+        assertEquals(TutorialStep.DEEDS, step())
+        vm.onAction(HomeAction.SkipTutorialStep)
+        assertEquals(true, vm.state.value?.tutorialDone)
+
+        vm.onAction(HomeAction.FinishTutorial)
+        assertNull(step())
     }
 
     @Test
