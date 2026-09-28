@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute book_2_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="48dp" android:height="48dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <!-- Шаг приключения: рассказ — раскрытая книжка. -->
-    <path android:fillColor="#8FA4FF"
-        android:pathData="M4 14c10-4 20 1 20 1s10-5 20-1v25c-10-4-20 1-20 1s-10-5-20-1z"/>
-    <path android:fillColor="#FFFFFF"
-        android:pathData="M7 13c8-3 16 1.5 16 1.5v23S15 34 7 35.5z"/>
-    <path android:fillColor="#FFF3E2"
-        android:pathData="M25 14.5s8-4.5 16-1.5v22.5c-8-1.5-16 2-16 2z"/>
-    <path android:strokeColor="#D6DDFF" android:strokeWidth="1.6" android:strokeLineCap="round"
-        android:pathData="M10 19c3.5-1 7 0 10 1M10 24c3.5-1 7 0 10 1M28 20c3-1 7-2 10-1M28 25c3-1 7-2 10-1"/>
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#5B7BFF" android:fillType="evenOdd" android:pathData="M 4 5 a 3 3 0 0 1 3 -3 h 11 a 2 2 0 0 1 2 2 v 12.99 c 0 .168 -.038 .322 -.113 .472 l -.545 1.09 a 1 1 0 0 0 0 .895 l .543 1.088 A 1 1 0 0 1 19 22 H 7 a 3 3 0 0 1 -3 -3 z m 3 13 h 10.408 a 3 3 0 0 0 0 2 H 7 a 1 1 0 1 1 0 -2 m 3 -11 a 1 1 0 0 0 0 2 h 4 a 1 1 0 1 0 0 -2 z"/>
 </vector>

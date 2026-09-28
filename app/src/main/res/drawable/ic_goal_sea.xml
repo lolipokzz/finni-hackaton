@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute sailboat_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <!-- Солнце над морем, две волны и парус -->
-    <path android:fillColor="#FFC24A" android:pathData="M31,15 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0Z"/>
-    <path android:fillColor="#FF6F61" android:pathData="M15,8 L15,26 L6,26 Z"/>
-    <path android:fillColor="#5B7BFF" android:pathData="M17,11 L17,26 L24,26 Z"/>
-    <path android:strokeColor="#2E3A6E" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M16,7 L16,27"/>
-    <path android:fillColor="#FFFFFF" android:strokeColor="#2E3A6E" android:strokeWidth="2" android:strokeLineJoin="round" android:pathData="M7,27 L25,27 L22,31 L10,31 Z"/>
-    <path android:strokeColor="#3EC6C0" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M4,35 q5,-4 10,0 t10,0 t10,0 t10,0"/>
-    <path android:strokeColor="#5B7BFF" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M4,42 q5,-4 10,0 t10,0 t10,0 t10,0"/>
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#2EC4A6" android:pathData="M 12.72 2.04 a 1 1 0 0 1 1.124 .423 l 7 11 A 1 1 0 0 1 20 15 h -7 a 1 1 0 0 1 -1 -1 V 3 a 1 1 0 0 1 .72 -.96 M 3.19 16.415 A 1 1 0 0 1 4 16 h 16 a 1 1 0 0 1 .948 1.32 c -.207 .61 -.51 1.2 -.866 1.735 C 19.542 19.865 18.531 21 17 21 H 7 c -1.53 0 -2.542 -1.135 -3.082 -1.945 a 7.542 7.542 0 0 1 -.866 -1.736 1.012 1.012 0 0 1 .137 -.904 Z M 9.152 5.47 A 1 1 0 0 1 11 6 v 8 a 1 1 0 0 1 -1 1 H 5 a 1 1 0 0 1 -.848 -1.53 z"/>
 </vector>

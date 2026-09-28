@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- MingCute bulb_fill (через Supericons) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
-    android:viewportWidth="48" android:viewportHeight="48">
-    <path android:fillColor="#FFD84D" android:pathData="M24,4 C15,4 9,10 9,18 c0,5 3,9 6,12 v4 h18 v-4 c3,-3 6,-7 6,-12 C39,10 33,4 24,4Z"/>
-    <path android:fillColor="#AEB6C8" android:pathData="M18,36 h12 a2,2 0 0 1 2,2 v0 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 v-0 a2,2 0 0 1 2,-2Z"/>
-    <path android:fillColor="#8F98AD" android:pathData="M20,41 h8 a2,2 0 0 1 2,2 v0 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 v-0 a2,2 0 0 1 2,-2Z"/>
-    <path android:strokeColor="#FFF3B0" android:strokeWidth="3" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M15,16 a9,9 0 0 1 6,-7"/>
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFC23D" android:pathData="M 13 20 a 1 1 0 0 1 .117 1.993 L 13 22 h -2 a 1 1 0 0 1 -.117 -1.993 L 11 20 z M 12 2 c 4.41 0 8 3.543 8 7.933 0 3.006 -1.522 5.196 -2.78 6.494 l -.284 .283 -.27 .252 -.252 .22 -.33 .27 -.328 .244 c -.241 .17 -.403 .419 -.55 .678 l -.205 .364 c -.238 .41 -.517 .762 -1.108 .762 h -3.786 c -.59 0 -.87 -.351 -1.108 -.762 l -.118 -.208 c -.172 -.312 -.348 -.63 -.637 -.834 l -.232 -.171 -.199 -.155 -.227 -.188 -.252 -.22 -.27 -.252 -.285 -.283 C 5.522 15.129 4 12.939 4 9.933 4 5.543 7.59 2 12 2 m 1.707 4.293 a 1 1 0 0 0 -1.32 -.083 l -.094 .083 L 10.3 8.286 a 1.01 1.01 0 0 0 -.084 1.333 l .084 .095 L 11.586 11 l -1.293 1.293 a 1 1 0 0 0 1.32 1.497 l .094 -.083 1.993 -1.993 a 1.01 1.01 0 0 0 .084 -1.333 l -.084 -.095 L 12.414 9 l 1.293 -1.293 a 1 1 0 0 0 0 -1.414"/>
 </vector>
