@@ -60,7 +60,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.R
 import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
-import ru.larpinovplay.finniapp.presentation.components.BackButton
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.components.CardDialog
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.CoinPill
@@ -108,11 +108,7 @@ fun SavingsScreenContent(
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackButton(onBack)
-                Text("Копилка", style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
-                CoinPill(state.balance)
-            }
+            ScreenHeader("Копилка", onBack) { CoinPill(state.balance) }
             Spacer(Modifier.height(14.dp))
             LazyVerticalGrid(
                 state = list,

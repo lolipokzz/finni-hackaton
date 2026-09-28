@@ -61,13 +61,12 @@ import ru.larpinovplay.finniapp.domain.game.model.BudgetDirection
 import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
-import ru.larpinovplay.finniapp.presentation.components.BackButton
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.components.CardDialog
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.CoinPill
 import ru.larpinovplay.finniapp.presentation.components.DashedDivider
 import ru.larpinovplay.finniapp.presentation.components.EffectChip
-import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
 import ru.larpinovplay.finniapp.presentation.components.PebbleButton
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
 import ru.larpinovplay.finniapp.presentation.components.SoftButton
@@ -121,15 +120,8 @@ fun ShopScreenContent(
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackButton(onBack)
-                Text(
-                    "Магазин",
-                    style = OnRoomLabel.copy(fontSize = 26.sp),
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
-                CoinPill(state.balance)
-            }
+            ScreenHeader("Магазин", onBack) { CoinPill(state.balance) }
+
             Spacer(Modifier.height(14.dp))
             CategoryTabs(selected = state.tab, onSelect = { onAction(ShopAction.TabSelected(it)) })
             Spacer(Modifier.height(12.dp))

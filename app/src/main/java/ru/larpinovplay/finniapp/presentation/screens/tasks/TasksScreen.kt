@@ -58,7 +58,7 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import ru.larpinovplay.finniapp.presentation.adventure.AdventureSky
 import ru.larpinovplay.finniapp.presentation.adventure.look
-import ru.larpinovplay.finniapp.presentation.components.BackButton
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.components.CardSticker
 import ru.larpinovplay.finniapp.presentation.components.OnRoomLabel
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
@@ -107,11 +107,7 @@ fun TasksScreenContent(
         RoomBackground()
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BackButton(onBack)
-                Text("Задания", style = OnRoomLabel.copy(fontSize = 26.sp), modifier = Modifier.weight(1f).semantics { heading() })
-                WeekCounter(state.doneThisWeek, state.perWeek)
-            }
+            ScreenHeader("Задания", onBack) { WeekCounter(state.doneThisWeek, state.perWeek) }
             Spacer(Modifier.height(14.dp))
             LazyColumn(
                 state = list,

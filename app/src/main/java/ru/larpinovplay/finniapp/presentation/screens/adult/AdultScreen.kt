@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import ru.larpinovplay.finniapp.presentation.components.RoomBackground
+import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.events.ObserveAsEvents
 
 import ru.larpinovplay.finniapp.presentation.pet.title
@@ -38,8 +39,7 @@ fun AdultScreen(onBack: () -> Unit, viewModel: AdultViewModel = koinViewModel())
             Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            TextButton(onClick = onBack, enabled = !state.busy) { Text("← Назад") }
-            Text("Для взрослых", style = MaterialTheme.typography.headlineMedium)
+            ScreenHeader("Для взрослых", onBack = { if (!state.busy) onBack() })
             if (!state.unlocked) {
                 AdultCard("Вход в родительский раздел") {
                     Text("Решите пример, чтобы открыть настройки профиля и учебный прогресс.")
