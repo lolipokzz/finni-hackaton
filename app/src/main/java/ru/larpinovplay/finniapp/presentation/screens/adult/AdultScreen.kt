@@ -112,7 +112,7 @@ fun AdultScreenContent(
                 AdultCard("Пройденные темы") {
                     state.topics.forEach { progress ->
                         Text(progress.topic.title(), style = MaterialTheme.typography.titleMedium)
-                        Text("Выполнено ${progress.done} из ${progress.total} заданий")
+                        Text("Пройдено ${progress.done} из ${progress.total} уровней")
                     }
                 }
                 AdultCard("Настройки") {

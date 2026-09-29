@@ -15,7 +15,7 @@ classDiagram
   GameState "1" --> "0..1" SavingsGoal : goal
   GameState "1" --> "*" SavingsGoal : completedGoals
   GameState "1" --> "0..1" Trip
-  GameState "1" --> "*" TaskResult
+  GameState "1" --> "*" LevelResult
   GameState "1" --> "*" AdventureResult
   GameState "1" --> "*" WeekSummary : history
   Pet --> PetLook
@@ -26,7 +26,7 @@ classDiagram
   LedgerEntry --> LedgerReason
 ```
 
-Справочники контента (только чтение): `ShopItem`, `SavingsGoal`, `Task`, `Adventure` — собраны в `Content`
+Справочники контента (только чтение): `ShopItem`, `SavingsGoal`, `Level` (уровни из `Task`), `Adventure` — собраны в `Content`
 (см. [05](05-content-model.md)). Купленные товары и цели попадают в игру копией целиком, поэтому старое сохранение
 остаётся понятным, даже если в контенте поменяли цену.
 
@@ -71,8 +71,8 @@ data class GameState(
     val depositsThisWeek: List<Int> = emptyList(),
     val depositsByWeek: List<Int> = emptyList(),        // отложено за каждую закрытую неделю (для срока цели)
     val withdrawalsThisWeek: List<Int> = emptyList(),
-    val taskResults: List<TaskResult> = emptyList(),
-    val tasksDoneThisWeek: Int = 0,
+    val levelResults: List<LevelResult> = emptyList(),  // первые прохождения уровней карты заданий
+    val goldLevels: Set<String> = emptySet(),            // уровни с пройденным золотым испытанием
     val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),       // итоги закрытых недель
     val tutorial: Boolean = false,                      // идёт обучение на главном экране
@@ -82,19 +82,20 @@ data class GameState(
 
 Производные значения (считаются, не хранятся):
 
-| Свойство | Что это |
-|---|---|
-| `savedThisWeek` | отложено за неделю за вычетом снятого |
-| `spentThisWeek(category)` | потрачено на обязательное или необязательное |
-| `weekIncome` | карманные (или стартовые) монеты этой недели |
-| `tasksPerWeek` | лимит заданий в неделю; `null` в демо |
-| `taskStatus(task)` | `AVAILABLE`, `DONE`, `RETRY_NEXT_WEEK`, `LIMIT_REACHED` |
-| `adventureOfWeek(adventures)` | приключение, которое ждёт на этой неделе |
-| `finishBlock(today, adventures)` | почему неделю пока нельзя закончить: `PLAN_NOT_CONFIRMED`, `ADVENTURE_NOT_PLAYED`, `SAME_DAY` |
-| `goalRemaining()`, `weeksToGoal()` | сколько осталось до цели и примерно за сколько недель ([04](04-rules-and-formulas.md#срок-достижения-цели)) |
-| `currentTrip` | поездка, в которой питомец сейчас |
-| `tutorialStep` | текущий шаг обучения: `PLAN`, `GOAL`, `SHOP`, `TASKS`, `DEEDS` |
-| `GameSnapshot.weekDeeds` | четыре дела недели: сыт, не скучает, копилка по плану, траты по плану |
+| Свойство                                                                 | Что это                                                                                                            |
+|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| `savedThisWeek`                                                          | отложено за неделю за вычетом снятого                                                                              |
+| `spentThisWeek(category)`                                                | потрачено на обязательное или необязательное                                                                       |
+| `weekIncome`                                                             | карманные (или стартовые) монеты этой недели                                                                       |
+| `levelStatus(level, levels)`                                             | `LOCKED` (неделя уровня ещё не началась или не пройден предыдущий), `AVAILABLE`, `DONE`                            |
+| `levelResult(level)`, `availableLevels(levels)`, `topicProgress(levels)` | результат уровня, открытые уровни, пройдено по темам                                                               |
+| `adventureOfWeek(adventures)`                                            | приключение, которое ждёт на этой неделе                                                                           |
+| `finishBlock(today, adventures, levels)`                                 | почему неделю пока нельзя закончить: `PLAN_NOT_CONFIRMED`, `LEVELS_NOT_PLAYED`, `ADVENTURE_NOT_PLAYED`, `SAME_DAY` |
+| `goalRemaining()`, `weeksToGoal()`                                       | сколько осталось до цели и примерно за сколько недель ([04](04-rules-and-formulas.md#срок-достижения-цели))        |
+| `currentTrip`                                                            | поездка, в которой питомец сейчас                                                                                  |
+| `tutorialStep`                                                           | текущий шаг обучения: `PLAN`, `TASKS`, `GOAL`, `SHOP`, `DEEDS`; первые два не пропустить (`required`)              |
+| `adventureStatus(adventure, adventures, levels)`                         | приключение недели открыто после уровней недели (`weekLevelsDone`); в демо открыты все                             |
+| `GameSnapshot.weekDeeds`                                                 | четыре дела недели: сыт, не скучает, копилка по плану, траты по плану                                              |
 
 ## Pet
 
@@ -130,7 +131,7 @@ sealed interface LedgerReason {
     data object Withdraw                                 // монеты из копилки обратно в кошелёк
     data object SavingsBonus                             // бонус копилки
     data class GoalReached(val goalName: String)         // цель куплена из копилки
-    data class TaskReward(val taskTitle: String)
+    data class TaskReward(val taskTitle: String)        // награда за уровень карты заданий
     data class AdventureReward(val adventureTitle: String)
 }
 ```
@@ -186,13 +187,16 @@ data class Trip(val goalId: String, val week: Int)
 ## Задания и приключения
 
 ```kotlin
-data class TaskResult(val taskId: String, val week: Int, val success: Boolean, val reward: Int)
+data class LevelResult(val levelId: String, val week: Int, val stars: Int, val reward: Int)
 data class AdventureResult(val adventureId: String, val week: Int, val perfect: Boolean, val reward: Int)
+enum class LevelStatus { LOCKED, AVAILABLE, DONE }
 ```
 
-Сами задания и приключения — контент ([05](05-content-model.md)). Статус задания вычисляется `GameState.taskStatus`:
-`DONE`, если есть успешный результат; в обычной игре `RETRY_NEXT_WEEK` после ошибки на этой неделе и
-`LIMIT_REACHED` после 2 заданий за неделю; иначе `AVAILABLE`. В демо лимита и ожидания нет.
+Сами уровни, задания и приключения — контент ([05](05-content-model.md)). Уровень — 6 заданий одной темы, за прохождение — 4 случайных (`GameRules.TASKS_PER_LEVEL`);
+уровни идут друг за другом: следующий открывается, когда пройден предыдущий, и не раньше своей
+игровой недели; непройденный не сгорает. `LevelResult` — первое прохождение:
+звёзды 1–3 по числу ошибок и награда. Повторно уровень проходится только как золотое испытание: без монет, результат —
+id уровня в `goldLevels`. В демо все уровни открыты сразу (**ТЗ 2.5.8**).
 
 ## Настройки
 
@@ -228,5 +232,5 @@ sealed interface FinishWeekResult { Finished(summary); Blocked(reason: FinishBlo
 
 Снимок пишется в `files/datastore/game.json` через DTO (`data/game/store/GameSaveDto.kt`): `GameSaveFile(version,
 game: GameSnapshotDto?)`, где `GameSnapshotDto` повторяет `GameState` и `Pet` полями. Текущая версия формата —
-`GAME_SAVE_VERSION = 2`; сохранение другой версии сбрасывается с сообщением. Настройки — в `settings.json`
+`GAME_SAVE_VERSION = 3` (3 — задания стали уровнями карты); сохранение другой версии сбрасывается с сообщением. Настройки — в `settings.json`
 (`SettingsSaveFile`).

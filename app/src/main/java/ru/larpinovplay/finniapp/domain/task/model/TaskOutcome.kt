@@ -1,4 +1,4 @@
 package ru.larpinovplay.finniapp.domain.task.model
 
-/** Итог ответа: верно ли, сколько монет, что сказать ребёнку. */
-data class TaskOutcome(val success: Boolean, val reward: Int, val consequence: String?, val explanation: String)
+/** Итог ответа на упражнение: верно ли, что из-за этого случилось, как это объяснить ребёнку. */
+data class TaskOutcome(val success: Boolean, val consequence: String?, val explanation: String)

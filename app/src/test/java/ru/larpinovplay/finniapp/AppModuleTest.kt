@@ -35,7 +35,7 @@ import ru.larpinovplay.finniapp.presentation.screens.progress.ProgressViewModel
 import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.shop.ShopViewModel
-import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskPlayViewModel
+import ru.larpinovplay.finniapp.presentation.screens.tasks.LevelPlayViewModel
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksViewModel
 
 /**
@@ -91,7 +91,7 @@ class AppModuleTest {
 
         koin.get<HomeViewModel>()
         koin.get<TasksViewModel>()
-        koin.get<TaskPlayViewModel> { parametersOf(koin.get<Content>().tasks.first().id) }
+        koin.get<LevelPlayViewModel> { parametersOf(koin.get<Content>().levels.first().id, false) }
         koin.get<ShopViewModel>()
         koin.get<SavingsViewModel>()
         koin.get<ProgressViewModel>()

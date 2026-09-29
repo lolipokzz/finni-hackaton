@@ -1,13 +1,12 @@
 package ru.larpinovplay.finniapp.domain.task.model
 
-/** Финансовое задание (справочник контента, только чтение), ТЗ 2.5.8. */
+/**
+ * Одно упражнение уровня (справочник контента, только чтение), ТЗ 2.5.8: вопрос или игровая ситуация,
+ * виджет по [payload] и объяснение после ответа — и верного, и ошибочного.
+ */
 data class Task(
     val id: String,
-    val topic: TaskTopic,
-    val title: String,
     val intro: String,
-    val reward: Int,
-    val rewardOnMistake: Int,
     val explanationSuccess: String,
     val explanationMistake: String,
     val hint: String,

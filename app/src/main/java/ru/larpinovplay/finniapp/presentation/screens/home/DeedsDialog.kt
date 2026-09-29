@@ -141,15 +141,21 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
         }
 
         val todo = Deed.entries.filter { !deeds[it] }
-        if (todo.isNotEmpty() || state.finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED) {
+        // Уровни и приключение недели — тоже «осталось сделать», с кнопкой в «Задания»
+        val tasksTodo = when (state.finishBlock) {
+            FinishBlock.LEVELS_NOT_PLAYED -> R.drawable.ic_nav_tasks to FeedbackKey.FINISH_NO_LEVELS
+            FinishBlock.ADVENTURE_NOT_PLAYED -> R.drawable.ic_adventure to FeedbackKey.FINISH_NO_ADVENTURE
+            else -> null
+        }
+        if (todo.isNotEmpty() || tasksTodo != null) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Осталось сделать", fontSize = 15.sp, fontWeight = FontWeight.Black, color = FinniColors.InkMuted)
                 todo.forEach { deed ->
                     TodoRow(deed.sticker.first, deed.todoText(state.weekSatiety), Color(0xFFFFF0E6), Color(0xFF7A2E10), deed.go, goTo)
                 }
-                if (state.finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED) {
+                tasksTodo?.let { (icon, text) ->
                     TodoRow(
-                        R.drawable.ic_adventure, feedback.text(FeedbackKey.FINISH_NO_ADVENTURE),
+                        icon, feedback.text(text),
                         Color(0xFFEEF0FF), Color(0xFF2A2F6B), "Играть" to HomeSection.TASKS, goTo,
                         buttonColor = Color(0xFFC9D1FF), buttonInk = Color(0xFF22285E),
                     )
@@ -182,7 +188,7 @@ private fun DeedsCardBody(state: HomeUiState, goTo: (HomeSection) -> Unit, onClo
             null -> TealButton("Завершить неделю", R.drawable.ic_sun_small, onFinish)
             FinishBlock.SAME_DAY -> FinishNote(feedback.text(FeedbackKey.FINISH_SAME_DAY))
             FinishBlock.PLAN_NOT_CONFIRMED -> FinishNote(feedback.text(FeedbackKey.FINISH_NO_PLAN))
-            FinishBlock.ADVENTURE_NOT_PLAYED -> Unit   // уже в «осталось сделать», с кнопкой
+            FinishBlock.LEVELS_NOT_PLAYED, FinishBlock.ADVENTURE_NOT_PLAYED -> Unit   // уже в «осталось сделать», с кнопкой
         }
     }
     }

@@ -111,7 +111,7 @@ class AdultViewModelTest {
             assertEquals(1, snapshot.state.week)
             assertEquals(0, snapshot.state.savings)
             assertTrue(snapshot.state.history.isEmpty())
-            assertTrue(snapshot.state.taskResults.isEmpty())
+            assertTrue(snapshot.state.levelResults.isEmpty())
             assertEquals(PetGrowthStage.BABY, snapshot.pet.growthStage)
             game.confirmPlan(BudgetPlan(optional = snapshot.state.balance))
             // В демо неделю можно закончить в тот же день

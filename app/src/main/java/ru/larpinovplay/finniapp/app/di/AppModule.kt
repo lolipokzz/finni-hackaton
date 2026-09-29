@@ -15,19 +15,19 @@ import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsViewModel
 import ru.larpinovplay.finniapp.presentation.screens.shop.ShopViewModel
 import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeViewModel
-import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskPlayViewModel
+import ru.larpinovplay.finniapp.presentation.screens.tasks.LevelPlayViewModel
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksViewModel
 
 val appModule = module {
     // Репозитории и справочники — общие для экранов и живут, пока жив процесс.
     // Хранилища (GameStore, SettingsRepository) приходят из storageModule; справочники пока в коде.
     single { defaultContent() }
-    single<GameRepository> { GameRepositoryImpl(get(), adventures = get<Content>().adventures) }
+    single<GameRepository> { GameRepositoryImpl(get(), adventures = get<Content>().adventures, levels = get<Content>().levels) }
 
     viewModel { PetCreationViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { TasksViewModel(get(), get()) }
-    viewModel { (taskId: String) -> TaskPlayViewModel(taskId, get(), get()) }
+    viewModel { (levelId: String, challenge: Boolean) -> LevelPlayViewModel(levelId, challenge, get(), get()) }
     viewModel { (adventureId: String) -> AdventureViewModel(adventureId, get(), get()) }
     viewModel { ShopViewModel(get(), get()) }
     viewModel { WardrobeViewModel(get()) }

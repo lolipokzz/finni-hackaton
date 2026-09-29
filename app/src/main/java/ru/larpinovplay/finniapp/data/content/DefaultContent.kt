@@ -6,6 +6,6 @@ import ru.larpinovplay.finniapp.domain.content.Content
 fun defaultContent(): Content = Content(
     shopItems = defaultShopItems,
     goals = defaultGoals,
-    tasks = defaultTasks,
+    levels = defaultLevels,
     adventures = defaultAdventures,
 )
