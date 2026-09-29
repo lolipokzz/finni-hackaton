@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -17,15 +16,10 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
-import ru.larpinovplay.finniapp.domain.content.Content
-import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
-import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.presentation.components.PetHostOwner
 import ru.larpinovplay.finniapp.presentation.components.PetHostState
 import ru.larpinovplay.finniapp.presentation.screens.adult.AdultScreen
@@ -36,10 +30,8 @@ import ru.larpinovplay.finniapp.presentation.screens.savings.SavingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.settings.SettingsScreen
 import ru.larpinovplay.finniapp.presentation.screens.shop.ShopScreen
 import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeScreen
-import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskPlayScreen
-import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskResultCard
+import ru.larpinovplay.finniapp.presentation.screens.tasks.LevelPlayScreen
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksScreen
-import ru.larpinovplay.finniapp.presentation.screens.tasks.toUi
 
 /**
  * Единственный NavDisplay приложения: здесь описан весь граф (см. [Routes.kt][Home]).
@@ -57,7 +49,6 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),   // ViewModel экрана живёт, пока экран в стеке
             ),
-            sceneStrategies = listOf(remember { DialogSceneStrategy<NavKey>() }),
             // Только затухание, без сдвига: SurfaceView питомца не следует за анимацией Compose, а стандартные
             // 0.7 с перехода держат кнопки неактивными и заставляют ждать питомца
             transitionSpec = { FadeTransition },
@@ -79,7 +70,7 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
 
                 entry<Tasks> {
                     TasksScreen(
-                        onOpenTask = { task -> backStack.goTo(TaskPlay(task.id)) },
+                        onOpenLevel = { level, challenge -> backStack.goTo(LevelPlay(level.id, challenge)) },
                         onOpenAdventure = { adventure -> backStack.goTo(AdventurePlay(adventure.id)) },
                         onBack = backStack::goBack,
                     )
@@ -92,26 +83,11 @@ fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {
                     )
                 }
 
-                entry<TaskPlay> { route ->
-                    TaskPlayScreen(
-                        viewModel = koinViewModel { parametersOf(route.taskId) },
-                        onCompleted = { outcome ->
-                            backStack.goBack()   // TaskPlay → Tasks, итог покажется поверх списка
-                            if (outcome != null) backStack.goTo(TaskResult(route.taskId, outcome.toUi()))
-                        },
+                entry<LevelPlay> { route ->
+                    LevelPlayScreen(
+                        viewModel = koinViewModel { parametersOf(route.levelId, route.challenge) },
                         onBack = backStack::goBack,
                     )
-                }
-
-                entry<TaskResult>(metadata = DialogSceneStrategy.dialog()) { route ->
-                    // Можно ли решить задание снова прямо сейчас — так бывает в демо: там нет лимита и ожидания недели
-                    val game = koinInject<GameRepository>()
-                    val content = koinInject<Content>()
-                    val retryNow = remember(route) {
-                        val task = content.tasks.firstOrNull { it.id == route.taskId }
-                        task != null && game.snapshot.value?.state?.taskStatus(task) == TaskStatus.AVAILABLE
-                    }
-                    TaskResultCard(result = route.outcome, onDismiss = backStack::goBack, retryNow = retryNow)
                 }
 
                 entry<Shop> {

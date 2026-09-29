@@ -4,22 +4,27 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 
 /**
  * Шаг обучения на главном экране — первая неделя нового питомца. Ребёнок делает настоящие действия,
- * а Финни подсказывает: составить план, выбрать цель, купить еду, решить задание, посмотреть дела недели.
+ * а Финни подсказывает: составить план, пройти первый уровень заданий, выбрать цель, купить еду,
+ * посмотреть дела недели.
  */
-enum class TutorialStep { PLAN, GOAL, SHOP, TASKS, DEEDS }
+enum class TutorialStep { PLAN, TASKS, GOAL, SHOP, DEEDS }
 
 /**
  * Текущий шаг обучения; null — обучения нет или оно закончено. Шаг не хранится, а следует из игры:
  * первый по порядку, который ещё не сделан и не пропущен. Ребёнок может делать дела в любом порядке,
- * и подсказка всегда про то, что ещё не сделано. План не пропустить: без него неделя не начнётся.
+ * и подсказка всегда про то, что ещё не сделано. Первые два шага не пропустить: без плана неделя не начнётся,
+ * а без первого уровня не откроются остальные.
  */
 val GameState.tutorialStep: TutorialStep?
     get() = if (!tutorial) null else TutorialStep.entries.firstOrNull { it !in tutorialSkipped && !it.doneIn(this) }
 
+/** Шаг, который нельзя пропустить. */
+val TutorialStep.required: Boolean get() = this == TutorialStep.PLAN || this == TutorialStep.TASKS
+
 private fun TutorialStep.doneIn(game: GameState): Boolean = when (this) {
     TutorialStep.PLAN -> game.phase != PeriodPhase.PLANNING
+    TutorialStep.TASKS -> game.levelResults.isNotEmpty()   // пройден хоть один уровень — с ошибками или без, неважно
     TutorialStep.GOAL -> game.goal != null
     TutorialStep.SHOP -> game.purchases.any { it.category == ShopCategory.MANDATORY }
-    TutorialStep.TASKS -> game.taskResults.isNotEmpty()   // решено хоть одно задание — верно или нет, неважно
-    TutorialStep.DEEDS -> false                           // последний шаг закрывает окно «Обучение пройдено»
+    TutorialStep.DEEDS -> false                            // последний шаг закрывает окно «Обучение пройдено»
 }

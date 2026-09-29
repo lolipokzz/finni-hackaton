@@ -16,7 +16,8 @@ import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
  * [GAME_SAVE_VERSION]: старые сохранения при загрузке сбрасываются.
  */
 // 2 — звёзды недели заменены делами недели, шаги роста считаются иначе: старые итоги и рост не переносятся
-internal const val GAME_SAVE_VERSION = 2
+// 3 — задания стали уровнями карты: результаты отдельных заданий и лимит недели не переносятся
+internal const val GAME_SAVE_VERSION = 3
 
 @Serializable
 internal data class GameSaveFile(
@@ -55,8 +56,8 @@ internal data class GameStateDto(
     val depositsThisWeek: List<Int> = emptyList(),
     val depositsByWeek: List<Int> = emptyList(),
     val withdrawalsThisWeek: List<Int> = emptyList(),
-    val taskResults: List<TaskResultDto> = emptyList(),
-    val tasksDoneThisWeek: Int = 0,
+    val levelResults: List<LevelResultDto> = emptyList(),
+    val goldLevels: Set<String> = emptySet(),
     val adventureResults: List<AdventureResultDto> = emptyList(),
     val history: List<WeekSummaryDto> = emptyList(),
     val tutorial: Boolean = false,   // в старых сохранениях поля нет: обучения там уже не будет
@@ -140,10 +141,10 @@ internal data class SavingsGoalDto(
 internal data class TripDto(val goalId: String, val week: Int)
 
 @Serializable
-internal data class TaskResultDto(
-    val taskId: String,
+internal data class LevelResultDto(
+    val levelId: String,
     val week: Int,
-    val success: Boolean,
+    val stars: Int,
     val reward: Int,
 )
 

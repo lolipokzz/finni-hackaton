@@ -115,7 +115,8 @@ class EconomyBalanceTest {
     @Test
     fun extraIncomeStaysUnderThirtyPercentOfPocketMoney() {
         val week = GameRules.weekIncome(PetGrowthStage.BABY)
-        val tasks = GameRules.TASKS_PER_WEEK * content.tasks.maxOf { it.reward }
+        // Все уровни самой «дорогой» недели без ошибок
+        val tasks = content.levels.groupBy { it.week }.values.maxOf { week -> week.sumOf { it.reward } }
         val adventure = content.adventures.maxOf { it.reward }
 
         assertTrue("сверху $tasks + $adventure при доходе $week", (tasks + adventure) * 100 <= week * 30)

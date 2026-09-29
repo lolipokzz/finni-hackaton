@@ -1,9 +1,5 @@
 package ru.larpinovplay.finniapp.presentation.screens.home
 
-import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
-import kotlin.math.roundToInt
-import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
-import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,17 +17,22 @@ import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
+import ru.larpinovplay.finniapp.domain.game.model.LevelStatus
+import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
+import ru.larpinovplay.finniapp.domain.game.model.required
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.weekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
-import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
-import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
+import kotlin.math.roundToInt
 
 /**
  * Состояние главного экрана: собирает [HomeUiState] из питомца, игры и настроек.
@@ -120,9 +121,10 @@ class HomeViewModel(
     private fun dismissDeeds() = _state.update { it?.copy(deedsOpen = false, tutorialDone = it.tutorial == TutorialStep.DEEDS) }
 
     private fun skipTutorialStep() {
-        when (val step = _state.value?.tutorial) {
-            null, TutorialStep.PLAN -> Unit   // без плана неделя не начнётся — этот шаг не пропустить
-            TutorialStep.DEEDS -> _state.update { it?.copy(tutorialDone = true) }   // сразу к «Обучение пройдено»
+        val step = _state.value?.tutorial
+        when {
+            step == null || step.required -> Unit   // первый уровень и план не пропустить (см. TutorialStep.required)
+            step == TutorialStep.DEEDS -> _state.update { it?.copy(tutorialDone = true) }   // сразу к «Обучение пройдено»
             else -> viewModelScope.launch { game.skipTutorialStep(step).orSnackbar { skipTutorialStep() } }
         }
     }
@@ -186,7 +188,10 @@ class HomeViewModel(
         finishBlock: FinishBlock?,
         current: HomeUiState?,
     ): HomeUiState {
-        val tasks = game.availableTasks(content.tasks).size
+        val tasks = game.availableLevels(content.levels).size
+        // Приключение недели открывается после её уровней
+        val adventure = game.adventureOfWeek(content.adventures)
+            ?.takeIf { game.adventureStatus(it, content.adventures, content.levels) == LevelStatus.AVAILABLE }
         val deeds = GameSnapshot(game, pet).weekDeeds
         val planDraft = if (game.phase == PeriodPhase.PLANNING) {
             current?.planDraft?.takeIf { it.week == game.week && it.budget == game.balance } ?: newPlanDraft(game)
@@ -212,10 +217,10 @@ class HomeViewModel(
             goal = game.goal?.let { HomeUiState.Goal(name = it.name, cost = it.cost) },
             week = game.week,
             speech = if (settings.tipsEnabled) speech(game, pet, finishBlock, tasks, deeds) else null,
-            tasksBadge = tasks + if (finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED) 1 else 0,
-            // Сначала приключение недели — без него неделю не закончить, потом ближайшее задание
-            activeTask = game.adventureOfWeek(content.adventures)?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = true) }
-                ?: game.availableTasks(content.tasks).firstOrNull()?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = false) },
+            tasksBadge = tasks + if (adventure != null) 1 else 0,
+            // Сначала открытое приключение недели — без него неделю не закончить, потом ближайший уровень карты
+            activeTask = adventure?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = true) }
+                ?: game.availableLevels(content.levels).firstOrNull()?.let { HomeUiState.ActiveTask(it.title, it.reward, adventure = false) },
             animationsEnabled = settings.animationsEnabled,
             soundEnabled = settings.soundEnabled,
             voiceRepeatEnabled = settings.voiceRepeatEnabled,
@@ -247,6 +252,7 @@ class HomeViewModel(
         // «Проголодался» — только когда сытость и правда низкая (30 и меньше), а не просто еда на неделю ещё не куплена
         pet.isHungry -> HomeUiState.Speech.HUNGRY
         finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED -> HomeUiState.Speech.ADVENTURE
+        finishBlock == FinishBlock.LEVELS_NOT_PLAYED -> HomeUiState.Speech.NEW_TASK   // уровни недели, за ними — приключение
         game.goal == null -> HomeUiState.Speech.CHOOSE_GOAL
         !deeds.notBored -> HomeUiState.Speech.BORED
         // Неделю можно закончить, но не все дела сделаны: показать, какие ещё можно успеть

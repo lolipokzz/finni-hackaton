@@ -40,7 +40,7 @@ class AdultViewModel(
             combine(game.snapshot, settings.observeSettings()) { snapshot, prefs -> snapshot to prefs }
                 .collect { (snapshot, prefs) ->
                     _state.update { it.copy(snapshot = snapshot, settings = prefs,
-                        topics = snapshot?.state?.topicProgress(content.tasks).orEmpty()) }
+                        topics = snapshot?.state?.topicProgress(content.levels).orEmpty()) }
                 }
         }
     }

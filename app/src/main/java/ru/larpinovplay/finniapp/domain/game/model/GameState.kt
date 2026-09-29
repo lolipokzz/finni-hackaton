@@ -1,11 +1,10 @@
 package ru.larpinovplay.finniapp.domain.game.model
 
 import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
-import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
-import ru.larpinovplay.finniapp.domain.task.model.Task
+import ru.larpinovplay.finniapp.domain.task.model.Level
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 import java.time.LocalDate
 import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
@@ -32,8 +31,8 @@ data class GameState(
     val depositsThisWeek: List<Int> = emptyList(),
     val depositsByWeek: List<Int> = emptyList(),    // сколько за закрытую неделю отложено за вычетом снятого
     val withdrawalsThisWeek: List<Int> = emptyList(),
-    val taskResults: List<TaskResult> = emptyList(),
-    val tasksDoneThisWeek: Int = 0,
+    val levelResults: List<LevelResult> = emptyList(),   // первые прохождения уровней карты заданий
+    val goldLevels: Set<String> = emptySet(),             // уровни с пройденным золотым испытанием
     val adventureResults: List<AdventureResult> = emptyList(),
     val history: List<WeekSummary> = emptyList(),
     val tutorial: Boolean = false,                  // идёт обучение на главном экране (см. tutorialStep)
@@ -46,9 +45,6 @@ data class GameState(
 
     /** Сколько за эту неделю отложено за вычетом снятого; может быть меньше нуля. Покупка цели сюда не входит. */
     val savedThisWeek: Int get() = depositsThisWeek.sum() - withdrawalsThisWeek.sum()
-
-    /** Сколько заданий можно решить за неделю; null — лимита нет (демо). */
-    val tasksPerWeek: Int? get() = GameRules.TASKS_PER_WEEK.takeUnless { demoMode }
 
     /** Карманные (или стартовые) монеты, пришедшие в начале этой недели. */
     val weekIncome: Int
@@ -74,12 +70,27 @@ data class GameState(
         return adventures.firstOrNull { it.id !in done }
     }
 
+    /** Пройдены все уровни [levels] до этой недели включительно: после них открывается приключение недели. */
+    fun weekLevelsDone(levels: List<Level>): Boolean = levels.filter { it.week <= week }.all { levelResult(it) != null }
+
+    /**
+     * Приключение на карте: пройдено; можно — это приключение недели и уровни недели пройдены (оно в конце
+     * тропинки недели); иначе закрыто. В демо (ТЗ 2.5.8) все непройденные приключения открыты сразу.
+     */
+    fun adventureStatus(adventure: Adventure, adventures: List<Adventure>, levels: List<Level>): LevelStatus = when {
+        adventureResults.any { it.adventureId == adventure.id } -> LevelStatus.DONE
+        demoMode -> LevelStatus.AVAILABLE
+        adventureOfWeek(adventures)?.id == adventure.id && weekLevelsDone(levels) -> LevelStatus.AVAILABLE
+        else -> LevelStatus.LOCKED
+    }
+
     /**
      * Почему неделю сейчас нельзя закончить, или null, если можно. [today] — сегодняшняя дата устройства,
-     * [adventures] — приключения из контента.
+     * [adventures] и [levels] — приключения и уровни из контента: приключение недели открывается после её уровней.
      */
-    fun finishBlock(today: LocalDate, adventures: List<Adventure> = emptyList()): FinishBlock? = when {
+    fun finishBlock(today: LocalDate, adventures: List<Adventure> = emptyList(), levels: List<Level> = emptyList()): FinishBlock? = when {
         phase != PeriodPhase.ACTIVE -> FinishBlock.PLAN_NOT_CONFIRMED
+        adventureOfWeek(adventures) != null && !demoMode && !weekLevelsDone(levels) -> FinishBlock.LEVELS_NOT_PLAYED
         adventureOfWeek(adventures) != null -> FinishBlock.ADVENTURE_NOT_PLAYED
         // Не больше недели в день. Если часы перевели назад, не запираем игру: блокирует только тот же день
         !demoMode && today == periodStartedOn -> FinishBlock.SAME_DAY
@@ -87,26 +98,29 @@ data class GameState(
     }
 
     /**
-     * Можно ли сейчас решать [task]. В обычной игре — не больше [GameRules.TASKS_PER_WEEK] заданий в неделю,
-     * а после ошибки задание ждёт следующей недели. В демо (ТЗ 2.5.8) все задания доступны сразу и после ошибки
-     * задание можно сразу решить ещё раз: эксперт проходит ошибочный и правильный вариант подряд.
+     * Уровень на карте [levels] (по порядку тропинки). Уровни идут друг за другом: следующий открывается, когда
+     * пройден предыдущий, и не раньше своей недели. Непройденный уровень ждёт и на следующих неделях.
+     * В демо (ТЗ 2.5.8) все уровни открыты сразу — без недель и без очереди.
      */
-    fun taskStatus(task: Task): TaskStatus {
-        val last = taskResults.lastOrNull { it.taskId == task.id }
-        return when {
-            last?.success == true -> TaskStatus.DONE
-            !demoMode && last != null && last.week == week -> TaskStatus.RETRY_NEXT_WEEK
-            !demoMode && tasksDoneThisWeek >= GameRules.TASKS_PER_WEEK -> TaskStatus.LIMIT_REACHED
-            else -> TaskStatus.AVAILABLE
-        }
+    fun levelStatus(level: Level, levels: List<Level>): LevelStatus = when {
+        levelResult(level) != null -> LevelStatus.DONE
+        demoMode -> LevelStatus.AVAILABLE
+        level.week > week -> LevelStatus.LOCKED
+        previousLevel(level, levels)?.let { levelResult(it) == null } == true -> LevelStatus.LOCKED
+        else -> LevelStatus.AVAILABLE
     }
 
-    fun availableTasks(tasks: List<Task>): List<Task> = tasks.filter { taskStatus(it) == TaskStatus.AVAILABLE }
+    /** Уровень перед [level] на тропинке [levels]; null — [level] первый. */
+    fun previousLevel(level: Level, levels: List<Level>): Level? = levels.getOrNull(levels.indexOfFirst { it.id == level.id } - 1)
 
-    fun topicProgress(tasks: List<Task>): List<TopicProgress> =
+    fun levelResult(level: Level): LevelResult? = levelResults.firstOrNull { it.levelId == level.id }
+
+    fun availableLevels(levels: List<Level>): List<Level> = levels.filter { levelStatus(it, levels) == LevelStatus.AVAILABLE }
+
+    fun topicProgress(levels: List<Level>): List<TopicProgress> =
         TaskTopic.entries.map { topic ->
-            val ofTopic = tasks.filter { it.topic == topic }
-            TopicProgress(topic, total = ofTopic.size, done = ofTopic.count { taskStatus(it) == TaskStatus.DONE })
+            val ofTopic = levels.filter { it.topic == topic }
+            TopicProgress(topic, total = ofTopic.size, done = ofTopic.count { levelResult(it) != null })
         }
 
     /** Сколько не хватает до цели, если бы в копилке было [savingsIfAny]; 0 — хватает, null — цели нет. */

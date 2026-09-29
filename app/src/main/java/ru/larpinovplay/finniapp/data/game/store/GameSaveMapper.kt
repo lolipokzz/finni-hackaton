@@ -6,7 +6,7 @@ import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
-import ru.larpinovplay.finniapp.domain.game.model.TaskResult
+import ru.larpinovplay.finniapp.domain.game.model.LevelResult
 import ru.larpinovplay.finniapp.domain.game.model.Trip
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
@@ -39,8 +39,8 @@ private fun GameState.toDto() = GameStateDto(
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
     withdrawalsThisWeek = withdrawalsThisWeek,
-    taskResults = taskResults.map { it.toDto() },
-    tasksDoneThisWeek = tasksDoneThisWeek,
+    levelResults = levelResults.map { it.toDto() },
+    goldLevels = goldLevels,
     adventureResults = adventureResults.map { it.toDto() },
     history = history.map { it.toDto() },
     tutorial = tutorial,
@@ -64,8 +64,8 @@ private fun GameStateDto.toDomain() = GameState(
     depositsThisWeek = depositsThisWeek,
     depositsByWeek = depositsByWeek,
     withdrawalsThisWeek = withdrawalsThisWeek,
-    taskResults = taskResults.map { it.toDomain() },
-    tasksDoneThisWeek = tasksDoneThisWeek,
+    levelResults = levelResults.map { it.toDomain() },
+    goldLevels = goldLevels,
     adventureResults = adventureResults.map { it.toDomain() },
     history = history.map { it.toDomain() },
     tutorial = tutorial,
@@ -138,9 +138,9 @@ private fun SavingsGoal.toDto() = SavingsGoalDto(id, name, cost, hint, trip)
 
 private fun SavingsGoalDto.toDomain() = SavingsGoal(id, name, cost, hint, trip)
 
-private fun TaskResult.toDto() = TaskResultDto(taskId, week, success, reward)
+private fun LevelResult.toDto() = LevelResultDto(levelId, week, stars, reward)
 
-private fun TaskResultDto.toDomain() = TaskResult(taskId, week, success, reward)
+private fun LevelResultDto.toDomain() = LevelResult(levelId, week, stars, reward)
 
 private fun WeekSummary.toDto() = WeekSummaryDto(
     week = week,

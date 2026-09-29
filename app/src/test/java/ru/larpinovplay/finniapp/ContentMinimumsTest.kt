@@ -1,9 +1,11 @@
 package ru.larpinovplay.finniapp
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import ru.larpinovplay.finniapp.data.content.defaultContent
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
@@ -20,20 +22,58 @@ class ContentMinimumsTest {
 
     private val content = defaultContent()
 
+    private val tasks = content.levels.flatMap { it.tasks }
+
     @Test
     fun atLeastSixTasksCoveringAllThreeTopics() {
-        assertTrue("заданий ${content.tasks.size}", content.tasks.size >= 6)
-        val byTopic = content.tasks.groupingBy { it.topic }.eachCount()
+        assertTrue("заданий ${tasks.size}", tasks.size >= 6)
+        val byTopic = content.levels.groupBy { it.topic }.mapValues { (_, levels) -> levels.sumOf { it.tasks.size } }
         // Три темы ТЗ 2.5.8: планирование бюджета, сбережения, платежи и покупки — и в каждой больше одного задания
         TaskTopic.entries.forEach { topic ->
             assertTrue("в теме $topic заданий ${byTopic[topic] ?: 0}", (byTopic[topic] ?: 0) >= 2)
         }
-        assertEquals(content.tasks.size, content.tasks.map { it.id }.toSet().size)
+        assertEquals(tasks.size, tasks.map { it.id }.toSet().size)
+        assertEquals(content.levels.size, content.levels.map { it.id }.toSet().size)
+    }
+
+    /** Карта: пять недель подряд (демо ТЗ 2.6), в каждой по уровню на тему. */
+    @Test
+    fun everyWeekHasALevelPerTopicOfFourToFiveTasks() {
+        val weeks = content.levels.groupBy { it.week }
+        assertEquals((1..5).toList(), weeks.keys.sorted())
+        weeks.forEach { (week, levels) ->
+            assertEquals("темы недели $week", TaskTopic.entries.toSet(), levels.map { it.topic }.toSet())
+        }
+        // Заданий в уровне больше, чем проходит ребёнок: каждый раз выбираются случайные
+        content.levels.forEach { assertTrue("${it.id}: ${it.tasks.size} заданий", it.tasks.size > GameRules.TASKS_PER_LEVEL) }
+    }
+
+    /** У раскладки и списка покупок есть верное решение, а у каждого задания — объяснение (ТЗ 2.5.8). */
+    @Test
+    fun everyTaskCanBeSolvedAndIsExplained() {
+        tasks.forEach { task ->
+            assertTrue("${task.id} без объяснений", task.explanationSuccess.isNotBlank() && task.explanationMistake.isNotBlank())
+            when (val p = task.payload) {
+                is TaskPayload.Allocate -> {
+                    val optional = p.total - p.mandatoryMin - p.savingsMin
+                    assertTrue("${task.id}: минимумы больше суммы", optional >= 0)
+                    val right = TaskAnswer.Allocation(mapOf("mandatory" to p.mandatoryMin, "optional" to optional, "savings" to p.savingsMin))
+                    assertTrue(task.id, task.evaluate(right).success)
+                    assertFalse(task.id, task.evaluate(TaskAnswer.Allocation(mapOf("optional" to p.total))).success)
+                }
+                is TaskPayload.ShopList -> {
+                    val mandatory = p.items.filter { it.mandatory }.map { it.id }.toSet()
+                    assertTrue(task.id, task.evaluate(TaskAnswer.Selection(mandatory)).success)
+                    assertFalse(task.id, task.evaluate(TaskAnswer.Selection(p.items.map { it.id }.toSet())).success)
+                }
+                is TaskPayload.Choice -> Unit   // ниже
+            }
+        }
     }
 
     @Test
     fun choiceTasksHaveOneRightAnswerAndExplainEveryOption() {
-        content.tasks.forEach { task ->
+        tasks.forEach { task ->
             val choice = task.payload as? TaskPayload.Choice ?: return@forEach
             assertEquals("верных вариантов в ${task.id}", 1, choice.options.count { it.correct })
             // Правильный и ошибочный варианты проходятся, и после любого есть объяснение (ТЗ 2.5.8, 2.6)
