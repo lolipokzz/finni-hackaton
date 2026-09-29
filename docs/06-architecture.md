@@ -8,7 +8,8 @@
 ```kotlin
 object GameEngine {
     fun buy(game: GameSnapshot, item: ShopItem): Transition<PurchaseResult>
-    // confirmPlan, deposit, withdraw, chooseGoal, reachGoal, answerTask, completeAdventure, finishWeek, wear, takeOff
+    // confirmPlan, deposit, withdraw, chooseGoal, reachGoal, completeLevel, completeChallenge,
+    // completeAdventure, finishWeek, wear, takeOff, addDemoCoins
 }
 data class Transition<out R>(val game: GameSnapshot, val result: R)
 ```
@@ -39,7 +40,7 @@ app/src/main/java/ru/larpinovplay/finniapp/
     pet/model/                   — Pet, PetSatiety, PetMood, PetGrowthStage, PetLook
     shop/                        — ShopItem, ShopCategory, WearableSlot, ShopRules (сколько стоит еда на неделю)
     goal/model/SavingsGoal.kt
-    task/                        — Task, TaskPayload, TaskAnswer, TaskOutcome, Task.evaluate
+    task/                        — Level, Task, TaskPayload, TaskAnswer, TaskOutcome, Task.evaluate
     adventure/                   — Adventure, AdventureScene, AdventureRules (оплата, сдача, корзина)
     content/                     — Content, Feedback, FeedbackKey
     settings/                    — AppSettings, SettingsRepository
@@ -91,7 +92,8 @@ sequenceDiagram
 | `buy` | списывает монеты, меняет сытость и настроение, одежду кладёт в гардероб | покупка |
 | `wear`, `takeOff` | надевает и снимает вещь из гардероба | гардероб |
 | `chooseGoal`, `deposit`, `withdraw`, `reachGoal` | цель и копилка; цель-поездка отправляет питомца в поездку | накопления |
-| `answerTask` | оценивает ответ (`Task.evaluate`), платит награду, считает лимит недели | задания |
+| `completeLevel` | сохраняет первое прохождение уровня, звёзды и однократную награду 3/2 монеты | уровни |
+| `completeChallenge` | отмечает золотое испытание пройденного уровня без ошибок и в срок; монет не даёт | повтор уровня |
 | `completeAdventure` | засчитывает приключение недели и платит награду | приключения |
 | `finishWeek` | дела недели → шаги роста, бонус копилки, недельное падение сытости и настроения, итоги, карманные | конец недели |
 
@@ -103,8 +105,14 @@ sequenceDiagram
   `FinishWeekResult.Blocked`) — это не ошибка, а подсказка ребёнку;
 - дата приходит параметром (`today: LocalDate`), поэтому движок не зависит от часов устройства;
 - производные значения не хранятся, а считаются: стадия роста — из очков роста (`Pet.growthStage`), дела недели —
-  из снимка (`GameSnapshot.weekDeeds`), шаг обучения — из игры (`GameState.tutorialStep`), статус задания —
-  `GameState.taskStatus`.
+  из снимка (`GameSnapshot.weekDeeds`), шаг обучения — из игры (`GameState.tutorialStep`), статус уровня —
+  `GameState.levelStatus`, доступность приключения — `GameState.adventureStatus`.
+
+`LevelPlayViewModel` выбирает 4 случайных упражнения из 6 и сохраняет их исходный порядок внутри уровня.
+Каждый ответ оценивает чистая функция `Task.evaluate`; `TaskOutcome` содержит результат и объяснение, без
+начисления монет. Только после четвёртого разбора ViewModel вызывает `completeLevel` через репозиторий:
+движок начисляет 3 монеты без ошибок или 2 с ошибками и сохраняет `LevelResult`. Повтор — отдельное золотое
+испытание через `completeChallenge`, без изменения баланса и первоначальных звёзд.
 
 Числа экономики — в `GameRules`, формулы — в [04](04-rules-and-formulas.md).
 
@@ -154,7 +162,7 @@ protobuf. Слои:
 
 ## Контент
 
-Учебный контент — неизменяемый `Content` (`domain/content/Content.kt`): товары, цели, задания, приключения. Данные
+Учебный контент — неизменяемый `Content` (`domain/content/Content.kt`): товары, цели, уровни с упражнениями, приключения. Данные
 лежат в `data/content/*.kt`, Koin отдаёт их синглтоном. Фразы для ребёнка — `assets/content/feedback.json`, читаются
 один раз при старте (`assetsModule`). Подробно — [05](05-content-model.md).
 
@@ -210,8 +218,9 @@ class HomeViewModel(private val game: GameRepository, private val content: Conte
 
 Jetpack Navigation 3: один `NavDisplay` (`presentation/navigation/MainNavigation.kt`), маршруты — `@Serializable`
 объекты и классы, реализующие `NavKey` (`presentation/navigation/Routes.kt`). Back stack сохраняется при повороте и
-смерти процесса. Экраны получают данные и колбэки, а переходы между ними описаны только в `MainNavigation`. Итог
-задания — маршрут-диалог (`DialogSceneStrategy.dialog()`).
+смерти процесса. Экраны получают данные и колбэки, а переходы между ними описаны только в `MainNavigation`.
+`Tasks` открывает `LevelPlay(levelId, challenge)`: упражнения, разбор каждого ответа и итог находятся на одном
+экране `LevelPlayScreen`. Отдельного маршрута для итога нет; возврат ведёт на карту заданий.
 
 Граф начинается с `Home`. Знакомство с Финни (приветствие, раскраска, имя, три урока) идёт до графа:
 `PetCreationScreen` в `MainActivity` показывает создание, пока игры нет, и граф — когда она есть. Полный граф —
