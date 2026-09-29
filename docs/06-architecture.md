@@ -275,54 +275,7 @@ Koin: `appModule` (контент, `GameRepository`, все ViewModel), `storage
   `assembleRelease` ([README](../README.md#релизная-сборка)). `keystore.properties`, `*.jks` и `*.keystore` — в
   `.gitignore`.
 
----
-
-## Kotlin и Android для Java-разработчика
-
-Правила игры (`domain/`) и контент (`data/content/`) — обычный Kotlin без Android, их можно писать и тестировать
-JUnit, не открывая эмулятор. Ниже — соответствия, чтобы быстро читать остальной код.
-
-### Kotlin vs Java
-
-| Java | Kotlin | Комментарий |
-|---|---|---|
-| `record Point(int x, int y)` | `data class Point(val x: Int, val y: Int)` | `copy()` бесплатно: `p.copy(x = 5)` |
-| `sealed interface` + `switch` pattern | `sealed interface` + `when` | `when` обязан быть исчерпывающим, компилятор проверит |
-| `Optional<T>` / null-проверки | `T?`, `?.`, `?:`, `!!` | `state.goal ?: return` |
-| checked exceptions | нет | исходы правил — значениями (`PurchaseResult.NotEnough`), сбои хранения — `Result.Error` |
-| `static` | `object`, `companion object`, top-level функции | `GameEngine` — `object` |
-| классы открыты по умолчанию | классы `final` по умолчанию | `open`, чтобы наследовать; нам не нужно |
-| Streams | `list.map { }`, `filter { }`, `sumOf { }` | лямбда в фигурных скобках, `it` — параметр |
-| Jackson | `kotlinx.serialization` + `@Serializable` | аннотация на классе, плагин компилятора генерирует код |
-| `CompletableFuture` | `suspend fun` + корутины | в `domain/game/engine` не используем вообще |
-| Lombok `@Builder` | именованные аргументы и значения по умолчанию | `GameState(week = 2, balance = 50)` |
-| `List<T>` изменяемый | `List<T>` неизменяемый, `MutableList<T>` | в домене только неизменяемые, новое состояние через `copy` и `+` |
-
-### Как устроен Android-слой
-
-| Понятие Spring/бэкенда | Аналог в приложении |
-|---|---|
-| Контроллер | `ViewModel`: принимает действия пользователя (`onAction`), отдаёт состояние экрана |
-| Сервисный слой | `GameEngine` в `domain/game/engine` |
-| Репозиторий / БД | `GameRepository` + DataStore (файл JSON на диске устройства) |
-| Шаблон Thymeleaf/JSP | Compose: `@Composable fun HomeScreenContent(state: HomeUiState, onAction: (HomeAction) -> Unit)`. Перерисовывается сама при изменении `state` |
-| Reactive Streams / `Flux` | `Flow`, `StateFlow` — поток состояний, на который UI подписан |
-| `application.properties` | `GameRules` (числа экономики) и `data/content/` (контент) |
-| DI-контейнер Spring | Koin-модули в `app/di/` |
-| Запуск приложения | `Application.onCreate()` — один раз на процесс |
-| Сессия | `GameSnapshot` в DataStore — переживает закрытие приложения (**ТЗ 2.5.13**) |
-
-Важные отличия от сервера:
-
-- Процесс приложения может быть убит системой в любой момент. Поэтому состояние пишем на диск после каждой команды,
-  а не «при выходе».
-- Один пользователь, одно устройство, нет конкурентных запросов. Но есть быстрые двойные нажатия — отсюда `Mutex` в
-  репозитории.
-- Нет «сервера правды»: если состояние на диске испорчено, восстановить неоткуда. Отсюда атомарная запись DataStore
-  и версия формата в файле.
-- Главный поток нельзя блокировать: любой ввод-вывод — через `suspend`. Движка это не касается: он не делает ввода-вывода.
-
-### Как запускать тесты
+## Тесты
 
 ```bash
 ./gradlew :app:testDebugUnitTest
