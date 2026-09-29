@@ -115,6 +115,7 @@ private fun LedgerReason.toDto(): LedgerReasonDto = when (this) {
     is LedgerReason.TaskReward -> LedgerReasonDto.TaskReward(taskTitle)
     is LedgerReason.AdventureReward -> LedgerReasonDto.AdventureReward(adventureTitle)
     LedgerReason.WeekIncome -> LedgerReasonDto.WeekIncome
+    LedgerReason.DemoCoins -> LedgerReasonDto.DemoCoins
 }
 
 private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
@@ -128,6 +129,7 @@ private fun LedgerReasonDto.toDomain(): LedgerReason = when (this) {
     is LedgerReasonDto.TaskReward -> LedgerReason.TaskReward(taskTitle)
     is LedgerReasonDto.AdventureReward -> LedgerReason.AdventureReward(adventureTitle)
     LedgerReasonDto.WeekIncome -> LedgerReason.WeekIncome
+    LedgerReasonDto.DemoCoins -> LedgerReason.DemoCoins
 }
 
 private fun ShopItem.toDto() = ShopItemDto(id, name, price, category, satiety, mood, hint, slot)

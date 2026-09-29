@@ -52,9 +52,14 @@ class HomeViewModel(
             combine(
                 game.snapshot.filterNotNull(),
                 settingsRepository.observeSettings(),
-            ) { snapshot, settings -> snapshot to settings }
-                .collect { (snapshot, settings) ->
-                    _state.update { current -> toUiState(snapshot.pet, snapshot.state, settings, game.finishBlock(), current) }
+                game.gameBeforeDemo,
+            ) { snapshot, settings, beforeDemo -> Triple(snapshot, settings, beforeDemo) }
+                .collect { (snapshot, settings, beforeDemo) ->
+                    _state.update { current ->
+                        toUiState(snapshot.pet, snapshot.state, settings, game.finishBlock(), current)
+                            // Окно демо живёт, пока идёт демо: после выхода его закрывает вернувшаяся игра
+                            .copy(demoPanel = current?.demoPanel?.takeIf { snapshot.state.demoMode }?.copy(savedPetName = beforeDemo?.pet?.name))
+                    }
                 }
         }
     }
@@ -74,8 +79,31 @@ class HomeViewModel(
             HomeAction.DismissDeeds -> dismissDeeds()
             HomeAction.SkipTutorialStep -> skipTutorialStep()
             HomeAction.FinishTutorial -> finishTutorial()
+            HomeAction.OpenDemo -> openDemo()
+            HomeAction.CloseDemo -> _state.update { it?.copy(demoPanel = null) }
+            HomeAction.AddDemoCoins -> addDemoCoins()
+            HomeAction.AskExitDemo -> _state.update { it?.copy(demoPanel = it.demoPanel?.copy(confirmExit = true)) }
+            HomeAction.ExitDemo -> exitDemo()
             is HomeAction.OpenSection -> Unit  // переход — дело навигации
         }
+    }
+
+    private fun openDemo() = _state.update { state ->
+        state?.takeIf { it.demoMode }?.copy(demoPanel = HomeUiState.DemoPanel(savedPetName = game.gameBeforeDemo.value?.pet?.name)) ?: state
+    }
+
+    /** Монеты приходят сразу: окно остаётся открытым, чтобы добавить ещё. */
+    private fun addDemoCoins() {
+        viewModelScope.launch { game.addDemoCoins(GameRules.DEMO_COINS).orSnackbar { addDemoCoins() } }
+    }
+
+    /**
+     * Возвращает игру ребёнка. Окно закроется само: вернувшаяся игра уже не демо (см. init), а без отложенной игры
+     * главного экрана не станет совсем — откроется создание питомца.
+     */
+    private fun exitDemo() {
+        if (_state.value?.demoPanel?.confirmExit != true) return
+        viewModelScope.launch { game.exitDemo().orSnackbar { exitDemo() } }
     }
 
     /**

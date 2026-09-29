@@ -42,10 +42,18 @@ class DataStoreGameStore private constructor(
             is Result.Success -> recovery.getAndSet(null)?.let { Result.Error(it) } ?: Result.Success(read.data.game?.toDomain())
         }
 
+    override suspend fun loadBeforeDemo(): Result<GameSnapshot?, StorageError> =
+        onDisk(file, StorageError.READ_FAILED) { dataStore.data.first() }.map { it.beforeDemo?.toDomain() }
+
     // Сбой, замеченный при чтении перед записью, уже перезаписан: сообщать о нём поздно и не нужно
     override suspend fun save(snapshot: GameSnapshot): EmptyResult<StorageError> =
-        onDisk(file, StorageError.WRITE_FAILED) { dataStore.updateData { GameSaveFile(game = snapshot.toDto()) } }
+        onDisk(file, StorageError.WRITE_FAILED) { dataStore.updateData { it.copy(game = snapshot.toDto()) } }
             .map { recovery.set(null) }
+
+    override suspend fun save(snapshot: GameSnapshot, beforeDemo: GameSnapshot?): EmptyResult<StorageError> =
+        onDisk(file, StorageError.WRITE_FAILED) {
+            dataStore.updateData { GameSaveFile(game = snapshot.toDto(), beforeDemo = beforeDemo?.toDto()) }
+        }.map { recovery.set(null) }
 
     override suspend fun clear(): EmptyResult<StorageError> =
         onDisk(file, StorageError.WRITE_FAILED) { dataStore.updateData { GameSaveFile() } }

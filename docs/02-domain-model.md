@@ -124,6 +124,7 @@ data class LedgerEntry(val week: Int, val reason: LedgerReason, val balanceDelta
 sealed interface LedgerReason {
     data object StartCoins                               // стартовые монеты
     data object WeekIncome                               // карманные за неделю
+    data object DemoCoins                                // монеты, начисленные себе в демо-режиме
     data class Purchase(val itemName: String)
     data object Deposit                                  // пополнение копилки вручную
     data object PlannedDeposit                           // строка «Копилка» из плана недели
@@ -227,6 +228,7 @@ sealed interface FinishWeekResult { Finished(summary); Blocked(reason: FinishBlo
 ## Формат сохранения
 
 Снимок пишется в `files/datastore/game.json` через DTO (`data/game/store/GameSaveDto.kt`): `GameSaveFile(version,
-game: GameSnapshotDto?)`, где `GameSnapshotDto` повторяет `GameState` и `Pet` полями. Текущая версия формата —
+game: GameSnapshotDto?, beforeDemo: GameSnapshotDto?)`, где `GameSnapshotDto` повторяет `GameState` и `Pet` полями,
+а `beforeDemo` — игра ребёнка, отложенная на время демо-режима (null — демо не включено). Текущая версия формата —
 `GAME_SAVE_VERSION = 2`; сохранение другой версии сбрасывается с сообщением. Настройки — в `settings.json`
 (`SettingsSaveFile`).

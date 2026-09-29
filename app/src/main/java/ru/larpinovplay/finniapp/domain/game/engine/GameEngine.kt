@@ -157,6 +157,17 @@ object GameEngine {
     }
 
     /**
+     * Начисляет [amount] монет в демо-режиме (запись журнала «Монеты демо-режима»): эксперт проверяет покупки и
+     * копилку, не дожидаясь карманных. В обычной игре ничего не делает и возвращает false — там монеты только
+     * зарабатываются. Посреди плана бюджет недели растёт: план раскладывает весь кошелёк.
+     */
+    fun addDemoCoins(game: GameSnapshot, amount: Int): Transition<Boolean> {
+        val s = game.state
+        if (!s.demoMode || amount <= 0) return Transition(game, false)
+        return Transition(game.copy(state = s.post(LedgerReason.DemoCoins, +amount)), true)
+    }
+
+    /**
      * Закрывает неделю, если [GameState.finishBlock] не мешает: засчитывает дела недели шагами роста,
      * платит бонус копилки, меняет питомца, начинает новую неделю в фазе плана и зачисляет карманные
      * по новой стадии питомца (docs/11-economy.md).

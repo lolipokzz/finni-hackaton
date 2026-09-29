@@ -5,7 +5,7 @@
 
 Колонка «Где» указывает экран (`presentation/screens/…`), логику (`domain/…`, `data/…`) и unit-тест
 (`app/src/test/…`, класс и метод). Все тесты запускаются командой `./gradlew :app:testDebugUnitTest`
-(180 тестов). Ручные сценарии — в [09](09-test-cases.md).
+(186 тестов). Ручные сценарии — в [09](09-test-cases.md).
 
 ## Функциональные требования (ТЗ 2.5)
 
@@ -50,7 +50,7 @@
 | 2.5.12 | Цели, темы, прогресс без негативных оценок | `AdultScreen`: «Чему учится ребёнок», «Общий прогресс», «Пройденные темы» — только факты, без оценок | реализовано |
 | 2.5.12 | Правила начисления баллов родителем | Не делаем: ТЗ оставляет на усмотрение команды; доход — только из игры, чтобы экономика оставалась честной | не требуется |
 | 2.5.13 | Сохранение после перезапуска | Вся игра и настройки — JSON-файлы DataStore, запись после каждого действия (`DataStoreGameStore`, `GameRepositoryImpl`). Тесты `DataStoreGameStoreTest.savedGameSurvivesRestart`, `GameRepositoryImplTest.gameContinuesAfterRestart`, `PetCreationViewModelTest.petCreatedInOneLaunchIsRestoredInTheNext`, `DataStoreSettingsRepositoryTest.updatedSettingsSurviveRestart` | реализовано |
-| 2.5.13 | Демо-режим с тестовым профилем и сбросом | «Для взрослых» → «Включить демо» / «Сбросить демо»: профиль «Финни Демо», неделя завершается кнопкой в тот же день (`GameRepositoryImpl.resetToDemo`). Тесты `GameRepositoryImplTest.demoStartsWithStartBalanceOnFirstWeek`, `GameEngineTest.demoWeekFinishesTheSameDay`, `AdultViewModelTest.demoCanBeRepeatedAndStartsWithCleanProgress` | реализовано |
+| 2.5.13 | Демо-режим с тестовым профилем и сбросом | «Для взрослых» → «Включить демо» / «Сбросить демо»: профиль «Финни Демо», неделя завершается кнопкой в тот же день (`GameRepositoryImpl.resetToDemo`). В демо можно добавить себе 50 монет и выйти из демо — игра ребёнка, отложенная на время демо, вернётся без потерь (плашка «Демо» на главном экране или раздел взрослого). Тесты `GameRepositoryImplTest.demoStartsWithStartBalanceOnFirstWeek`, `demoKeepsChildsGameAndExitBringsItBack`, `failedDemoStartKeepsChildsGame`, `DataStoreGameStoreTest.gameBeforeDemoSurvivesSavesAndRestartUntilDemoEnds`, `GameEngineTest.demoWeekFinishesTheSameDay`, `AdultViewModelTest.demoCanBeRepeatedAndStartsWithCleanProgress` | реализовано |
 | 2.5.14 | Новое задание без переработки логики | Объект `Task` в `TaskContent.kt`, правила и экраны не меняются ([05](05-content-model.md#как-добавить-новое-задание)). Тест `ContentMinimumsTest` | реализовано |
 
 ## Минимальный контент (ТЗ 2.6)
@@ -82,7 +82,7 @@
 | 3.4 | Только нужные разрешения, каждое обосновано | `RECORD_AUDIO` — только для «Кот повторяет слова»: выключено по умолчанию, доступ спрашивается при включении переключателя в «Настройках» ([06](06-architecture.md)). Тесты `DataStoreSettingsRepositoryTest.voiceRepeatIsOffByDefault`, `SettingsViewModelTest` | реализовано |
 | 3.4 | Запуск ≤ 5 с, отклик ≤ 1 с | На эмуляторе главный экран ~0,6 с, 3D-питомец ~3 с; замер на физическом устройстве не проведён | в работе |
 | 3.4 | Нет падений, потери прогресса и тупиков в сценарии | Сценарий проходится на эмуляторе; ошибки записи показываются и не теряют сохранение (`DataStoreGameStoreTest`, `GameRepositoryImplTest.failedSaveLeavesSnapshotUnchangedAndReportsError`); прогон на устройстве не проведён | в работе |
-| 3.4 | Ключевая логика покрыта тестами | 180 unit-тестов: бюджет, покупки, копилка, рост, сохранение, ViewModel (`./gradlew :app:testDebugUnitTest`) | реализовано |
+| 3.4 | Ключевая логика покрыта тестами | 186 unit-тестов: бюджет, покупки, копилка, рост, сохранение, ViewModel (`./gradlew :app:testDebugUnitTest`) | реализовано |
 | 3.5 | Без аккаунта и персональных данных | Нужны только раскраска и игровое имя питомца, данные не покидают устройство | реализовано |
 | 3.5 | Без рекламы, подписок, покупок и внешних ссылок | Нет SDK рекламы и платежей, нет `INTERNET`, нет ссылок в интерфейсе | реализовано |
 | 3.5 | Тексты не пугают и не стыдят | Правила текстов в [05](05-content-model.md#тексты-обратной-связи--assetscontentfeedbackjson): ошибка — через питомца и следующий шаг. Открытый вопрос: клипы и звуки «ударов» при нажатии на голову и лапы (`PetHits`) стоит обосновать или смягчить | в работе |

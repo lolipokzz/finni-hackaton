@@ -7,6 +7,9 @@ import ru.larpinovplay.finniapp.data.game.store.GameSaveFile
 import ru.larpinovplay.finniapp.data.game.store.toDomain
 import ru.larpinovplay.finniapp.data.game.store.toDto
 import ru.larpinovplay.finniapp.data.storage.StorageJson
+import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
+import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
 
 /** Формат файла: снимок игры проходит домен → DTO → JSON → DTO → домен без потерь. */
@@ -59,6 +62,20 @@ class GameSaveMapperTest {
         listOf("start_coins", "purchase", "deposit", "planned_deposit", "withdraw", "savings_bonus", "adventure_reward", "goal_reached", "task_reward", "week_income").forEach { name ->
             assertTrue("В файле нет причины $name", json.contains("\"$name\""))
         }
+    }
+
+    /** Демо-игра с начисленными монетами и отложенная на время демо игра ребёнка лежат в одном файле. */
+    @Test
+    fun demoGameAndGameBeforeDemoSurviveJsonRoundTrip() {
+        val demoStart = GameSnapshot(GameEngine.newGame(SampleGames.DAY_1).copy(demoMode = true), SampleGames.newborn)
+        val demo = GameEngine.addDemoCoins(demoStart, GameRules.DEMO_COINS).game
+        val json = StorageJson.encodeToString(GameSaveFile.serializer(), GameSaveFile(game = demo.toDto(), beforeDemo = game.toDto()))
+
+        val restored = StorageJson.decodeFromString(GameSaveFile.serializer(), json)
+
+        assertTrue("В файле нет причины demo_coins", json.contains("\"demo_coins\""))
+        assertEquals(demo, restored.game?.toDomain())
+        assertEquals(game, restored.beforeDemo?.toDomain())
     }
 
     @Test

@@ -20,5 +20,6 @@ fun LedgerReason.text(): String {
         is LedgerReason.TaskReward -> feedback.text(FeedbackKey.LEDGER_TASK, "task" to taskTitle)
         is LedgerReason.AdventureReward -> feedback.text(FeedbackKey.LEDGER_ADVENTURE, "adventure" to adventureTitle)
         LedgerReason.WeekIncome -> feedback.text(FeedbackKey.LEDGER_WEEK_INCOME)
+        LedgerReason.DemoCoins -> feedback.text(FeedbackKey.LEDGER_DEMO_COINS)
     }
 }

@@ -27,4 +27,11 @@ sealed interface HomeAction {
     /** Кнопка «План» и окно плана: открыть и закрыть, не подтверждая. */
     data object OpenPlan : HomeAction
     data object ClosePlan : HomeAction
+
+    /** Плашка «Демо» и её окно: добавить монет, выйти из демо (сначала спросить, потом выйти). */
+    data object OpenDemo : HomeAction
+    data object CloseDemo : HomeAction
+    data object AddDemoCoins : HomeAction
+    data object AskExitDemo : HomeAction
+    data object ExitDemo : HomeAction
 }

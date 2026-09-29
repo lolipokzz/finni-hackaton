@@ -60,10 +60,18 @@ class GameRepositoryImpl(
     private val _snapshot = MutableStateFlow<GameSnapshot?>(null)
     override val snapshot: StateFlow<GameSnapshot?> = _snapshot.asStateFlow()
 
+    private val _gameBeforeDemo = MutableStateFlow<GameSnapshot?>(null)
+    override val gameBeforeDemo: StateFlow<GameSnapshot?> = _gameBeforeDemo.asStateFlow()
+
     private val mutex = Mutex()
 
     override suspend fun load(): Result<GameSnapshot?, StorageError> = mutex.withLock {
-        store.load().onSuccess { _snapshot.value = it }
+        store.load().onSuccess { loaded ->
+            // Отложенная на время демо игра лежит в том же файле; сбой её чтения не мешает играть — выйти из демо
+            // тогда можно будет только к созданию питомца
+            _gameBeforeDemo.value = (store.loadBeforeDemo() as? Result.Success)?.data?.takeIf { loaded?.state?.demoMode == true }
+            _snapshot.value = loaded
+        }
     }
 
     override suspend fun createPet(pet: Pet, withTutorial: Boolean): EmptyResult<StorageError> = mutex.withLock {
@@ -113,7 +121,10 @@ class GameRepositoryImpl(
         execute { GameEngine.finishWeek(it, today(), adventures) }
 
     override suspend fun resetProfile(): EmptyResult<StorageError> = mutex.withLock {
-        store.clear().onSuccess { _snapshot.value = null }
+        store.clear().onSuccess {
+            _gameBeforeDemo.value = null
+            _snapshot.value = null
+        }
     }
 
     override suspend fun resetToDemo(): EmptyResult<StorageError> = mutex.withLock {
@@ -122,7 +133,30 @@ class GameRepositoryImpl(
             // Кот: у него весь функционал — удары, поглаживание, эмоции, гардероб, голос
             Pet.newborn("Финни Демо", PetLook(PetColor.CORAL)),
         )
-        persist(demo)
+        // Игра ребёнка откладывается до выхода из демо. Если демо уже идёт, отложена по-прежнему игра ребёнка,
+        // а не прежнее демо
+        val current = _snapshot.value
+        val keep = if (current == null || current.state.demoMode) _gameBeforeDemo.value else current
+        store.save(demo, keep).onSuccess {
+            _gameBeforeDemo.value = keep
+            _snapshot.value = demo
+        }
+    }
+
+    override suspend fun addDemoCoins(amount: Int): Result<Boolean, StorageError> =
+        execute { GameEngine.addDemoCoins(it, amount) }
+
+    override suspend fun exitDemo(): EmptyResult<StorageError> = mutex.withLock {
+        val current = checkNotNull(_snapshot.value) { "Игры нет" }
+        check(current.state.demoMode) { "Демо-режим не включён" }
+        val restored = _gameBeforeDemo.value
+        val result = if (restored != null) store.save(restored, beforeDemo = null) else store.clear()
+        // Сначала игра, потом отложенная копия: экран демо закрывается по вернувшейся игре и не успевает показать,
+        // что отложенной игры «нет»
+        result.onSuccess {
+            _snapshot.value = restored
+            _gameBeforeDemo.value = null
+        }
     }
 
     private suspend fun <R> execute(command: (GameSnapshot) -> Transition<R>): Result<R, StorageError> =
