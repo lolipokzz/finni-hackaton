@@ -72,6 +72,25 @@ class DataStoreGameStoreTest {
         assertEquals(Result.Success(game), restarted.load())
     }
 
+    /** Игра ребёнка, отложенная на время демо, лежит в том же файле: её не трогают обычные записи и перезапуск. */
+    @Test
+    fun gameBeforeDemoSurvivesSavesAndRestartUntilDemoEnds() = runBlocking {
+        val childsGame = SampleGames.rich()
+        val demo = SampleGames.richer().let { it.copy(state = it.state.copy(demoMode = true)) }
+        val store = openStore()
+
+        store.save(demo, beforeDemo = childsGame)
+        store.save(demo.copy(state = demo.state.copy(balance = 7)))   // обычный ход в демо
+
+        val restarted = restart()
+        assertEquals(Result.Success(childsGame), restarted.loadBeforeDemo())
+        assertEquals(7, (restarted.load() as Result.Success).data?.state?.balance)
+
+        restarted.save(childsGame, beforeDemo = null)   // выход из демо
+        assertEquals(Result.Success(childsGame), restarted.load())
+        assertEquals(Result.Success(null), restarted.loadBeforeDemo())
+    }
+
     @Test
     fun lastSaveWins() = runBlocking {
         val store = openStore()

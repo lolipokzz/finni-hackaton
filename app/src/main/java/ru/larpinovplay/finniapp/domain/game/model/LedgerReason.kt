@@ -21,4 +21,6 @@ sealed interface LedgerReason {
     data class TaskReward(val taskTitle: String) : LedgerReason
     data class AdventureReward(val adventureTitle: String) : LedgerReason
     data object WeekIncome : LedgerReason
+    /** Монеты, которые эксперт начислил себе в демо-режиме. */
+    data object DemoCoins : LedgerReason
 }

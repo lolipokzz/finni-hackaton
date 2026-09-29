@@ -24,6 +24,8 @@ internal data class GameSaveFile(
     val version: Int = GAME_SAVE_VERSION,
     /** null — игра ещё не начата. */
     val game: GameSnapshotDto? = null,
+    /** Игра ребёнка, отложенная на время демо-режима; null — демо не включено. В старых файлах поля нет. */
+    val beforeDemo: GameSnapshotDto? = null,
 )
 
 /** Только версия: читается первой, чтобы отличить чужую версию от повреждённого файла. */
@@ -114,6 +116,9 @@ internal sealed interface LedgerReasonDto {
 
     @Serializable @SerialName("week_income")
     data object WeekIncome : LedgerReasonDto
+
+    @Serializable @SerialName("demo_coins")
+    data object DemoCoins : LedgerReasonDto
 }
 
 @Serializable

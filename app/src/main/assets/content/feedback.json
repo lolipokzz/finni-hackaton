@@ -8,6 +8,7 @@
   "ledger.task": "Задание: {task}",
   "ledger.adventure": "Приключение: {adventure}",
   "ledger.week_income": "Карманные деньги",
+  "ledger.demo_coins": "Монеты демо-режима",
 
   "period.a_ok": "Ты купил еды на всю неделю — Финни сыт",
   "period.a_fail": "Еды на неделю не хватило: нужно {need} сытости. На новой неделе купи её первой",

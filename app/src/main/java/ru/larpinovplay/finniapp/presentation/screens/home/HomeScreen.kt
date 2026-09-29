@@ -194,7 +194,7 @@ fun HomeScreenContent(
                 if (state.planDraft != null || state.activePlan != null) {
                     PlanButton(Modifier.spotlightTarget(targets, TutorialStep.PLAN)) { onAction(HomeAction.OpenPlan) }
                 }
-                if (state.demoMode) DemoChip()
+                if (state.demoMode) DemoChip { onAction(HomeAction.OpenDemo) }
             }
             val speech = state.speech.takeIf { coachStep == null }
             // Облачко висит [SPEECH_SHOWN_MS] и садится в «…» у головы
@@ -226,7 +226,8 @@ fun HomeScreenContent(
             Spacer(Modifier.height(8.dp))
         }
         // Окна важнее подсказки: пока открыто окно, подсветки нет
-        val dialogOpen = state.info != null || state.deedsOpen || state.weekSummary != null || state.planOpen || state.tutorialDone
+        val dialogOpen = state.info != null || state.deedsOpen || state.weekSummary != null || state.planOpen || state.tutorialDone ||
+            state.demoPanel != null
         if (coachStep != null && !dialogOpen) {
             TutorialSpotlight(
                 coachStep.coachText, targets[coachStep],
@@ -245,6 +246,7 @@ fun HomeScreenContent(
         )
     }
     if (state.deedsOpen) DeedsCard(state, onAction)
+    state.demoPanel?.let { DemoDialog(it, onAction) }
     if (state.tutorialDone) TutorialDoneDialog(onDone = { onAction(HomeAction.FinishTutorial) })
     // Сначала итоги прошлой недели, потом план новой
     val summary = state.weekSummary
@@ -437,10 +439,20 @@ private fun PlanButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
     }
 }
 
+/** Плашка демо-режима. Нажатие открывает окно: добавить монет или выйти из демо. */
 @Composable
-private fun DemoChip() {
-    Surface(shape = CircleShape, color = FinniColors.Sunny, border = BorderStroke(2.dp, Color.White)) {
-        Text("Демо", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+private fun DemoChip(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = FinniColors.Sunny,
+        border = BorderStroke(2.dp, Color.White),
+        // Маленькая плашка, но цель для пальца — не меньше 48 dp (ТЗ 3.6)
+        modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Демо-режим: монеты и выход из демо" },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text("Демо", fontSize = 13.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+        }
     }
 }
 

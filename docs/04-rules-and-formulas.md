@@ -60,6 +60,7 @@ savings_after = savings_before + Σ savingsDelta(tx)
 | Withdraw | +a | −a | 0 < a ≤ savings, окно с последствиями |
 | SavingsBonus | 0 | +5 | при закрытии недели, если отложено ≥ 10 |
 | GoalReached | 0 | −goal.cost | savings ≥ goal.cost |
+| DemoCoins | +50 | 0 | только в демо-режиме, по кнопке «Добавить 50 монет» (`GameRules.DEMO_COINS`) |
 
 Жёсткие инварианты после любой операции: `balance ≥ 0`, `savings ≥ 0`. Операция, которая их
 нарушила бы, отклоняется до изменения состояния.

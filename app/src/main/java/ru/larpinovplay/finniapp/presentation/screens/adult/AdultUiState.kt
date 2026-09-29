@@ -5,7 +5,7 @@ import ru.larpinovplay.finniapp.domain.game.model.TopicProgress
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 
 /** Действия, которые меняют прогресс заметно, и потому идут через окно подтверждения. */
-enum class AdultConfirmation { RESET_PROFILE, DELETE_ALL, DEMO }
+enum class AdultConfirmation { RESET_PROFILE, DELETE_ALL, DEMO, EXIT_DEMO }
 
 /** Что пошло не так; слова подбирает экран. */
 enum class AdultError {
@@ -33,6 +33,8 @@ data class AdultUiState(
     val pending: AdultConfirmation? = null,
     val busy: Boolean = false,
     val snapshot: GameSnapshot? = null,
+    /** Игра ребёнка, отложенная на время демо: к ней вернёт «Выйти из демо». */
+    val gameBeforeDemo: GameSnapshot? = null,
     val topics: List<TopicProgress> = emptyList(),
     val settings: AppSettings = AppSettings(),
 )

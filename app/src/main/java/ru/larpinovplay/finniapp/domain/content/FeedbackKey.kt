@@ -15,6 +15,7 @@ enum class FeedbackKey(val id: String) {
     LEDGER_TASK("ledger.task"),
     LEDGER_ADVENTURE("ledger.adventure"),
     LEDGER_WEEK_INCOME("ledger.week_income"),
+    LEDGER_DEMO_COINS("ledger.demo_coins"),
 
     // Итоги недели: что вышло с каждым делом
     PERIOD_FOOD_OK("period.a_ok"),

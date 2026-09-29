@@ -51,6 +51,79 @@ class GameRepositoryImplTest {
         assertEquals("Финни Демо", game.requireSnapshot().pet.name)
     }
 
+    /**
+     * Демо не стирает игру ребёнка: она откладывается, переживает перезапуск и повторный сброс демо,
+     * а после выхода возвращается такой, какой была. Монеты в демо добавляются, в обычной игре — нет.
+     */
+    @Test
+    fun demoKeepsChildsGameAndExitBringsItBack() = runBlocking {
+        game.createPet(newborn)
+        game.confirmPlan(plan)
+        game.buy(food)
+        val childsGame = game.requireSnapshot()
+        assertEquals(Result.Success(false), game.addDemoCoins(GameRules.DEMO_COINS))   // не демо: монет не даём
+
+        game.resetToDemo()
+        assertTrue(game.requireSnapshot().state.demoMode)
+        assertEquals(childsGame, game.gameBeforeDemo.value)
+        assertEquals(childsGame, store.beforeDemo)
+
+        assertEquals(Result.Success(true), game.addDemoCoins(GameRules.DEMO_COINS))
+        assertEquals(100 + GameRules.DEMO_COINS, game.requireSnapshot().state.balance)   // у этого репозитория старт — 100
+        game.resetToDemo()   // повторный сброс демо откладывает всё ту же игру ребёнка, а не прежнее демо
+        assertEquals(childsGame, store.beforeDemo)
+
+        // Перезапуск посреди демо: отложенная игра читается с диска
+        val restarted = GameRepositoryImpl(store, startBalance = 100, clock = clock)
+        restarted.load()
+        assertTrue(restarted.requireSnapshot().state.demoMode)
+        assertEquals(childsGame, restarted.gameBeforeDemo.value)
+
+        assertTrue(restarted.exitDemo() is Result.Success)
+        assertEquals(childsGame, restarted.requireSnapshot())
+        assertNull(restarted.gameBeforeDemo.value)
+        assertEquals(childsGame, store.saved)
+        assertNull(store.beforeDemo)
+    }
+
+    /** Демо без игры ребёнка (например, включено из старого сохранения): выход ведёт к созданию питомца. */
+    @Test
+    fun exitDemoWithoutSavedGameLeavesNoGame() = runBlocking {
+        game.resetToDemo()
+        assertNull(game.gameBeforeDemo.value)
+
+        game.exitDemo()
+
+        assertNull(game.snapshot.value)
+        assertNull(store.saved)
+    }
+
+    /** Сбой записи на входе в демо: игра ребёнка остаётся текущей и не теряется. */
+    @Test
+    fun failedDemoStartKeepsChildsGame() = runBlocking {
+        game.createPet(newborn)
+        val childsGame = game.requireSnapshot()
+        store.saveFailure = StorageError.WRITE_FAILED
+
+        val result = game.resetToDemo()
+
+        assertTrue(result is Result.Error)
+        assertEquals(childsGame, game.requireSnapshot())
+        assertNull(game.gameBeforeDemo.value)
+    }
+
+    @Test
+    fun resetProfileAlsoForgetsGameBeforeDemo() = runBlocking {
+        game.createPet(newborn)
+        game.resetToDemo()
+
+        game.resetProfile()
+
+        assertNull(game.snapshot.value)
+        assertNull(game.gameBeforeDemo.value)
+        assertNull(store.beforeDemo)
+    }
+
     @Test
     fun gameDoesNotExistUntilPetIsCreated() {
         assertNull(game.snapshot.value)

@@ -11,6 +11,9 @@ import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
  * команд не знает, это дело [GameRepositoryImpl]. Отделено, чтобы репозиторий
  * проверялся без диска, а сбои записи подделывались в тесте. Исключения библиотеки хранения наружу не выходят:
  * все ожидаемые сбои приходят как [StorageError].
+ *
+ * Кроме текущей игры в сохранении может лежать игра ребёнка, отложенная на время демо-режима. Обе пишутся в одну
+ * запись, поэтому при сбое на входе в демо или выходе из него игра ребёнка не теряется.
  */
 interface GameStore {
 
@@ -21,9 +24,21 @@ interface GameStore {
      */
     suspend fun load(): Result<GameSnapshot?, StorageError>
 
-    /** Записывает [snapshot] вместо прежнего сохранения целиком. При ошибке прежнее сохранение остаётся. */
+    /** Игра, отложенная на время демо-режима; Success(null) — её нет. Сбои сохранения сообщает [load], а не она. */
+    suspend fun loadBeforeDemo(): Result<GameSnapshot?, StorageError>
+
+    /**
+     * Записывает [snapshot] вместо прежней текущей игры. Отложенная на время демо игра остаётся как была.
+     * При ошибке прежнее сохранение остаётся.
+     */
     suspend fun save(snapshot: GameSnapshot): EmptyResult<StorageError>
 
-    /** Стирает сохранение: следующая [load] вернёт Success(null). При ошибке прежнее сохранение остаётся. */
+    /**
+     * Записывает одной записью текущую игру [snapshot] и отложенную на время демо [beforeDemo] (null — её больше нет).
+     * При ошибке прежнее сохранение остаётся целиком.
+     */
+    suspend fun save(snapshot: GameSnapshot, beforeDemo: GameSnapshot?): EmptyResult<StorageError>
+
+    /** Стирает сохранение вместе с отложенной игрой: следующая [load] вернёт Success(null). При ошибке всё остаётся. */
     suspend fun clear(): EmptyResult<StorageError>
 }

@@ -121,9 +121,20 @@ fun AdultScreenContent(
                 }
                 AdultCard("Демонстрационный режим") {
                     Text("Тестовый питомец, ${GameRules.START_BALANCE} монет, первая неделя. Игровые недели завершаются кнопкой, без ожидания реального времени.")
-                    Text("Включение демо заменит текущий профиль и его прогресс.")
-                    OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.DEMO)) }, enabled = !state.busy) {
-                        Text(if (state.snapshot?.state?.demoMode == true) "Сбросить демо" else "Включить демо")
+                    val saved = state.gameBeforeDemo
+                    if (state.snapshot?.state?.demoMode == true) {
+                        Text(
+                            if (saved != null) "Игра с питомцем ${saved.pet.name} отложена и вернётся такой же после выхода из демо."
+                            else "Отложенной игры нет: после выхода из демо откроется создание питомца.",
+                        )
+                        OutlinedButton(onClick = { onAction(AdultAction.AddDemoCoins) }, enabled = !state.busy) {
+                            Text("Добавить ${GameRules.DEMO_COINS} монет")
+                        }
+                        OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.DEMO)) }, enabled = !state.busy) { Text("Сбросить демо") }
+                        OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.EXIT_DEMO)) }, enabled = !state.busy) { Text("Выйти из демо") }
+                    } else {
+                        Text("Текущая игра не пропадёт: пока идёт демо, она отложена, а после выхода вернётся с тем же прогрессом.")
+                        OutlinedButton(onClick = { onAction(AdultAction.Request(AdultConfirmation.DEMO)) }, enabled = !state.busy) { Text("Включить демо") }
                     }
                 }
                 AdultCard("Управление данными") {
@@ -136,20 +147,32 @@ fun AdultScreenContent(
         }
     }
     state.pending?.let { action ->
+        val inDemo = state.snapshot?.state?.demoMode == true
+        val savedName = (if (inDemo) state.gameBeforeDemo else state.snapshot)?.pet?.name
         val title = when (action) {
             AdultConfirmation.RESET_PROFILE -> "Сбросить профиль?"
             AdultConfirmation.DELETE_ALL -> "Удалить все данные?"
-            AdultConfirmation.DEMO -> "Начать демо заново?"
+            AdultConfirmation.DEMO -> if (inDemo) "Начать демо заново?" else "Включить демо?"
+            AdultConfirmation.EXIT_DEMO -> "Выйти из демо?"
         }
+        val demoProfile = "Финни Демо, ${GameRules.START_BALANCE} монет, неделя 1"
         val explanation = when (action) {
             AdultConfirmation.RESET_PROFILE -> "Питомец, монеты, покупки, накопления и учебный прогресс будут удалены. Настройки сохранятся. Откроется создание нового питомца."
             AdultConfirmation.DELETE_ALL -> "Питомец и весь игровой прогресс будут удалены. Настройки звука, анимаций и подсказок вернутся к исходным. Откроется создание нового питомца."
-            AdultConfirmation.DEMO -> "Текущий питомец и весь игровой прогресс будут заменены тестовым профилем: Финни Демо, ${GameRules.START_BALANCE} монет, неделя 1."
+            AdultConfirmation.DEMO ->
+                if (inDemo) "Всё, что сделано в демо, заменится новым тестовым профилем: $demoProfile."
+                else "Откроется тестовый профиль: $demoProfile." +
+                    (savedName?.let { " Игра с питомцем $it не пропадёт и вернётся после выхода из демо." } ?: "")
+            AdultConfirmation.EXIT_DEMO ->
+                if (savedName != null) "Вернётся игра с питомцем $savedName — такой, какой она была до демо. Всё, что сделано в демо, удалится."
+                else "Отложенной игры нет: демо-игра удалится и откроется создание питомца."
         }
+        // Вход в демо обратим — игра ребёнка вернётся; остальное отменить нельзя
+        val irreversible = !(action == AdultConfirmation.DEMO && !inDemo && savedName != null)
         AlertDialog(
             onDismissRequest = { onAction(AdultAction.DismissConfirmation) },
             title = { Text(title) },
-            text = { Text("$explanation Отменить это действие после подтверждения нельзя.") },
+            text = { Text(if (irreversible) "$explanation Отменить это действие после подтверждения нельзя." else explanation) },
             confirmButton = { TextButton(onClick = { onAction(AdultAction.Confirm) }, enabled = !state.busy) { Text(if (state.busy) "Подождите…" else "Подтвердить") } },
             dismissButton = { TextButton(onClick = { onAction(AdultAction.DismissConfirmation) }, enabled = !state.busy) { Text("Отмена") } },
         )

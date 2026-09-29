@@ -36,7 +36,14 @@ data class HomeUiState(
     val tutorial: TutorialStep? = null,       // обучение первой недели: где Финни подсказывает; null — обучения нет
     val tutorialDone: Boolean = false,        // окно «Обучение пройдено»: последний шаг пройден, ждём «Да, всё понятно!»
     val deedsOpen: Boolean = false,           // открыто окно «Дела недели» (там же — конец недели)
+    val demoPanel: DemoPanel? = null,         // открыто окно демо-режима (по плашке «Демо»); null — закрыто
 ) {
+    /**
+     * Окно демо-режима: [savedPetName] — питомец игры ребёнка, отложенной на время демо (null — её нет);
+     * [confirmExit] — ждём подтверждения выхода.
+     */
+    data class DemoPanel(val savedPetName: String?, val confirmExit: Boolean = false)
+
     /**
      * Черновик плана в окне начала недели: монеты недели ([income] + [carried]) и как ребёнок их раскладывает.
      * [need] — сколько минимум стоит еда на неделю: подсказка для строки «Обязательное».
