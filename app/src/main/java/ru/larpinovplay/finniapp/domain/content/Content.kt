@@ -6,8 +6,8 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.task.model.Level
 
 /**
- * Справочники игры: неизменяемый набор, который загружается один раз (docs/05-content-model.md).
- * Игровое состояние ссылается на них, но не владеет.
+ * Справочники игры: неизменяемый набор, который загружается один раз. Игровое состояние ссылается на них, но не
+ * владеет.
  */
 data class Content(
     val shopItems: List<ShopItem>,

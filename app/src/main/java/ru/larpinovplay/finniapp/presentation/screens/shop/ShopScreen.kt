@@ -82,11 +82,8 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 import androidx.compose.ui.graphics.ColorFilter
 
 /**
- * Магазин, ТЗ 2.5.6: товары двух типов; до покупки видны цена, категория и влияние на питомца;
- * покупка требует подтверждения; при нехватке монет — объяснение и варианты, а не просто отказ.
- *
- * Тот же язык наклеек, что у главного экрана и окон недели: кремовые карточки в белой обводке,
- * у категорий — наклейки дел, к которым они ведут (обязательное — еда, необязательное — радость).
+ * Магазин: товары двух типов; до покупки видны цена, категория и влияние на питомца; покупка требует подтверждения; при
+ * нехватке монет — объяснение и варианты, а не просто отказ.
  */
 @Composable
 fun ShopScreen(
@@ -317,7 +314,7 @@ private fun PlanCard(category: ShopCategory, budget: ShopUiState.CategoryBudget?
     }
 }
 
-/** Дело «Финни сыт»: сколько сытости куплено из нужных на неделю (docs/03-processes.md, П5). */
+/** Дело «Финни сыт»: сколько сытости куплено из нужных на неделю. */
 @Composable
 private fun FoodLine(weekSatiety: Int) {
     val need = GameRules.WEEKLY_HUNGER
@@ -389,9 +386,8 @@ private fun EffectChips(item: ShopItem, modifier: Modifier = Modifier) {
 }
 
 /**
- * Плитка товара: крупная картинка, название и цена. Нажимается вся плитка — дальше окно покупки,
- * где видно, что вещь даст Финни. Нажать можно и когда монет не хватает: это учебная ситуация (ТЗ 2.5.6),
- * тогда цена просто спокойнее. Одежду, которая уже есть, второй раз не купить.
+ * Плитка товара: крупная картинка, название и цена. Нажимается вся плитка — дальше окно покупки, где видно, что вещь
+ * даст Финни.
  */
 @Composable
 private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit, modifier: Modifier = Modifier) {
@@ -556,7 +552,7 @@ private fun BoughtDialog(fb: PurchaseFeedback.Bought, onGoToWardrobe: () -> Unit
     }
 }
 
-/** Нехватка средств: сколько не хватает и что можно сделать (docs/03-processes.md, П5). */
+/** Нехватка средств: сколько не хватает и что можно сделать. */
 @Composable
 private fun NotEnoughDialog(
     fb: PurchaseFeedback.NotEnough,
@@ -624,7 +620,7 @@ private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     val change = "В копилке ${fb.savings} → станет ${fb.savingsAfter}"
     val goal = fb.goal ?: return change
     val remaining = "$change. До «${goal.name}» будет не хватать ${fb.goalRemainingAfter}"
-    // Срок до цели показываем до подтверждения, как и в окне снятия из копилки (ТЗ 2.5.7)
+    // Срок до цели показываем до подтверждения, как и в окне снятия из копилки
     val before = fb.weeksBefore
     val after = fb.weeksAfter
     if (before == null || after == null || after <= before) return remaining

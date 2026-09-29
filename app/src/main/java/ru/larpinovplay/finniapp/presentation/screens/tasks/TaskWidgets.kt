@@ -47,12 +47,7 @@ import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
-/**
- * Виджет упражнения по его типу: выбор действия, раскладка суммы, список покупок. Ввод ребёнка живёт в
- * rememberSaveable, поэтому вызывающий оборачивает виджет в `key(task.id)`: у каждого упражнения свой ввод.
- * [enabled] = false — ответ уже проверен: виджет показывает выбор, но менять его нельзя.
- * Цвета — как у вопросов приключения: белые варианты, выбранный — мятный с бирюзовой рамкой.
- */
+/** Виджет упражнения по его типу: выбор действия, раскладка суммы, список покупок. */
 @Composable
 fun TaskWidget(payload: TaskPayload, enabled: Boolean, onSubmit: (TaskAnswer) -> Unit) {
     when (payload) {

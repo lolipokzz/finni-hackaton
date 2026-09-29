@@ -4,8 +4,8 @@ import ru.larpinovplay.finniapp.domain.adventure.model.Adventure
 import ru.larpinovplay.finniapp.domain.adventure.model.AdventureScene
 
 /**
- * Приключения недели по порядку: первое — на первой неделе, следующее — после него.
- * Пока список в коде; как и задания, переедет в assets/content (docs/05-content-model.md).
+ * Приключения недели по порядку: первое — на первой неделе, следующее — после него. Пока список в коде; как и задания,
+ * переедет в assets/content.
  */
 internal val defaultAdventures: List<Adventure> = listOf(
     Adventure(

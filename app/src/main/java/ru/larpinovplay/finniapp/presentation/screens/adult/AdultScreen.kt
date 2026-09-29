@@ -67,7 +67,7 @@ fun AdultScreenContent(
             Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Та же кнопка «Назад», что на всех экранах (ТЗ 3.6); пока идёт сброс или удаление, уйти нельзя
+            // Та же кнопка «Назад», что на всех экранах; пока идёт сброс или удаление, уйти нельзя
             ScreenHeader("Для взрослых", onBack, backEnabled = !state.busy)
             if (!state.unlocked) {
                 AdultCard("Вход в родительский раздел") {

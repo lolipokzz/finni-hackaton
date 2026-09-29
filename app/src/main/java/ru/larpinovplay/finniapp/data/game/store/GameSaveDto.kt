@@ -10,10 +10,8 @@ import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 
 /**
- * Формат файла сохранения. Это копия доменных моделей, а не они сами: домен не знает о JSON, а формат файла
- * меняется отдельно от игры. Новое поле с значением по умолчанию читается из старых файлов без смены версии.
- * Переименование или удаление поля, смена смысла, переименование констант enum — это уже новая
- * [GAME_SAVE_VERSION]: старые сохранения при загрузке сбрасываются.
+ * Формат файла сохранения. Это копия доменных моделей, а не они сами: домен не знает о JSON, а формат файла меняется
+ * отдельно от игры.
  */
 // 2 — звёзды недели заменены делами недели, шаги роста считаются иначе: старые итоги и рост не переносятся
 // 3 — задания стали уровнями карты: результаты отдельных заданий и лимит недели не переносятся
@@ -47,7 +45,7 @@ internal data class GameStateDto(
     /** Сохранение без фазы — из версии без плана: начинаем неделю с плана. */
     val phase: PeriodPhase = PeriodPhase.PLANNING,
     val plan: BudgetPlanDto? = null,
-    /** День начала недели как `LocalDate.toEpochDay()`; null — день неизвестен. */
+    /** День начала недели как `LocalDate.toEpochDay`; null — день неизвестен. */
     val periodStartedOn: Long? = null,
     val ledger: List<LedgerEntryDto> = emptyList(),
     val purchases: List<ShopItemDto> = emptyList(),

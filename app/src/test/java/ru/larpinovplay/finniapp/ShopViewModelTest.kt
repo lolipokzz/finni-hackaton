@@ -102,7 +102,7 @@ class ShopViewModelTest {
         vm.onAction(ShopAction.BuyClicked(meat))
         vm.onAction(ShopAction.ConfirmPurchase)
 
-        // ТЗ 2.5.7: до подтверждения видно, как уменьшится копилка и как изменится срок до цели
+        // До подтверждения видно, как уменьшится копилка и как изменится срок до цели
         val notEnough = vm.state.value.feedback as PurchaseFeedback.NotEnough
         assertEquals(20, notEnough.missing)
         assertEquals(5, notEnough.savingsAfter)

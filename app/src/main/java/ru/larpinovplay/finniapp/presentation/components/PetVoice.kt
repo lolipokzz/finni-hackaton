@@ -18,17 +18,8 @@ import kotlin.math.min
 import kotlin.math.sqrt
 
 /**
- * «Повторюшка», как в «Моём Говорящем Томе»: питомец всё время слушает микрофон, ловит фразу и повторяет её
- * своим голосом — выше по тону, но с той же скоростью.
- *
- * - Фраза ловится по громкости: начало — когда звук заметно громче фонового шума, конец — ~0.7 с тишины.
- *   Слишком короткие щелчки отбрасываются, длина ограничена [MAX_PHRASE_SECONDS].
- * - Тон поднимается в [PITCH] раз без ускорения: запись растягивается по времени (WSOLA) и затем
- *   пересэмплируется обратно к исходной длине.
- * - Пока питомец говорит сам или играют его звуки ([isBusy]), микрофон не слушается: иначе он повторял бы себя.
- * - Звук никуда не сохраняется и не отправляется: всё в памяти, фраза живёт до конца проигрывания.
- *
- * Запись и обработка — в своём потоке; наружу — только [hearing] и [mouthOpen], их читает кадр отрисовки.
+ * «Повторюшка», как в «Моём Говорящем Томе»: питомец всё время слушает микрофон, ловит фразу и повторяет её своим
+ * голосом — выше по тону, но с той же скоростью.
  */
 internal class PetVoice(private val context: Context) {
 
@@ -75,7 +66,7 @@ internal class PetVoice(private val context: Context) {
     private fun hasPermission() =
         ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
-    @SuppressLint("MissingPermission")   // проверено в start()
+    @SuppressLint("MissingPermission")   // проверено в start
     private fun loop() {
         val minBuffer = AudioRecord.getMinBufferSize(RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         val recorder = try {

@@ -23,10 +23,7 @@ private val StorageError.feedbackKey: FeedbackKey
 @Composable
 fun StorageError.text(): String = LocalFeedback.current.text(feedbackKey)
 
-/**
- * Сбой, который пользователь может исправить сам: освободить память, вернуть доступ к ней. Остальные слой
- * данных уже попытался вылечить, а игра осталась в прежнем, сохранённом состоянии — сказать о них нечего.
- */
+/** Сбой, который пользователь может исправить сам: освободить память, вернуть доступ к ней. */
 val StorageError.userCanFix: Boolean
     get() = this == StorageError.NO_SPACE || this == StorageError.NO_ACCESS
 

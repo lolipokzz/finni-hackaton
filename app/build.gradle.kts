@@ -68,7 +68,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
-    // DataStore: типизированный, с JSON-сериализатором на kotlinx.serialization (см. docs/06-architecture.md)
+    // DataStore: типизированный, с JSON-сериализатором на kotlinx.serialization
     implementation(libs.androidx.datastore)
 
     // Kotlinx Serialization
@@ -79,18 +79,14 @@ dependencies {
     implementation(libs.filament.gltfio)
     implementation(libs.filament.utils)
 
-    // Koin
-    // Подключение BOM-платформы (управляет версиями всех модулей Koin)
+    // Koin: версии всех модулей задаёт BOM
     implementation(platform(libs.koin.bom))
-
-    // Основные зависимости для разработки
     implementation(libs.koin.core)
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
 
-    // Зависимости для тестирования
-    testImplementation(platform(libs.koin.bom)) // BOM для тестовой конфигурации
+    testImplementation(platform(libs.koin.bom))
     testImplementation(libs.koin.test)
-    testImplementation(libs.koin.test.junit4) // Если используете JUnit 4
+    testImplementation(libs.koin.test.junit4)
 }

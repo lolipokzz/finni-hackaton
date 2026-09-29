@@ -8,15 +8,7 @@ import android.os.Looper
 import androidx.core.os.HandlerCompat
 import ru.larpinovplay.finniapp.R
 
-/**
- * Звуки 3D-питомца: мурчание, пока его гладят, и реакции на удары. Файлы — res/raw/pet_*.wav: мурчание —
- * живая запись (freesound.org #117612); удары — синтезированный удар и «мяу» из той же записи; «бойнг»
- * синтезирован. Любой файл можно заменить записью с тем же именем без правок кода.
- *
- * SoundPool, а не MediaPlayer: звуки короткие и должны начаться в тот же кадр, что и анимация.
- * [enabled] = false (настройка «Звук») сразу глушит всё и дальше ничего не играет.
- * Всё вызывается с главного потока, как и остальной PetModelController.
- */
+/** Звуки 3D-питомца: мурчание, пока его гладят, и реакции на удары. */
 internal class PetSounds(context: Context) {
 
     private val pool = SoundPool.Builder()

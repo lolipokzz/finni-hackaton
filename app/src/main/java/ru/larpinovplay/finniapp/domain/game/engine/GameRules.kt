@@ -4,8 +4,8 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.task.model.Level
 
 /**
- * Числа игровой экономики (docs/11-economy.md, перенос в docs/04-rules-and-formulas.md).
- * Всё считается от дохода недели: цены и награды — доли от него. Позже переедут в EconomyConfig контента.
+ * Числа игровой экономики. Всё считается от дохода недели: цены и награды — доли от него. Позже переедут в
+ * EconomyConfig контента.
  */
 object GameRules {
     const val START_BALANCE = 50

@@ -64,12 +64,7 @@ private data class Drag(val index: Int, val topLeft: Offset, val size: IntSize, 
     val center: Offset get() = topLeft + Offset(size.width / 2f, size.height / 2f)
 }
 
-/**
- * Оплата: купюры и монеты перетаскивают из кошелька на прилавок пальцем, как в настоящем магазине.
- * Отпустил над прилавком — положил; стащил с прилавка — вернул в кошелёк; отпустил мимо — вернулась на место.
- * Нажатием не перекладываются, но у TalkBack есть действие «положить» и «вернуть», чтобы оплатить можно было и без жеста.
- * Где сейчас палец — состояние самого жеста, оно живёт здесь; что лежит на прилавке — в [AdventureUiState].
- */
+/** Оплата: купюры и монеты перетаскивают из кошелька на прилавок пальцем, как в настоящем магазине. */
 @Composable
 internal fun PayScene(scene: AdventureScene.Pay, state: AdventureUiState, look: AdventureLook, onAction: (AdventureAction) -> Unit) {
     val locked = state.check != null

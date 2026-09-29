@@ -13,15 +13,7 @@ import java.io.IOException
 private const val RETRIES = 2
 private const val RETRY_PAUSE_MS = 100L
 
-/**
- * Чтение или запись файла хранения на Dispatchers.IO. Со сбоем сначала пытаемся справиться сами:
- * - пропала папка файла — создаём её и пробуем снова (сам файл DataStore создаёт при записи);
- * - непонятный сбой ввода-вывода — ещё [RETRIES] попытки с короткой паузой: такие бывают разовыми.
- *
- * Не повторяем то, что само не пройдёт, и сразу отдаём причину, которую может исправить пользователь:
- * нет места — [StorageError.NO_SPACE], нет доступа к памяти (права, память только для чтения) —
- * [StorageError.NO_ACCESS]. Не помогли и повторы — [failure] (READ_FAILED или WRITE_FAILED).
- */
+/** Чтение или запись файла хранения на Dispatchers.IO. Со сбоем сначала пытаемся справиться сами. */
 internal suspend fun <T> onDisk(file: () -> File, failure: StorageError, block: suspend () -> T): Result<T, StorageError> =
     withContext(Dispatchers.IO) {
         repeat(RETRIES + 1) { attempt ->

@@ -2,11 +2,7 @@ package ru.larpinovplay.finniapp.domain.shop
 
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 
-/**
- * Сколько монет минимум нужно, чтобы купить еды на [satiety] сытости из [items] (повторять товар можно).
- * Это цена нужд недели: её подсказывает план, а не цена самой дешёвой еды, которой на неделю не хватит.
- * null — из этих товаров столько сытости не набрать.
- */
+/** Сколько монет минимум нужно, чтобы купить еды на [satiety] сытости из [items] (повторять товар можно). */
 fun cheapestFoodFor(satiety: Int, items: List<ShopItem>): Int? {
     val food = items.filter { it.satiety > 0 }
     if (food.isEmpty()) return null

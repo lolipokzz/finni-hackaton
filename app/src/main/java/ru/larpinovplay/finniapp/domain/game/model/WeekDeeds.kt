@@ -4,11 +4,7 @@ import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.pet.model.MoodLevel
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 
-/**
- * Четыре дела недели (docs/11-economy.md, раздел 4). Каждое сделанное дело — шаг роста Финни.
- * Считаются в любой момент недели, поэтому ребёнок видит, что уже сделано и что ещё можно успеть;
- * в конце недели засчитывается то, что сделано к её закрытию.
- */
+/** Четыре дела недели. Каждое сделанное дело — шаг роста Финни. */
 data class WeekDeeds(
     val fed: Boolean,              // куплено еды на недельную сытость
     val notBored: Boolean,         // настроение не ниже «спокойного»

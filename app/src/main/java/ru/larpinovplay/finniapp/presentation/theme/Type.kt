@@ -7,10 +7,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * Крупный, жирный, округлый по духу шрифт. Пока системный (Roboto);
- * когда в проект добавят Nunito или похожую гарнитуру с лицензией OFL,
- * достаточно заменить [FinniFont].
- * Основной текст не меньше 16 sp (ТЗ 3.6).
+ * Крупный, жирный, округлый по духу шрифт. Пока системный (Roboto); когда в проект добавят Nunito или похожую гарнитуру
+ * с лицензией OFL, достаточно заменить [FinniFont]. Основной текст не меньше 16 sp.
  */
 val FinniFont: FontFamily = FontFamily.Default
 

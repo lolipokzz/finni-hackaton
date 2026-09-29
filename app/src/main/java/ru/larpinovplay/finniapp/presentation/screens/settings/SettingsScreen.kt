@@ -60,7 +60,7 @@ import ru.larpinovplay.finniapp.presentation.components.ScreenHeader
 import ru.larpinovplay.finniapp.presentation.components.creamCard
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
-/** Три карточки знакомства с игрой (ТЗ 2.5.1): показываются при первом запуске и здесь по запросу. */
+/** Три карточки знакомства с игрой: показываются при первом запуске и здесь по запросу. */
 private data class IntroCard(val icon: Int, val tint: Color, val title: String, val text: String)
 
 private val introCards = listOf(
@@ -78,7 +78,7 @@ private val introCards = listOf(
     ),
 )
 
-/** Словарик простыми словами (ТЗ 2.5.11). Слова те же, что на экранах игры. */
+/** Словарик простыми словами. Слова те же, что на экранах игры. */
 private val glossary = listOf(
     "Монеты" to "Игровые деньги. Каждую неделю приходят карманные, немного — за задания и приключения.",
     "Обязательное" to "Без этого Финни плохо: еда.",
@@ -253,7 +253,7 @@ private fun ToggleRow(icon: Int, tint: Color, title: String, subtitle: String, c
             Text(title, fontSize = 16.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
             Text(subtitle, fontSize = 13.sp, lineHeight = 17.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         }
-        // Состояние продублировано словом: цвет не единственный носитель смысла (ТЗ 3.6)
+        // Состояние продублировано словом: цвет не единственный носитель смысла
         Text(
             if (checked) "Вкл" else "Выкл", fontSize = 13.sp, fontWeight = FontWeight.Black,
             color = if (checked) FinniColors.Teal else FinniColors.InkMuted,
@@ -273,10 +273,8 @@ private fun ToggleRow(icon: Int, tint: Color, title: String, subtitle: String, c
 }
 
 /**
- * Повтор слов — единственное, чему нужен микрофон. По умолчанию выключен; доступ к микрофону спрашивается
- * только в момент включения этого переключателя, а не сам по себе на главном экране.
- * Звук обрабатывается только на устройстве: не записывается в файлы и никуда не отправляется.
- * Переключатель показывает, работает ли повтор на самом деле: включён и доступ выдан.
+ * Повтор слов — единственное, чему нужен микрофон. По умолчанию выключен; доступ к микрофону спрашивается только в
+ * момент включения этого переключателя, а не сам по себе на главном экране.
  */
 @Composable
 private fun VoiceRepeatRow(setting: Boolean, onChange: (Boolean) -> Unit) {

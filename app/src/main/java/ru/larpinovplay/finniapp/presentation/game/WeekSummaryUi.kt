@@ -39,10 +39,7 @@ fun Deed.todoText(weekSatiety: Int): String {
     }
 }
 
-/**
- * Почему за неделю изменилось настроение (ТЗ 2.5.10): неделя его снижает, а одежда и достигнутые цели немного
- * поддерживают (docs/04-rules-and-formulas.md, «Состояние питомца»).
- */
+/** Почему за неделю изменилось настроение: неделя его снижает, а одежда и достигнутые цели немного поддерживают. */
 @Composable
 fun WeekSummary.moodText(): String {
     val feedback = LocalFeedback.current

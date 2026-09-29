@@ -27,23 +27,15 @@ import ru.larpinovplay.finniapp.domain.task.model.Level
 import java.time.LocalDate
 
 /**
- * Игра как чистые функции (docs/06-architecture.md): `(снимок, команда) → (новый снимок, результат)`.
- * Единственное место, где создаётся запись журнала и меняются кошелёк и питомец. Без корутин и Android,
- * поэтому проверяется обычными юнит-тестами. Хранение и последовательность команд — дело GameRepository.
- *
- * Правила — из docs/04-rules-and-formulas.md. Неделя идёт так: приходят монеты → ребёнок делит их планом
- * ([confirmPlan]) → покупает и копит → закрывает неделю ([finishWeek]): каждое сделанное дело недели — шаг роста.
- * Дата приходит параметром, поэтому движок не зависит от часов устройства.
+ * Игра как чистые функции: `(снимок, команда) → (новый снимок, результат)`. Единственное место, где создаётся запись
+ * журнала и меняются кошелёк и питомец.
  */
 object GameEngine {
 
     fun newGame(today: LocalDate, startBalance: Int = GameRules.START_BALANCE): GameState =
         GameState(periodStartedOn = today).post(LedgerReason.StartCoins, +startBalance)
 
-    /**
-     * Подтверждает план недели. План должен разложить весь баланс, без минусов, и только один раз за неделю.
-     * Строка «Копилка» сразу переводится в копилку: отложить — поведение по умолчанию, а забрать можно ([withdraw]).
-     */
+    /** Подтверждает план недели. План должен разложить весь баланс, без минусов, и только один раз за неделю. */
     fun confirmPlan(game: GameSnapshot, plan: BudgetPlan): Transition<ConfirmPlanResult> {
         val s = game.state
         val valid = s.phase == PeriodPhase.PLANNING &&
@@ -122,11 +114,7 @@ object GameEngine {
         return Transition(GameSnapshot(state, pet), goal)
     }
 
-    /**
-     * Засчитывает первое прохождение [level] с [mistakes] ошибками: звёзды ([GameRules.levelStars]) и награду.
-     * Ошибки меняют только их: пройти уровень — главное. null, если уровень закрыт (не его неделя или не пройден
-     * предыдущий на тропинке [levels]) или уже пройден.
-     */
+    /** Засчитывает первое прохождение [level] с [mistakes] ошибками: звёзды ([GameRules.levelStars]) и награду. */
     fun completeLevel(game: GameSnapshot, level: Level, mistakes: Int, levels: List<Level>): Transition<LevelResult?> {
         val s = game.state
         if (s.levelStatus(level, levels) != LevelStatus.AVAILABLE) return Transition(game, null)
@@ -153,11 +141,7 @@ object GameEngine {
         return Transition(game.copy(state = s.copy(goldLevels = s.goldLevels + level.id)), true)
     }
 
-    /**
-     * Засчитывает приключение недели с [mistakes] ошибками и платит награду. Ошибки влияют только на её размер:
-     * пройти — главное. null, если [adventure] сейчас закрыто или уже пройдено ([GameState.adventureStatus]):
-     * не приключение недели или не пройдены уровни недели [levels].
-     */
+    /** Засчитывает приключение недели с [mistakes] ошибками и платит награду. */
     fun completeAdventure(
         game: GameSnapshot,
         adventure: Adventure,
@@ -176,8 +160,7 @@ object GameEngine {
 
     /**
      * Начисляет [amount] монет в демо-режиме (запись журнала «Монеты демо-режима»): эксперт проверяет покупки и
-     * копилку, не дожидаясь карманных. В обычной игре ничего не делает и возвращает false — там монеты только
-     * зарабатываются. Посреди плана бюджет недели растёт: план раскладывает весь кошелёк.
+     * копилку, не дожидаясь карманных.
      */
     fun addDemoCoins(game: GameSnapshot, amount: Int): Transition<Boolean> {
         val s = game.state
@@ -186,9 +169,8 @@ object GameEngine {
     }
 
     /**
-     * Закрывает неделю, если [GameState.finishBlock] не мешает: засчитывает дела недели шагами роста,
-     * платит бонус копилки, меняет питомца, начинает новую неделю в фазе плана и зачисляет карманные
-     * по новой стадии питомца (docs/11-economy.md).
+     * Закрывает неделю, если [GameState.finishBlock] не мешает: засчитывает дела недели шагами роста, платит бонус
+     * копилки, меняет питомца, начинает новую неделю в фазе плана и зачисляет карманные по новой стадии питомца.
      */
     fun finishWeek(
         game: GameSnapshot,

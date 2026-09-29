@@ -41,7 +41,7 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
  * Корзина: отметить, что купить, уложившись в бюджет. Над списком — полоска бюджета: сколько выбрано из сколько,
- * перебор — тёплым цветом и знаком «!». Выбранное помечено галочкой, обязательное — меткой «главное».
+ * перебор — тёплым цветом и знаком «!».
  */
 @Composable
 internal fun BasketScene(scene: AdventureScene.Basket, state: AdventureUiState, look: AdventureLook, onAction: (AdventureAction) -> Unit) {

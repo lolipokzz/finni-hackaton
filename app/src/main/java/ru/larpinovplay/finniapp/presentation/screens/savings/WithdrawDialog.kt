@@ -34,8 +34,8 @@ import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
- * Забрать из копилки (ТЗ 2.5.7): можно всё, это деньги ребёнка. Окно не отговаривает, а показывает,
- * что изменится: сколько останется в копилке и насколько отодвинется цель.
+ * Забрать из копилки: можно всё, это деньги ребёнка. Окно не отговаривает, а показывает, что изменится: сколько
+ * останется в копилке и насколько отодвинется цель.
  */
 @Composable
 fun WithdrawDialog(

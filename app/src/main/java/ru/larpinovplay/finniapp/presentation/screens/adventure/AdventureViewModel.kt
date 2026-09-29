@@ -17,9 +17,8 @@ import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.presentation.screens.adventure.AdventureUiState.SceneCheck
 
 /**
- * Проходит приключение [adventureId] шаг за шагом. Ошибка не останавливает сюжет: неверную оплату или корзину
- * можно поправить, неверный ответ на вопрос или про сдачу разбираем и идём дальше. Число ошибок влияет только на награду в конце.
- * Реальный баланс не трогается до конца: в игру уходит только итог ([GameRepository.completeAdventure]).
+ * Проходит приключение [adventureId] шаг за шагом. Ошибка не останавливает сюжет: неверную оплату или корзину можно
+ * поправить, неверный ответ на вопрос или про сдачу разбираем и идём дальше.
  */
 class AdventureViewModel(
     adventureId: String,

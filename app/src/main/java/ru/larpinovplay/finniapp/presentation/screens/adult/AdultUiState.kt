@@ -19,7 +19,7 @@ enum class AdultError {
     ACTION_FAILED,
 }
 
-/** Пример-барьер: два двузначных числа — просто для взрослого, сложно для 7-летнего (ТЗ 2.5.12). */
+/** Пример-барьер: два двузначных числа — просто для взрослого, сложно для 7-летнего. */
 data class AdultExample(val first: Int, val second: Int) {
     val sum: Int get() = first + second
 }

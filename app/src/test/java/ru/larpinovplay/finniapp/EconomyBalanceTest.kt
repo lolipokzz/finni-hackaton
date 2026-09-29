@@ -16,12 +16,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
 import java.time.LocalDate
 
-/**
- * Баланс экономики (docs/11-economy.md, раздел 9): пять демо-недель для разных стратегий ребёнка через
- * настоящий движок. Главный принцип — ни одна крайняя стратегия не выигрывает: у каждой свой минус,
- * а сбалансированный план растит Финни быстрее всех и приводит к первой цели. Если правка чисел ломает
- * этот тест, она ломает и то, чему учит игра.
- */
+/** Баланс экономики: пять демо-недель для разных стратегий ребёнка через настоящий движок. */
 class EconomyBalanceTest {
 
     private val content = defaultContent()

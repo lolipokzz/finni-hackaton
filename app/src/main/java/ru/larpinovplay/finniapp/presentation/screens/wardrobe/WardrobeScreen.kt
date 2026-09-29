@@ -58,9 +58,8 @@ import ru.larpinovplay.finniapp.presentation.screens.shop.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
- * Гардероб: купленная в магазине одежда. Сверху тот же 3D-питомец, что на главном экране (его рисует PetHost
- * в слоте этого экрана), поэтому надетая вещь сразу видна на нём. Снизу — наклейки по местам: голова,
- * глаза, шея; место, где ещё ничего нет, — пунктирное и ведёт в магазин.
+ * Гардероб: купленная в магазине одежда. Сверху тот же 3D-питомец, что на главном экране (его рисует PetHost в слоте
+ * этого экрана), поэтому надетая вещь сразу видна на нём.
  */
 @Composable
 fun WardrobeScreen(
@@ -99,9 +98,8 @@ fun WardrobeScreenContent(
         Column(Modifier.fillMaxSize().padding(horizontal = 14.dp)) {
             Spacer(Modifier.height(10.dp))
             ScreenHeader("Гардероб", onBack)
-            // Самый большой квадрат, который влезает в свободное место: 3D-питомец рисуется в квадратный буфер
-            // (см. PetModel3D), и неквадратный слот растянул бы его. Прижат к низу, к полу над вещами.
-            // Вещи — под слотом, а не поверх него: вид питомца лежит над всем экраном
+            // Самый большой квадрат, который влезает в свободное место: 3D-питомец рисуется в квадратный буфер (см.
+            // PetModel3D), и неквадратный слот растянул бы его. Прижат к низу, к полу над вещами.
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
                 Box(
                     petSlot

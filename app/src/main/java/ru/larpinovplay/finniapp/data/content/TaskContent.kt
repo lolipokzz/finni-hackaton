@@ -7,12 +7,7 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload.Choice.Option
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 
-/**
- * Карта заданий, ТЗ 2.5.8: каждую неделю открываются три уровня — по одному на тему. В уровне шесть коротких
- * упражнений, а проходит ребёнок [GameRules.TASKS_PER_LEVEL] случайных: повтор уровня не выучить наизусть.
- * Неделя 1 — числа до 30 и одно действие, дальше суммы больше и действия в два шага.
- * Пока список в коде; по документации (docs/05-content-model.md) переедет в assets/content/levels.json.
- */
+/** Карта заданий: каждую неделю открываются три уровня — по одному на тему. */
 internal val defaultLevels: List<Level> = listOf(
     // ---------- Неделя 1: что нужно, что хочется, хватит ли монет ----------
     level(

@@ -1,6 +1,6 @@
 package ru.larpinovplay.finniapp.domain.task.model
 
-/** Тема финансовых заданий, ТЗ 2.5.8. */
+/** Тема финансовых заданий. */
 enum class TaskTopic {
     BUDGET,
     SAVINGS,

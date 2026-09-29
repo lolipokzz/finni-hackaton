@@ -7,8 +7,8 @@ import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 
 /**
- * Всё, что показывает раздел «Прогресс» (ТЗ 2.5.11).
- * Стадия, шаги роста и имя приходят вместе с питомцем, а не копируются в состояние.
+ * Всё, что показывает раздел «Прогресс». Стадия, шаги роста и имя приходят вместе с питомцем, а не копируются в
+ * состояние.
  */
 data class ProgressUiState(
     val pet: Pet,

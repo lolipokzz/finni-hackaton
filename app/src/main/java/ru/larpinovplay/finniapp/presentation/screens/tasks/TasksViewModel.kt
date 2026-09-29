@@ -18,8 +18,8 @@ import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 
 /**
- * Карта заданий (ТЗ 2.5.8): неделя за неделей — уровни по трём темам и приключение недели.
- * Уровни недели открываются вместе с ней; какой узел выбран на карте — вид, он живёт в экране.
+ * Карта заданий: неделя за неделей — уровни по трём темам и приключение недели. Уровни недели открываются вместе с ней;
+ * какой узел выбран на карте — вид, он живёт в экране.
  */
 class TasksViewModel(
     private val game: GameRepository,
@@ -69,7 +69,7 @@ class TasksViewModel(
         )
     }
 
-    /** Почему уровни недели [number] закрыты. В демо уровни открыты все (ТЗ 2.5.8). */
+    /** Почему уровни недели [number] закрыты. В демо уровни открыты все. */
     private fun weekLock(s: GameState, number: Int): WeekLock? = when {
         number <= s.week || s.demoMode -> null
         number > s.week + 1 -> WeekLock.LATER
@@ -79,9 +79,8 @@ class TasksViewModel(
     }
 
     /**
-     * Приключения по неделям, в конце тропинки недели: пройденные — на неделе прохождения, ждущее — на этой,
-     * остальные — по одному на следующие недели, по порядку. Приключение недели открывается после её уровней;
-     * в демо открыты все.
+     * Приключения по неделям, в конце тропинки недели: пройденные — на неделе прохождения, ждущее — на этой, остальные
+     * — по одному на следующие недели, по порядку.
      */
     private fun adventuresByWeek(s: GameState): Map<Int, List<MapNode.AdventureNode>> {
         val nodes = mutableListOf<Pair<Int, MapNode.AdventureNode>>()

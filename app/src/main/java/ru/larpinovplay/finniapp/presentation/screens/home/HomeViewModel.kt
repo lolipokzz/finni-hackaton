@@ -107,10 +107,7 @@ class HomeViewModel(
         viewModelScope.launch { game.exitDemo().orSnackbar { exitDemo() } }
     }
 
-    /**
-     * Карточка дел сменяется итогами одним обновлением: между ними не мелькнёт главный экран прошлой недели.
-     * Пока итоги открыты, второй тап по ещё не исчезнувшей кнопке не закончит (в демо) и следующую неделю.
-     */
+    /** Карточка дел сменяется итогами одним обновлением: между ними не мелькнёт главный экран прошлой недели. */
     private fun finishWeek() {
         if (_state.value?.weekSummary != null) return
         viewModelScope.launch {

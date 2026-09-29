@@ -4,7 +4,7 @@ import kotlinx.serialization.json.Json
 import ru.larpinovplay.finniapp.domain.content.Feedback
 import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 
-/** Где лежит файл с фразами обратной связи (docs/05-content-model.md). */
+/** Где лежит файл с фразами обратной связи. */
 const val FEEDBACK_ASSET = "content/feedback.json"
 
 /** Разбирает feedback.json: плоский объект «ключ → шаблон». Неизвестный или пропущенный ключ — ошибка контента. */

@@ -4,9 +4,8 @@ import ru.larpinovplay.finniapp.domain.adventure.checkPayment
 import ru.larpinovplay.finniapp.domain.adventure.checkBasket
 
 /**
- * Приключение недели: короткий сюжет из сцен (справочник контента, только чтение).
- * Приключения идут по порядку списка, одно за неделю. Числа внутри сцен свои и реальный баланс не трогают:
- * в игру уходит только награда — [reward], если прошёл без ошибок, иначе [rewardOnMistake].
+ * Приключение недели: короткий сюжет из сцен (справочник контента, только чтение). Приключения идут по порядку списка,
+ * одно за неделю.
  */
 data class Adventure(
     val id: String,
@@ -40,8 +39,7 @@ sealed interface AdventureScene {
 
     /**
      * Вопрос с вариантами. Верных может быть несколько; у каждого варианта своё объяснение, его показывают после
-     * ответа, верного или нет. Неверный ответ не останавливает сюжет. id вариантов уникальны во всём приключении:
-     * на них ссылается [Story.variants].
+     * ответа, верного или нет.
      */
     data class Choice(val text: String, val options: List<Option>, val hint: String) : AdventureScene {
         data class Option(val id: String, val text: String, val correct: Boolean, val explanation: String)

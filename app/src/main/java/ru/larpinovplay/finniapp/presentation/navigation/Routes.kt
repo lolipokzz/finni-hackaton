@@ -4,25 +4,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
 
-/**
- * Граф навигации (docs/07-screens.md#граф-навигации), после того как питомец создан:
- *
- * ```
- * Home ─┬─ Tasks ─┬─ LevelPlay ── назад на Tasks
- *       │         └─ AdventurePlay ── назад на Tasks
- *       ├─ Shop ── (нехватка монет) ── Tasks
- *       │    └─ (купил одежду) ── Wardrobe
- *       ├─ Wardrobe ── (пусто) ── Shop
- *       ├─ Savings
- *       ├─ Progress
- *       ├─ Settings
- *       └─ Adult
- * ```
- *
- * Каждый маршрут — ключ back stack'а: сериализуемый, поэтому стек переживает поворот экрана
- * и смерть процесса. «Назад» (кнопка на экране и системная) снимает верхний ключ.
- * Точка входа — [Home]: знакомство с Финни (раскраска, имя, короткое обучение) идёт до графа, см. PetCreationScreen.
- */
+/** Граф навигации после того, как питомец создан. */
 @Serializable
 data object Home : NavKey
 

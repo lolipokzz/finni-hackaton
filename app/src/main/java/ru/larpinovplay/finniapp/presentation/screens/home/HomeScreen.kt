@@ -129,17 +129,7 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniAppTheme
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 import androidx.compose.foundation.BorderStroke
 
-/**
- * Главный экран: комната с питомцем и немного «наклеек» вокруг (PRODUCT.md, макет v6).
- * Сверху — самочувствие Финни, монеты и его табличка с шагами роста; посередине Финни и одна его реплика
- * с кнопкой следующего дела; снизу меню и солнышко недели, по которому открываются дела и конец недели.
- *
- * Правила UX (docs/07-screens.md): тапаемые элементы ≥ 48 dp, у каждого показателя есть значок и описание
- * для TalkBack; подробности по нажатию.
- *
- * Питомец рисуется в SurfaceView поверх Compose с прозрачным фоном, поэтому наклейки не должны заходить
- * на его слот: реплика стоит над слотом, а не на нём.
- */
+/** Главный экран: комната с питомцем и немного «наклеек» вокруг. */
 @Composable
 fun HomeScreen(
     onOpenSection: (HomeSection) -> Unit,
@@ -342,8 +332,8 @@ private fun TopRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
 }
 
 /**
- * Копилка и активное задание числом и словами (ТЗ 2.5.3): видно сразу, без перехода в разделы.
- * Каждая карточка ведёт туда, где с этим работают.
+ * Копилка и активное задание числом и словами: видно сразу, без перехода в разделы. Каждая карточка ведёт туда, где с
+ * этим работают.
  */
 @Composable
 private fun StatusRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
@@ -447,7 +437,7 @@ private fun DemoChip(onClick: () -> Unit) {
         shape = CircleShape,
         color = FinniColors.Sunny,
         border = BorderStroke(2.dp, Color.White),
-        // Маленькая плашка, но цель для пальца — не меньше 48 dp (ТЗ 3.6)
+        // Маленькая плашка, но цель для пальца — не меньше 48 dp
         modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Демо-режим: монеты и выход из демо" },
     ) {
         Box(contentAlignment = Alignment.Center) {
@@ -461,11 +451,7 @@ private fun DemoChip(onClick: () -> Unit) {
 /** Сколько облачко висит само, прежде чем сесть в значок. */
 private const val SPEECH_SHOWN_MS = 6_000L
 
-/**
- * Реплика Финни. Сначала — облачко над головой: он говорит от себя и зовёт к одному делу текстовой ссылкой.
- * Через [SPEECH_SHOWN_MS] или по нажатию на облачко оно прячется, а у головы остаётся маленькое «…»
- * ([TypingBubble]); оно или сам Финни открывают реплику снова.
- */
+/** Реплика Финни. Сначала — облачко над головой: он говорит от себя и зовёт к одному делу текстовой ссылкой. */
 private val HomeUiState.Speech.important: Boolean
     get() = this == HomeUiState.Speech.PLAN_WEEK || this == HomeUiState.Speech.HUNGRY || this == HomeUiState.Speech.ADVENTURE ||
         this == HomeUiState.Speech.WEEK_READY || this == HomeUiState.Speech.DEEDS_LEFT
@@ -521,7 +507,6 @@ private fun PetArea(
 ) {
     val pet = state.pet
     // Повторять слова можно, только если это включено в настройках, звук включён и доступ к микрофону уже выдан.
-    // Сам главный экран доступ никогда не спрашивает: его запрашивает переключатель в настройках при включении
     val wantsVoice = state.voiceRepeatEnabled && state.soundEnabled
     val micGranted = petHost != null && rememberMicrophoneGranted(wantsVoice)
     val spec = PetSpec(
@@ -580,17 +565,14 @@ private fun PetArea(
 private val SpeechBubbleMaxWidth = 260.dp
 
 /**
- * Где кончики ушей, в долях стороны слота от его верха: FLOOR_IN_SLOT − PET_HEIGHT_IN_SLOT × масштаб стадии.
- * Питомец уменьшается от пола, а пол — не низ слота. Замерено на экране в спокойной позе на всех трёх стадиях
- * (малыш 0,366, подросток 0,239, взрослый 0,129 — ровно на прямой). По ней садятся облачко реплики и «…».
+ * Где кончики ушей, в долях стороны слота от его верха: FLOOR_IN_SLOT − PET_HEIGHT_IN_SLOT × масштаб стадии. Питомец
+ * уменьшается от пола, а пол — не низ слота.
  */
 private const val FLOOR_IN_SLOT = 0.868f
 private const val PET_HEIGHT_IN_SLOT = 0.739f
 
 /**
- * Маленькое облачко «• • •» с хвостиком из двух кружков к голове: Финни есть что сказать.
- * У важного дела точки тёплые. Точки не мигают: облачко лежит под прозрачным видом питомца, и постоянная
- * перерисовка под ним затемняет весь слот.
+ * Маленькое облачко «• • •» с хвостиком из двух кружков к голове: Финни есть что сказать. У важного дела точки тёплые.
  */
 @Composable
 private fun TypingBubble(important: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {

@@ -1,6 +1,6 @@
 package ru.larpinovplay.finniapp.domain.task.model
 
-/** Три типа механик заданий (docs/05-content-model.md): выбор действия, раскладка суммы, список покупок. */
+/** Три типа механик заданий: выбор действия, раскладка суммы, список покупок. */
 sealed interface TaskPayload {
     data class Choice(val options: List<Option>) : TaskPayload {
         data class Option(val id: String, val text: String, val correct: Boolean, val consequence: String)

@@ -12,9 +12,8 @@ import java.io.OutputStream
 internal class IncompatibleSaveVersion(val found: Int) : Exception("Версия сохранения $found, ожидается $GAME_SAVE_VERSION")
 
 /**
- * Читает и пишет [GameSaveFile] как JSON. Любой файл, который не удаётся разобрать, это
- * [CorruptionException]: DataStore передаёт её обработчику повреждений, а не роняет приложение.
- * Ошибки ввода-вывода (`IOException`) сюда не оборачиваются, они означают сбой диска, а не плохие данные.
+ * Читает и пишет [GameSaveFile] как JSON. Любой файл, который не удаётся разобрать, это [CorruptionException]:
+ * DataStore передаёт её обработчику повреждений, а не роняет приложение.
  */
 internal object GameSaveSerializer : Serializer<GameSaveFile> {
 

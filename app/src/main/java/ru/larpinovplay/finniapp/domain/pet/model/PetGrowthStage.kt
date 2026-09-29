@@ -1,8 +1,8 @@
 package ru.larpinovplay.finniapp.domain.pet.model
 
 /**
- * Стадии роста и шаги, с которых они начинаются. Шаг — одно сделанное дело недели, их 4 за неделю:
- * при всех делах подросток на 2-й неделе, взрослый на 4-й (docs/11-economy.md, раздел 4).
+ * Стадии роста и шаги, с которых они начинаются. Шаг — одно сделанное дело недели, их 4 за неделю: при всех делах
+ * подросток на 2-й неделе, взрослый на 4-й.
  */
 enum class PetGrowthStage(val order: Int, val minGrowthPoints: Int) {
     BABY(order = 0, minGrowthPoints = 0),

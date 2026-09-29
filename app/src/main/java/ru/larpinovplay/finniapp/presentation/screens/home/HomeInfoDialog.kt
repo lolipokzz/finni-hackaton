@@ -46,9 +46,8 @@ private data class InfoContent(
 )
 
 /**
- * Пояснение показателя простыми словами (ТЗ 2.2 «объяснимость», 2.5.4, 2.5.9):
- * что это, сколько сейчас, от чего растёт и падает, что можно сделать.
- * Числа совпадают с правилами GameEngine и docs/04-rules-and-formulas.md.
+ * Пояснение показателя простыми словами: что это, сколько сейчас, от чего растёт и
+ * падает, что можно сделать. Числа совпадают с правилами GameEngine
  */
 private fun content(info: HomeInfo, state: HomeUiState): InfoContent = when (info) {
     HomeInfo.COINS -> InfoContent(

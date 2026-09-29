@@ -519,7 +519,7 @@ class GameEngineTest {
         val (_, summary) = dressed.finish()
 
         assertEquals(2 * GameRules.LASTING_MOOD_PER_ITEM - GameRules.WEEKLY_MOOD_DECAY, summary.moodDelta)
-        // Итоги объясняют изменение: сколько дали одежда и цели (ТЗ 2.5.10)
+        // Итоги объясняют изменение: сколько дали одежда и цели
         assertEquals(2 * GameRules.LASTING_MOOD_PER_ITEM, summary.lastingMood)
     }
 
@@ -553,7 +553,7 @@ class GameEngineTest {
         assertEquals(LevelStatus.DONE, game.state.levelStatus(week1, content.levels))
     }
 
-    /** Уровни недели открываются вместе с ней; в демо (ТЗ 2.5.8) все открыты сразу. */
+    /** Уровни недели открываются вместе с ней; в демо все открыты сразу. */
     @Test
     fun levelsOfLaterWeeksAreLockedOutsideDemo() {
         val game = newGame()
@@ -652,7 +652,7 @@ class GameEngineTest {
         assertNull(done.state.finishBlock(day2, content.adventures, content.levels))
     }
 
-    /** В демо (ТЗ 2.5.8) все приключения открыты сразу, как и уровни. */
+    /** В демо все приключения открыты сразу, как и уровни. */
     @Test
     fun demoOpensEveryAdventure() {
         val demo = newGame().let { it.copy(state = it.state.copy(demoMode = true)) }

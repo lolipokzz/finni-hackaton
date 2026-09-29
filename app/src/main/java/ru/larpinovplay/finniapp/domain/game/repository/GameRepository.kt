@@ -22,36 +22,19 @@ import ru.larpinovplay.finniapp.domain.task.model.Level
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
 import ru.larpinovplay.finniapp.domain.util.result.Result
 
-/**
- * Единственная точка, через которую экраны читают игру и отдают ей команды.
- * Питомец — часть игры: он лежит в том же [snapshot], что и состояние, и обновляется с ним одной записью,
- * поэтому экран не увидит новые монеты со старой сытостью. Читать снимок можно, менять его умеют только
- * команды ниже (правила каждой описаны в GameEngine). Команды выполняются последовательно.
- *
- * Игра хранится на диске, поэтому у каждой команды два независимых исхода:
- * - что решили правила игры (например, [PurchaseResult.NotEnough]) лежит внутри [Result.Success];
- * - что не удалось сохранить — это [Result.Error] с [StorageError], его обрабатывает ViewModel. Команда
- *   применяется только вместе с записью: при ошибке [snapshot] остаётся прежним, то есть равным тому, что на диске.
- *
- * Запись — suspend на Dispatchers.IO: главный поток она не держит.
- * Правило, отклонённое игрой, ничего не пишет и потому ошибки хранения дать не может.
- */
+/** Единственная точка, через которую экраны читают игру и отдают ей команды. */
 interface GameRepository {
 
     /** Игра целиком; null, пока нет игры: сохранения ещё нет или оно не загружено ([load]). */
     val snapshot: StateFlow<GameSnapshot?>
 
     /**
-     * Загружает сохранённую игру и публикует её в [snapshot]. Вызывается один раз при запуске.
-     * Success(null) — сохранения нет, нужно создать питомца. При [StorageError.CORRUPTED] и
-     * [StorageError.INCOMPATIBLE_VERSION] сохранение уже сброшено: [snapshot] остаётся null, начинать заново.
+     * Загружает сохранённую игру и публикует её в [snapshot]. Вызывается один раз при запуске. Success(null) —
+     * сохранения нет, нужно создать питомца.
      */
     suspend fun load(): Result<GameSnapshot?, StorageError>
 
-    /**
-     * Начинает игру с питомцем [pet]; [withTutorial] — первую неделю Финни подсказывает на главном экране.
-     * @throws IllegalStateException если игра уже начата.
-     */
+    /** Начинает игру с питомцем [pet]; [withTutorial] — первую неделю Финни подсказывает на главном экране. */
     suspend fun createPet(pet: Pet, withTutorial: Boolean = false): EmptyResult<StorageError>
 
     /** Обучение закончено: подсказок больше не будет. */
@@ -102,8 +85,8 @@ interface GameRepository {
     val gameBeforeDemo: StateFlow<GameSnapshot?>
 
     /**
-     * Заменяет текущую игру чистым тестовым профилем. Игра ребёнка не пропадает: она откладывается в
-     * [gameBeforeDemo] и возвращается [exitDemo]. Повторный сброс демо откладывает не демо, а по-прежнему игру ребёнка.
+     * Заменяет текущую игру чистым тестовым профилем. Игра ребёнка не пропадает: она откладывается в [gameBeforeDemo] и
+     * возвращается [exitDemo].
      */
     suspend fun resetToDemo(): EmptyResult<StorageError>
 

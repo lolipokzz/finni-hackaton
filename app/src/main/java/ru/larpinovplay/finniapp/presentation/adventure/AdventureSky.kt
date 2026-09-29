@@ -13,8 +13,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Небо приключения: градиент из [AdventureLook], мягкие лучи из точки [sunX]·[sunY] (доли ширины и высоты)
- * и редкое конфетти. Рисуется за содержимым; ничего не анимирует — праздник не должен мешать читать.
+ * Небо приключения: градиент из [AdventureLook], мягкие лучи из точки [sunX]·[sunY] (доли ширины и высоты) и редкое
+ * конфетти.
  */
 @Composable
 fun AdventureSky(look: AdventureLook, modifier: Modifier = Modifier, sunX: Float = 0.5f, sunY: Float = 0.35f, confetti: Boolean = true) {

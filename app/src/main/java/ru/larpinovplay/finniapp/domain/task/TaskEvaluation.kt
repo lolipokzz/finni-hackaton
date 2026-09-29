@@ -5,7 +5,7 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
 import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 
-/** Оценка ответа по правилам из docs/04-rules-and-formulas.md. */
+/** Оценка ответа на упражнение: верно ли, награда и объяснение. */
 fun Task.evaluate(answer: TaskAnswer): TaskOutcome {
     val (success, consequence) = when (val p = payload) {
         is TaskPayload.Choice -> {

@@ -10,9 +10,8 @@ import java.time.LocalDate
 import ru.larpinovplay.finniapp.domain.game.engine.GameEngine
 
 /**
- * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб.
- * [purchases] — покупки текущей недели (обнуляются в конце недели), [wardrobe] — купленная одежда, она остаётся.
- * Питомец сюда не входит: он лежит рядом, в [GameSnapshot]. Неизменяемо; менять его может только [GameEngine].
+ * Игровое состояние: кошелёк, журнал, покупки, копилка, задания, история недель, гардероб. [purchases] — покупки
+ * текущей недели (обнуляются в конце недели), [wardrobe] — купленная одежда, она остаётся.
  */
 data class GameState(
     val demoMode: Boolean = false,
@@ -74,8 +73,8 @@ data class GameState(
     fun weekLevelsDone(levels: List<Level>): Boolean = levels.filter { it.week <= week }.all { levelResult(it) != null }
 
     /**
-     * Приключение на карте: пройдено; можно — это приключение недели и уровни недели пройдены (оно в конце
-     * тропинки недели); иначе закрыто. В демо (ТЗ 2.5.8) все непройденные приключения открыты сразу.
+     * Приключение на карте: пройдено; можно — это приключение недели и уровни недели пройдены (оно в конце тропинки
+     * недели); иначе закрыто. В демо все непройденные приключения открыты сразу.
      */
     fun adventureStatus(adventure: Adventure, adventures: List<Adventure>, levels: List<Level>): LevelStatus = when {
         adventureResults.any { it.adventureId == adventure.id } -> LevelStatus.DONE
@@ -84,10 +83,7 @@ data class GameState(
         else -> LevelStatus.LOCKED
     }
 
-    /**
-     * Почему неделю сейчас нельзя закончить, или null, если можно. [today] — сегодняшняя дата устройства,
-     * [adventures] и [levels] — приключения и уровни из контента: приключение недели открывается после её уровней.
-     */
+    /** Почему неделю сейчас нельзя закончить, или null, если можно. */
     fun finishBlock(today: LocalDate, adventures: List<Adventure> = emptyList(), levels: List<Level> = emptyList()): FinishBlock? = when {
         phase != PeriodPhase.ACTIVE -> FinishBlock.PLAN_NOT_CONFIRMED
         adventureOfWeek(adventures) != null && !demoMode && !weekLevelsDone(levels) -> FinishBlock.LEVELS_NOT_PLAYED
@@ -98,9 +94,8 @@ data class GameState(
     }
 
     /**
-     * Уровень на карте [levels] (по порядку тропинки). Уровни идут друг за другом: следующий открывается, когда
-     * пройден предыдущий, и не раньше своей недели. Непройденный уровень ждёт и на следующих неделях.
-     * В демо (ТЗ 2.5.8) все уровни открыты сразу — без недель и без очереди.
+     * Уровень на карте [levels] (по порядку тропинки). Уровни идут друг за другом: следующий открывается, когда пройден
+     * предыдущий, и не раньше своей недели.
      */
     fun levelStatus(level: Level, levels: List<Level>): LevelStatus = when {
         levelResult(level) != null -> LevelStatus.DONE

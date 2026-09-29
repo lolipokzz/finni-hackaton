@@ -3,8 +3,8 @@ package ru.larpinovplay.finniapp.domain.game.model
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 
 /**
- * Итоги закрытой недели (ТЗ 2.5.9, 2.5.10): дела недели, план против факта и что стало с питомцем.
- * Объяснение словами строит слой представления.
+ * Итоги закрытой недели: дела недели, план против факта и что стало с питомцем. Объяснение словами строит слой
+ * представления.
  */
 data class WeekSummary(
     val week: Int,

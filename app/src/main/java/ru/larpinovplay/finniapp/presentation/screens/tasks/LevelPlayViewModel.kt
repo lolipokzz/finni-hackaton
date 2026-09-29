@@ -19,8 +19,7 @@ import ru.larpinovplay.finniapp.presentation.storage.snackbar
 
 /**
  * Проходит уровень [levelId] упражнение за упражнением. Ошибка не останавливает уровень: после каждого ответа —
- * объяснение, и идём дальше; ошибки меняют только звёзды и награду. В игру уходит только итог
- * ([GameRepository.completeLevel] или, в испытании [challenge], [GameRepository.completeChallenge]).
+ * объяснение, и идём дальше; ошибки меняют только звёзды и награду.
  */
 class LevelPlayViewModel(
     levelId: String,

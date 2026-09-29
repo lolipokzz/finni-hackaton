@@ -23,11 +23,7 @@ import ru.larpinovplay.finniapp.domain.storage.StorageError
 import ru.larpinovplay.finniapp.domain.util.result.Result
 import ru.larpinovplay.finniapp.domain.util.result.dataOrNull
 
-/**
- * Репозиторий связывает правила игры и хранилище: правила проверяет GameEngineTest, диск подменён
- * [FakeGameStore]. Главное здесь порядок «сначала запись, потом публикация» и то, что сбой хранения
- * не портит игру, а возвращается вызывающему как [Result.Error].
- */
+/** Репозиторий связывает правила игры и хранилище: правила проверяет GameEngineTest, диск подменён [FakeGameStore]. */
 class GameRepositoryImplTest {
 
     private val food = defaultContent().shopItems.first { it.category == ShopCategory.MANDATORY }
@@ -37,7 +33,7 @@ class GameRepositoryImplTest {
     private val game = GameRepositoryImpl(store, startBalance = 100, clock = clock)
     private val plan = BudgetPlan(mandatory = food.price, optional = 100 - food.price)
 
-    /** Раздел взрослого обещает демо с [GameRules.START_BALANCE] монет на первой неделе (ТЗ 2.5.13) — так и есть. */
+    /** Раздел взрослого обещает демо с [GameRules.START_BALANCE] монет на первой неделе — так и есть. */
     @Test
     fun demoStartsWithStartBalanceOnFirstWeek() = runBlocking {
         val game = GameRepositoryImpl(FakeGameStore(), clock = clock)

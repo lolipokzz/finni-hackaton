@@ -39,8 +39,8 @@ import ru.larpinovplay.finniapp.presentation.screens.tasks.LevelPlayViewModel
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksViewModel
 
 /**
- * Проводка Koin: неверный `get()` в конструкторе иначе выяснится только падением при открытии экрана.
- * Поднимаем модуль без Android (свой [koinApplication], глобального Koin не трогаем) и достаём всё.
+ * Проводка Koin: неверный `get` в конструкторе иначе выяснится только падением при открытии экрана. Поднимаем модуль
+ * без Android (свой [koinApplication], глобального Koin не трогаем) и достаём всё.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppModuleTest {

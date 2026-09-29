@@ -32,7 +32,7 @@ val ShopItem.effectText: String
 
 val ShopCategory.title: String
     get() = when (this) {
-        // Те же слова, что в плане недели (PRODUCT.md: три слова решений одинаковы везде)
+        // Те же слова, что в плане недели
         ShopCategory.MANDATORY -> "Обязательное"
         ShopCategory.OPTIONAL -> "Необязательное"
     }

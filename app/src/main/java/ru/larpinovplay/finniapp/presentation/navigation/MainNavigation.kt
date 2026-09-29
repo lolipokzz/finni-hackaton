@@ -34,9 +34,8 @@ import ru.larpinovplay.finniapp.presentation.screens.tasks.LevelPlayScreen
 import ru.larpinovplay.finniapp.presentation.screens.tasks.TasksScreen
 
 /**
- * Единственный NavDisplay приложения: здесь описан весь граф (см. [Routes.kt][Home]).
- * Питомца рисует [PetHost] уровнем выше: сюда приходит только [petHost] с его состоянием.
- * Экран сам берёт свой ViewModel и ничего не знает о соседях; куда идти дальше, решается здесь.
+ * Единственный NavDisplay приложения: здесь описан весь граф (см. [Routes.kt][Home]). Питомца рисует [PetHost] уровнем
+ * выше: сюда приходит только [petHost] с его состоянием.
  */
 @Composable
 fun MainNavigation(petHost: PetHostState, modifier: Modifier = Modifier) {

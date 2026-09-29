@@ -16,19 +16,8 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Игра в одном JSON-файле под управлением Jetpack DataStore: запись атомарна (временный файл и переименование),
- * очередь записей последовательная, при сбое прежний файл остаётся нетронутым. Чтение и запись — suspend
- * на Dispatchers.IO (onDisk): вызывать можно с главного потока.
- *
- * Как сбои становятся [StorageError]:
- * - сбой ввода-вывода сначала лечится на месте (см. onDisk: папка, повторы); нет места или доступа →
- *   [StorageError.NO_SPACE] / [StorageError.NO_ACCESS]; не помогло → [StorageError.READ_FAILED] / [StorageError.WRITE_FAILED];
- * - повреждённый файл или чужая версия формата: обработчик заменяет файл пустым сохранением, а [load] один раз
- *   сообщает [StorageError.CORRUPTED] или [StorageError.INCOMPATIBLE_VERSION], иначе игрок молча потерял бы игру;
- * - всё остальное (баги, `CancellationException`) не перехватывается.
- *
- * На один файл в процессе допустим только один экземпляр DataStore, поэтому и хранилище создаётся один раз
- * (в Koin это `single`).
+ * Игра в одном JSON-файле под управлением Jetpack DataStore: запись атомарна (временный файл и переименование), очередь
+ * записей последовательная, при сбое прежний файл остаётся нетронутым.
  */
 class DataStoreGameStore private constructor(
     private val dataStore: DataStore<GameSaveFile>,
@@ -61,10 +50,6 @@ class DataStoreGameStore private constructor(
 
     companion object {
 
-        /**
-         * @param scope область, в которой DataStore выполняет ввод-вывод; живёт столько же, сколько приложение
-         * @param produceFile файл сохранения; в приложении это `context.dataStoreFile("game.json")`
-         */
         fun create(scope: CoroutineScope, produceFile: () -> File): DataStoreGameStore =
             create(scope, produceFile, GameSaveSerializer)
 

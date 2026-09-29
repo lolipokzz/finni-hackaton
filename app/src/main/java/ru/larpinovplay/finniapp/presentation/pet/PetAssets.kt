@@ -8,12 +8,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.presentation.components.PetHitAnimations
 import ru.larpinovplay.finniapp.presentation.components.PetSpec
 
-/**
- * 3D-модель кота для стадии роста: assets/cat/{baby,teen,adult}.glb. Питомец в игре один — кот.
- * На каждой стадии своя модель с тем же скелетом и анимациями: малыш крупноголовый и коротколапый,
- * подросток вытянутый, взрослый — исходный. Рост на экране задаёт [modelScale].
- * Цвет питомца в файл не входит: подменяется текстура шерсти ([skinAsset]).
- */
+/** 3D-модель кота для стадии роста: assets/cat/{baby,teen,adult}.glb. Питомец в игре один — кот. */
 val PetGrowthStage.modelAsset: String
     get() = when (this) {
         PetGrowthStage.BABY -> "cat/baby.glb"
@@ -53,7 +48,7 @@ val PetGrowthStage.modelScale: Float
         PetGrowthStage.ADULT -> 1f
     }
 
-/** Эмоция, которую показывает 3D-питомец. Голод важнее настроения (docs/04-rules-and-formulas.md). */
+/** Эмоция, которую показывает 3D-питомец. Голод важнее настроения. */
 enum class PetEmotion { HAPPY, CALM, BORED, HUNGRY }
 
 val Pet.emotion: PetEmotion
@@ -102,9 +97,8 @@ val Pet.accessoryNodes: Set<String>
     get() = outfit.values.mapNotNull(::accessoryNode).toSet()
 
 /**
- * Модель, которой прогревают отрисовку ещё до создания питомца (см. PetHostState.warmUp): стадия не важна,
- * лишь бы материалы были теми же, что у настоящих моделей. Кот со всеми вещами: у вещей свои материалы
- * (без текстуры, полупрозрачные стёкла), а тело — тот же текстурный материал, что у остальных стадий.
+ * Модель, которой прогревают отрисовку ещё до создания питомца (см. PetHostState.warmUp): стадия не важна, лишь бы
+ * материалы были теми же, что у настоящих моделей.
  */
 val PetWarmUpSpec: PetSpec = PetSpec(
     assetName = PetGrowthStage.BABY.modelAsset,

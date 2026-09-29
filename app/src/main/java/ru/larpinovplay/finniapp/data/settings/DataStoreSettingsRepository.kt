@@ -19,12 +19,8 @@ import java.io.File
 import java.io.IOException
 
 /**
- * Настройки в отдельном файле DataStore, не в файле игры: сброс игры при смене формата не должен трогать
- * звук и подсказки.
- *
- * Сбои читаются мягко: настройки не стоят прерванной игры, поэтому повреждённый файл заменяется значениями по
- * умолчанию, а неудачное чтение после двух повторов даёт те же значения. Запись лечит сбои на месте (onDisk),
- * а что не вылечилось — возвращает: [StorageError.NO_SPACE], [StorageError.NO_ACCESS] или [StorageError.WRITE_FAILED].
+ * Настройки в отдельном файле DataStore, не в файле игры: сброс игры при смене формата не должен трогать звук и
+ * подсказки.
  */
 class DataStoreSettingsRepository internal constructor(
     private val dataStore: DataStore<SettingsSaveFile>,
@@ -43,10 +39,6 @@ class DataStoreSettingsRepository internal constructor(
 
         private const val READ_RETRIES = 2L
 
-        /**
-         * @param scope область, в которой DataStore выполняет ввод-вывод; живёт столько же, сколько приложение
-         * @param produceFile файл настроек; в приложении это `context.dataStoreFile("settings.json")`
-         */
         fun create(scope: CoroutineScope, produceFile: () -> File): DataStoreSettingsRepository =
             create(scope, produceFile, SettingsSaveSerializer)
 

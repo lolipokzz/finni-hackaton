@@ -15,8 +15,8 @@ import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.domain.task.model.TaskTopic
 
 /**
- * Минимальный объём демонстрационного контента, ТЗ 2.6. Если кто-то уберёт задание, товар или цель ниже минимума,
- * тест упадёт раньше, чем это заметят эксперты.
+ * Минимальный объём демонстрационного контента. Если кто-то уберёт задание, товар или цель ниже минимума, тест упадёт
+ * раньше, чем это заметят эксперты.
  */
 class ContentMinimumsTest {
 
@@ -28,7 +28,7 @@ class ContentMinimumsTest {
     fun atLeastSixTasksCoveringAllThreeTopics() {
         assertTrue("заданий ${tasks.size}", tasks.size >= 6)
         val byTopic = content.levels.groupBy { it.topic }.mapValues { (_, levels) -> levels.sumOf { it.tasks.size } }
-        // Три темы ТЗ 2.5.8: планирование бюджета, сбережения, платежи и покупки — и в каждой больше одного задания
+        // Три темы: планирование бюджета, сбережения, платежи и покупки — и в каждой больше одного задания
         TaskTopic.entries.forEach { topic ->
             assertTrue("в теме $topic заданий ${byTopic[topic] ?: 0}", (byTopic[topic] ?: 0) >= 2)
         }
@@ -36,7 +36,7 @@ class ContentMinimumsTest {
         assertEquals(content.levels.size, content.levels.map { it.id }.toSet().size)
     }
 
-    /** Карта: пять недель подряд (демо ТЗ 2.6), в каждой по уровню на тему. */
+    /** Карта: пять недель подряд (демо), в каждой по уровню на тему. */
     @Test
     fun everyWeekHasALevelPerTopicOfFourToFiveTasks() {
         val weeks = content.levels.groupBy { it.week }
@@ -48,7 +48,7 @@ class ContentMinimumsTest {
         content.levels.forEach { assertTrue("${it.id}: ${it.tasks.size} заданий", it.tasks.size > GameRules.TASKS_PER_LEVEL) }
     }
 
-    /** У раскладки и списка покупок есть верное решение, а у каждого задания — объяснение (ТЗ 2.5.8). */
+    /** У раскладки и списка покупок есть верное решение, а у каждого задания — объяснение. */
     @Test
     fun everyTaskCanBeSolvedAndIsExplained() {
         tasks.forEach { task ->
@@ -76,7 +76,7 @@ class ContentMinimumsTest {
         tasks.forEach { task ->
             val choice = task.payload as? TaskPayload.Choice ?: return@forEach
             assertEquals("верных вариантов в ${task.id}", 1, choice.options.count { it.correct })
-            // Правильный и ошибочный варианты проходятся, и после любого есть объяснение (ТЗ 2.5.8, 2.6)
+            // Правильный и ошибочный варианты проходятся, и после любого есть объяснение
             choice.options.forEach { option ->
                 val outcome = task.evaluate(TaskAnswer.Choice(option.id))
                 assertEquals("${task.id}/${option.id}", option.correct, outcome.success)

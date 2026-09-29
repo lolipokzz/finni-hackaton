@@ -17,8 +17,7 @@ private val StorageScope = named("storageScope")
 
 /**
  * Сохранения на диске. Требуют Context (путь к файлам), поэтому вынесены из [appModule], чтобы тот поднимался в
- * JVM-тесте: там на их место ставятся хранилища в памяти. На каждый файл в процессе допустим один DataStore,
- * поэтому всё здесь `single`.
+ * JVM-тесте: там на их место ставятся хранилища в памяти.
  */
 val storageModule = module {
     single(StorageScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }

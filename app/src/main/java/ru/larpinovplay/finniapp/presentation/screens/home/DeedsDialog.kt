@@ -59,10 +59,7 @@ import ru.larpinovplay.finniapp.presentation.game.todoText
 import ru.larpinovplay.finniapp.presentation.pet.nextStageTitle
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
-/*
- * Дела недели — карточка-мордочка с ушками (CatEarFrame) над солнышком. Четыре наклейки дел, что осталось сделать (каждое — с кнопкой туда,
- * где это делается), лапки роста и конец недели: кнопка, если можно, или спокойное «почему пока нельзя».
- */
+/** Дела недели — карточка-мордочка с ушками (CatEarFrame) над солнышком. */
 
 internal val Deed.short: String
     get() = when (this) {

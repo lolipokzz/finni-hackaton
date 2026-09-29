@@ -2,7 +2,7 @@ package ru.larpinovplay.finniapp.domain.game.model
 
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 
-/** Направление бюджета из ТЗ: нужное, желаемое, накопления. */
+/** Направление бюджета: нужное, желаемое, накопления. */
 enum class BudgetDirection { MANDATORY, OPTIONAL, SAVINGS }
 
 /** Строка плана, из которой оплачиваются товары этой категории. */

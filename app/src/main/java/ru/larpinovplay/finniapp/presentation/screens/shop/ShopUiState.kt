@@ -40,7 +40,7 @@ sealed interface PurchaseFeedback {
         val savingsAfter: Int = savings - missing,   // сколько останется в копилке, если взять недостающее
         val goalRemainingAfter: Int? = null,         // сколько тогда не хватит до цели; null — цели нет
         val weeksBefore: Int? = null,                // срок до цели сейчас, нед.; null — не считается
-        val weeksAfter: Int? = null,                 // срок до цели, если взять недостающее (ТЗ 2.5.7)
+        val weeksAfter: Int? = null,                 // срок до цели, если взять недостающее
     ) : PurchaseFeedback {
         val canTakeFromSavings: Boolean get() = savings >= missing
     }
