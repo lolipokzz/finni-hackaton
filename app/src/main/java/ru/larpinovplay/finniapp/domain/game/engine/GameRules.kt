@@ -1,6 +1,7 @@
 package ru.larpinovplay.finniapp.domain.game.engine
 
 import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
+import ru.larpinovplay.finniapp.domain.task.model.Level
 
 /**
  * Числа игровой экономики (docs/11-economy.md, перенос в docs/04-rules-and-formulas.md).
@@ -8,7 +9,22 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
  */
 object GameRules {
     const val START_BALANCE = 50
-    const val TASKS_PER_WEEK = 2
+
+    /** Звёзды за уровень: без ошибок — [MAX_STARS], одна ошибка — на звезду меньше, больше — одна. Пройти можно всегда. */
+    const val MAX_STARS = 3
+    fun levelStars(mistakes: Int): Int = when (mistakes) {
+        0 -> MAX_STARS
+        1 -> MAX_STARS - 1
+        else -> 1
+    }
+
+    /** Сколько упражнений уровня проходит ребёнок: их выбирают случайно из всех упражнений уровня. */
+    const val TASKS_PER_LEVEL = 4
+    fun levelTasks(level: Level): Int = minOf(TASKS_PER_LEVEL, level.tasks.size)
+
+    /** Золотое испытание: столько секунд на каждое упражнение уровня. */
+    const val CHALLENGE_SECONDS_PER_TASK = 30
+    fun challengeSeconds(level: Level): Int = levelTasks(level) * CHALLENGE_SECONDS_PER_TASK
 
     /** Карманные за неделю по стадии питомца: рост — награда за дела недели, поэтому он меняет и доход. */
     fun weekIncome(stage: PetGrowthStage): Int = when (stage) {

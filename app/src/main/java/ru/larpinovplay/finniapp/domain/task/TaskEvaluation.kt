@@ -28,7 +28,6 @@ fun Task.evaluate(answer: TaskAnswer): TaskOutcome {
     }
     return TaskOutcome(
         success = success,
-        reward = if (success) reward else rewardOnMistake,
         consequence = consequence,
         explanation = if (success) explanationSuccess else explanationMistake,
     )

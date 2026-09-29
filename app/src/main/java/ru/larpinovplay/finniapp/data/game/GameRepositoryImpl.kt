@@ -18,6 +18,7 @@ import ru.larpinovplay.finniapp.domain.game.model.DepositResult
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
+import ru.larpinovplay.finniapp.domain.game.model.LevelResult
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
@@ -29,9 +30,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.storage.StorageError
-import ru.larpinovplay.finniapp.domain.task.model.Task
-import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
-import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
+import ru.larpinovplay.finniapp.domain.task.model.Level
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
 import ru.larpinovplay.finniapp.domain.util.result.Result
 import ru.larpinovplay.finniapp.domain.util.result.onSuccess
@@ -48,13 +47,14 @@ import java.time.LocalDate
  * чтобы два быстрых нажатия не породили гонку чтения и записи.
  *
  * Сегодняшнюю дату для правил недели берёт из [clock]; в тестах его подменяют. [adventures] — приключения из
- * контента: от них зависит, можно ли закончить неделю.
+ * контента: от них зависит, можно ли закончить неделю; [levels] — уровни карты по порядку: они проходятся друг за другом.
  */
 class GameRepositoryImpl(
     private val store: GameStore,
     private val startBalance: Int = GameRules.START_BALANCE,
     private val clock: Clock = Clock.systemDefaultZone(),
     private val adventures: List<Adventure> = emptyList(),
+    private val levels: List<Level> = emptyList(),
 ) : GameRepository {
 
     private val _snapshot = MutableStateFlow<GameSnapshot?>(null)
@@ -106,19 +106,22 @@ class GameRepositoryImpl(
     override suspend fun reachGoal(): Result<SavingsGoal?, StorageError> =
         execute { GameEngine.reachGoal(it) }
 
-    override suspend fun answerTask(task: Task, answer: TaskAnswer): Result<TaskOutcome?, StorageError> =
-        execute { GameEngine.answerTask(it, task, answer) }
+    override suspend fun completeLevel(level: Level, mistakes: Int): Result<LevelResult?, StorageError> =
+        execute { GameEngine.completeLevel(it, level, mistakes, levels) }
+
+    override suspend fun completeChallenge(level: Level, mistakes: Int, seconds: Int): Result<Boolean, StorageError> =
+        execute { GameEngine.completeChallenge(it, level, mistakes, seconds) }
 
     override suspend fun confirmPlan(plan: BudgetPlan): Result<ConfirmPlanResult, StorageError> =
         execute { GameEngine.confirmPlan(it, plan) }
 
     override suspend fun completeAdventure(adventure: Adventure, mistakes: Int): Result<AdventureResult?, StorageError> =
-        execute { GameEngine.completeAdventure(it, adventure, mistakes, adventures) }
+        execute { GameEngine.completeAdventure(it, adventure, mistakes, adventures, levels) }
 
-    override fun finishBlock(): FinishBlock? = _snapshot.value?.state?.finishBlock(today(), adventures)
+    override fun finishBlock(): FinishBlock? = _snapshot.value?.state?.finishBlock(today(), adventures, levels)
 
     override suspend fun finishWeek(): Result<FinishWeekResult, StorageError> =
-        execute { GameEngine.finishWeek(it, today(), adventures) }
+        execute { GameEngine.finishWeek(it, today(), adventures, levels) }
 
     override suspend fun resetProfile(): EmptyResult<StorageError> = mutex.withLock {
         store.clear().onSuccess {

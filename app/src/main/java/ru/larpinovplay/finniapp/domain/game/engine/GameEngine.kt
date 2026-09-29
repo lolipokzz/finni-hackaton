@@ -10,10 +10,10 @@ import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.LedgerEntry
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
+import ru.larpinovplay.finniapp.domain.game.model.LevelResult
+import ru.larpinovplay.finniapp.domain.game.model.LevelStatus
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
-import ru.larpinovplay.finniapp.domain.game.model.TaskResult
-import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.Trip
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
@@ -23,10 +23,7 @@ import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
-import ru.larpinovplay.finniapp.domain.task.evaluate
-import ru.larpinovplay.finniapp.domain.task.model.Task
-import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
-import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
+import ru.larpinovplay.finniapp.domain.task.model.Level
 import java.time.LocalDate
 
 /**
@@ -125,30 +122,51 @@ object GameEngine {
         return Transition(GameSnapshot(state, pet), goal)
     }
 
-    /** Итог ответа или null, если задание сейчас недоступно. */
-    fun answerTask(game: GameSnapshot, task: Task, answer: TaskAnswer): Transition<TaskOutcome?> {
+    /**
+     * Засчитывает первое прохождение [level] с [mistakes] ошибками: звёзды ([GameRules.levelStars]) и награду.
+     * Ошибки меняют только их: пройти уровень — главное. null, если уровень закрыт (не его неделя или не пройден
+     * предыдущий на тропинке [levels]) или уже пройден.
+     */
+    fun completeLevel(game: GameSnapshot, level: Level, mistakes: Int, levels: List<Level>): Transition<LevelResult?> {
         val s = game.state
-        if (s.taskStatus(task) != TaskStatus.AVAILABLE) return Transition(game, null)
-        val outcome = task.evaluate(answer)
-        val state = s.post(LedgerReason.TaskReward(task.title), +outcome.reward).copy(
-            taskResults = s.taskResults + TaskResult(task.id, s.week, outcome.success, outcome.reward),
-            tasksDoneThisWeek = s.tasksDoneThisWeek + 1,
+        if (s.levelStatus(level, levels) != LevelStatus.AVAILABLE) return Transition(game, null)
+        val errors = mistakes.coerceIn(0, GameRules.levelTasks(level))
+        val result = LevelResult(
+            levelId = level.id,
+            week = s.week,
+            stars = GameRules.levelStars(errors),
+            reward = if (errors == 0) level.reward else level.rewardOnMistake,
         )
-        return Transition(game.copy(state = state), outcome)
+        val state = s.post(LedgerReason.TaskReward(level.title), +result.reward).copy(levelResults = s.levelResults + result)
+        return Transition(game.copy(state = state), result)
+    }
+
+    /**
+     * Золотое испытание пройденного уровня — без монет, только звание. true — испытание пройдено: без ошибок
+     * и не дольше [GameRules.challengeSeconds] за [seconds]; золото остаётся за уровнем навсегда.
+     */
+    fun completeChallenge(game: GameSnapshot, level: Level, mistakes: Int, seconds: Int): Transition<Boolean> {
+        val s = game.state
+        val won = s.levelResult(level) != null && mistakes == 0 &&
+            seconds <= GameRules.challengeSeconds(level)
+        if (!won || level.id in s.goldLevels) return Transition(game, won)
+        return Transition(game.copy(state = s.copy(goldLevels = s.goldLevels + level.id)), true)
     }
 
     /**
      * Засчитывает приключение недели с [mistakes] ошибками и платит награду. Ошибки влияют только на её размер:
-     * пройти — главное. null, если [adventure] сейчас не приключение недели (уже пройдено или не по порядку).
+     * пройти — главное. null, если [adventure] сейчас закрыто или уже пройдено ([GameState.adventureStatus]):
+     * не приключение недели или не пройдены уровни недели [levels].
      */
     fun completeAdventure(
         game: GameSnapshot,
         adventure: Adventure,
         mistakes: Int,
         adventures: List<Adventure>,
+        levels: List<Level> = emptyList(),
     ): Transition<AdventureResult?> {
         val s = game.state
-        if (s.adventureOfWeek(adventures)?.id != adventure.id) return Transition(game, null)
+        if (s.adventureStatus(adventure, adventures, levels) != LevelStatus.AVAILABLE) return Transition(game, null)
         val perfect = mistakes == 0
         val result = AdventureResult(adventure.id, s.week, perfect, if (perfect) adventure.reward else adventure.rewardOnMistake)
         val state = s.post(LedgerReason.AdventureReward(adventure.title), +result.reward)
@@ -172,9 +190,14 @@ object GameEngine {
      * платит бонус копилки, меняет питомца, начинает новую неделю в фазе плана и зачисляет карманные
      * по новой стадии питомца (docs/11-economy.md).
      */
-    fun finishWeek(game: GameSnapshot, today: LocalDate, adventures: List<Adventure> = emptyList()): Transition<FinishWeekResult> {
+    fun finishWeek(
+        game: GameSnapshot,
+        today: LocalDate,
+        adventures: List<Adventure> = emptyList(),
+        levels: List<Level> = emptyList(),
+    ): Transition<FinishWeekResult> {
         val s = game.state
-        s.finishBlock(today, adventures)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
+        s.finishBlock(today, adventures, levels)?.let { return Transition(game, FinishWeekResult.Blocked(it)) }
 
         val plan = s.plan ?: BudgetPlan()
         val saved = s.savedThisWeek
@@ -212,7 +235,6 @@ object GameEngine {
             depositsThisWeek = emptyList(),
             withdrawalsThisWeek = emptyList(),
             purchases = emptyList(),
-            tasksDoneThisWeek = 0,
             week = s.week + 1,
             phase = PeriodPhase.PLANNING,
             plan = null,

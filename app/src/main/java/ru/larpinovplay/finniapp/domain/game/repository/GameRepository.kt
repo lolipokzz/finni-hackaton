@@ -10,6 +10,7 @@ import ru.larpinovplay.finniapp.domain.game.model.DepositResult
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.FinishWeekResult
 import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
+import ru.larpinovplay.finniapp.domain.game.model.LevelResult
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.goal.model.SavingsGoal
@@ -17,9 +18,7 @@ import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.shop.model.ShopItem
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
 import ru.larpinovplay.finniapp.domain.storage.StorageError
-import ru.larpinovplay.finniapp.domain.task.model.Task
-import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
-import ru.larpinovplay.finniapp.domain.task.model.TaskOutcome
+import ru.larpinovplay.finniapp.domain.task.model.Level
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
 import ru.larpinovplay.finniapp.domain.util.result.Result
 
@@ -77,10 +76,13 @@ interface GameRepository {
     /** Достигнутая цель или null, если цели нет или на неё ещё не накоплено. */
     suspend fun reachGoal(): Result<SavingsGoal?, StorageError>
 
-    /** Итог ответа или null, если задание сейчас недоступно. */
-    suspend fun answerTask(task: Task, answer: TaskAnswer): Result<TaskOutcome?, StorageError>
+    /** Первое прохождение уровня: звёзды и награда; null — уровень закрыт или уже пройден. */
+    suspend fun completeLevel(level: Level, mistakes: Int): Result<LevelResult?, StorageError>
 
-    /** Результат приключения или null, если оно сейчас не приключение недели (тогда проходится без награды). */
+    /** Золотое испытание пройденного уровня за [seconds] секунд; true — золото получено. */
+    suspend fun completeChallenge(level: Level, mistakes: Int, seconds: Int): Result<Boolean, StorageError>
+
+    /** Результат приключения или null, если оно сейчас закрыто или уже пройдено (тогда проходится без награды). */
     suspend fun completeAdventure(adventure: Adventure, mistakes: Int): Result<AdventureResult?, StorageError>
 
     suspend fun confirmPlan(plan: BudgetPlan): Result<ConfirmPlanResult, StorageError>

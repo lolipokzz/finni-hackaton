@@ -18,7 +18,10 @@ import ru.larpinovplay.finniapp.domain.game.model.GameSnapshot
 import ru.larpinovplay.finniapp.domain.game.model.LedgerReason
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
-import ru.larpinovplay.finniapp.domain.game.model.TaskStatus
+import ru.larpinovplay.finniapp.domain.game.model.LevelStatus
+import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.required
+import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.Transition
 import ru.larpinovplay.finniapp.domain.game.model.Trip
 import ru.larpinovplay.finniapp.domain.game.model.WeekSummary
@@ -34,8 +37,6 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetGrowthStage
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.shop.model.WearableSlot
-import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
-import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import java.time.LocalDate
 
 /** Правила игры без корутин, репозиториев и Android: снимок на входе, снимок и результат на выходе. */
@@ -522,67 +523,142 @@ class GameEngineTest {
         assertEquals(2 * GameRules.LASTING_MOOD_PER_ITEM, summary.lastingMood)
     }
 
+
+    private val week1 = content.levels.first { it.week == 1 }
+    private val week2 = content.levels.first { it.week == 2 }
+
     @Test
-    fun answeringTaskPaysRewardOnceAndLimitsTasksPerWeek() {
-        val choice = content.tasks.first { it.payload is TaskPayload.Choice }
-        val correct = (choice.payload as TaskPayload.Choice).options.first { it.correct }
+    fun completingLevelPaysRewardOnceWithStarsByMistakes() {
         val start = newGame()
 
-        val (game, outcome) = GameEngine.answerTask(start, choice, TaskAnswer.Choice(correct.id))
-        val (again, repeated) = GameEngine.answerTask(game, choice, TaskAnswer.Choice(correct.id))
+        val (game, result) = GameEngine.completeLevel(start, week1, mistakes = 0, content.levels)
+        val (again, repeated) = GameEngine.completeLevel(game, week1, mistakes = 0, content.levels)
 
-        assertTrue(checkNotNull(outcome).success)
-        assertEquals(100 + choice.reward, game.state.balance)
-        assertEquals(TaskStatus.DONE, game.state.taskStatus(choice))
-        assertNull(repeated)   // повторно то же задание не засчитывается
+        assertEquals(GameRules.MAX_STARS, checkNotNull(result).stars)
+        assertEquals(100 + week1.reward, game.state.balance)
+        assertEquals(LevelStatus.DONE, game.state.levelStatus(week1, content.levels))
+        assertTrue(game.state.ledger.last().reason is LedgerReason.TaskReward)
+        assertNull(repeated)   // второй раз уровень не засчитывается и не платит
         assertEquals(game, again)
     }
 
-    private val choiceTasks = content.tasks.filter { it.payload is TaskPayload.Choice }
-    private fun rightAnswer(task: ru.larpinovplay.finniapp.domain.task.model.Task) =
-        TaskAnswer.Choice((task.payload as TaskPayload.Choice).options.first { it.correct }.id)
-    private fun wrongAnswer(task: ru.larpinovplay.finniapp.domain.task.model.Task) =
-        TaskAnswer.Choice((task.payload as TaskPayload.Choice).options.first { !it.correct }.id)
-
-    /** ТЗ 2.5.8: в демо все задания доступны сразу — без недельного лимита и без ожидания после ошибки. */
     @Test
-    fun demoLiftsWeeklyLimitAndLetsRetryAtOnce() {
-        var game = newGame().let { it.copy(state = it.state.copy(demoMode = true)) }
-        choiceTasks.take(GameRules.TASKS_PER_WEEK).forEach { game = GameEngine.answerTask(game, it, rightAnswer(it)).game }
-        val next = choiceTasks[GameRules.TASKS_PER_WEEK]
-        assertEquals(TaskStatus.AVAILABLE, game.state.taskStatus(next))
-        assertEquals(null, game.state.tasksPerWeek)
+    fun mistakesLowerStarsAndRewardButLevelStillCounts() {
+        val (_, one) = GameEngine.completeLevel(newGame(), week1, mistakes = 1, content.levels)
+        val (game, many) = GameEngine.completeLevel(newGame(), week1, mistakes = 3, content.levels)
 
-        // Ошибочный вариант, и сразу же правильный — в ту же неделю
-        val (afterMistake, wrong) = GameEngine.answerTask(game, next, wrongAnswer(next))
-        assertFalse(checkNotNull(wrong).success)
-        assertEquals(TaskStatus.AVAILABLE, afterMistake.state.taskStatus(next))
-        val (afterRight, right) = GameEngine.answerTask(afterMistake, next, rightAnswer(next))
-        assertTrue(checkNotNull(right).success)
-        assertEquals(TaskStatus.DONE, afterRight.state.taskStatus(next))
+        assertEquals(GameRules.MAX_STARS - 1, checkNotNull(one).stars)
+        assertEquals(1, checkNotNull(many).stars)
+        assertEquals(week1.rewardOnMistake, many.reward)
+        assertEquals(LevelStatus.DONE, game.state.levelStatus(week1, content.levels))
+    }
+
+    /** Уровни недели открываются вместе с ней; в демо (ТЗ 2.5.8) все открыты сразу. */
+    @Test
+    fun levelsOfLaterWeeksAreLockedOutsideDemo() {
+        val game = newGame()
+        val (same, locked) = GameEngine.completeLevel(game, week2, mistakes = 0, content.levels)
+
+        assertEquals(LevelStatus.LOCKED, game.state.levelStatus(week2, content.levels))
+        assertNull(locked)
+        assertEquals(game, same)
+
+        val demo = game.copy(state = game.state.copy(demoMode = true))
+        assertEquals(LevelStatus.AVAILABLE, demo.state.levelStatus(week2, content.levels))
+        assertTrue(content.levels.all { demo.state.levelStatus(it, content.levels) == LevelStatus.AVAILABLE })
+    }
+
+    /** Уровни идут друг за другом: следующий закрыт, пока не пройден предыдущий, — пропустить нельзя. */
+    @Test
+    fun levelsGoOneAfterAnother() {
+        val (first, second) = content.levels
+        val start = newGame()
+        val (same, skipped) = GameEngine.completeLevel(start, second, mistakes = 0, content.levels)
+
+        assertEquals(listOf(first), start.state.availableLevels(content.levels))
+        assertEquals(LevelStatus.LOCKED, start.state.levelStatus(second, content.levels))
+        assertNull(skipped)
+        assertEquals(start, same)
+
+        val played = start.then { GameEngine.completeLevel(it, first, mistakes = 3, content.levels) }
+        assertEquals(LevelStatus.AVAILABLE, played.state.levelStatus(second, content.levels))
+    }
+
+    /** Непройденный уровень не сгорает: на следующей неделе очередь продолжается с него, а не с уровней новой недели. */
+    @Test
+    fun missedLevelsWaitOnLaterWeeks() {
+        val (nextWeek, _) = newGame().planned(mandatory = food.price).finish()
+
+        assertEquals(LevelStatus.AVAILABLE, nextWeek.state.levelStatus(week1, content.levels))
+        assertEquals(LevelStatus.LOCKED, nextWeek.state.levelStatus(week2, content.levels))
     }
 
     @Test
-    fun outsideDemoWeeklyLimitAndRetryWaitStay() {
-        var game = newGame()
-        choiceTasks.take(GameRules.TASKS_PER_WEEK).forEach { game = GameEngine.answerTask(game, it, rightAnswer(it)).game }
-        assertEquals(TaskStatus.LIMIT_REACHED, game.state.taskStatus(choiceTasks[GameRules.TASKS_PER_WEEK]))
-        assertEquals(GameRules.TASKS_PER_WEEK, game.state.tasksPerWeek)
+    fun goldNeedsDoneLevelNoMistakesAndTimeAndPaysNothing() {
+        val limit = GameRules.challengeSeconds(week1)
+        val notDone = newGame()
+        assertFalse(GameEngine.completeChallenge(notDone, week1, mistakes = 0, seconds = 1).result)
 
-        val task = choiceTasks.first()
-        val mistaken = newGame().then { GameEngine.answerTask(it, task, wrongAnswer(task)) }
-        assertEquals(TaskStatus.RETRY_NEXT_WEEK, mistaken.state.taskStatus(task))
+        val done = notDone.then { GameEngine.completeLevel(it, week1, mistakes = 2, content.levels) }
+        assertFalse(GameEngine.completeChallenge(done, week1, mistakes = 1, seconds = 1).result)
+        assertFalse(GameEngine.completeChallenge(done, week1, mistakes = 0, seconds = limit + 1).result)
+
+        val (gold, won) = GameEngine.completeChallenge(done, week1, mistakes = 0, seconds = limit)
+        assertTrue(won)
+        assertTrue(week1.id in gold.state.goldLevels)
+        assertEquals(done.state.balance, gold.state.balance)   // золото — без монет
+        assertEquals(done.state.ledger, gold.state.ledger)
     }
 
     @Test
-    fun topicProgressCountsDoneTasksPerTopic() {
-        val choice = content.tasks.first { it.payload is TaskPayload.Choice }
-        val correct = (choice.payload as TaskPayload.Choice).options.first { it.correct }
+    fun topicProgressCountsDoneLevelsPerTopic() {
+        val game = newGame().then { GameEngine.completeLevel(it, week1, mistakes = 0, content.levels) }
 
-        val game = newGame().then { GameEngine.answerTask(it, choice, TaskAnswer.Choice(correct.id)) }
-
-        val progress = game.state.topicProgress(content.tasks)
-        assertEquals(content.tasks.count { it.topic == choice.topic }, progress.first { it.topic == choice.topic }.total)
+        val progress = game.state.topicProgress(content.levels)
+        assertEquals(content.levels.count { it.topic == week1.topic }, progress.first { it.topic == week1.topic }.total)
         assertEquals(1, progress.sumOf { it.done })
+    }
+
+    /** Обучение начинается с плана, за ним — первый уровень; оба не пропустить. */
+    @Test
+    fun tutorialStartsWithPlanThenFirstLevel() {
+        val start = newGame().let { it.copy(state = it.state.copy(tutorial = true)) }
+        assertEquals(TutorialStep.PLAN, start.state.tutorialStep)
+        assertTrue(TutorialStep.PLAN.required && TutorialStep.TASKS.required)
+
+        val planned = start.planned(mandatory = food.price)
+        assertEquals(TutorialStep.TASKS, planned.state.tutorialStep)
+        val played = planned.then { GameEngine.completeLevel(it, week1, mistakes = 1, content.levels) }
+        assertEquals(TutorialStep.GOAL, played.state.tutorialStep)
+    }
+
+    private val weekOneLevels = content.levels.filter { it.week == 1 }
+
+    /** Приключение недели — в конце её тропинки: открывается, когда пройдены уровни недели; до тех пор неделю не закончить. */
+    @Test
+    fun adventureOpensAfterWeekLevels() {
+        val adventure = content.adventures.first()
+        val planned = newGame().planned(mandatory = food.price)
+
+        assertEquals(LevelStatus.LOCKED, planned.state.adventureStatus(adventure, content.adventures, content.levels))
+        assertNull(GameEngine.completeAdventure(planned, adventure, 0, content.adventures, content.levels).result)
+        assertEquals(FinishBlock.LEVELS_NOT_PLAYED, planned.state.finishBlock(day2, content.adventures, content.levels))
+
+        var played = planned
+        weekOneLevels.forEach { level -> played = played.then { GameEngine.completeLevel(it, level, 0, content.levels) } }
+        assertEquals(LevelStatus.AVAILABLE, played.state.adventureStatus(adventure, content.adventures, content.levels))
+        assertEquals(FinishBlock.ADVENTURE_NOT_PLAYED, played.state.finishBlock(day2, content.adventures, content.levels))
+        val done = played.then { GameEngine.completeAdventure(it, adventure, 0, content.adventures, content.levels) }
+        assertNull(done.state.finishBlock(day2, content.adventures, content.levels))
+    }
+
+    /** В демо (ТЗ 2.5.8) все приключения открыты сразу, как и уровни. */
+    @Test
+    fun demoOpensEveryAdventure() {
+        val demo = newGame().let { it.copy(state = it.state.copy(demoMode = true)) }
+
+        assertTrue(content.adventures.all { demo.state.adventureStatus(it, content.adventures, content.levels) == LevelStatus.AVAILABLE })
+        val last = content.adventures.last()
+        assertEquals(last.reward, GameEngine.completeAdventure(demo, last, 0, content.adventures, content.levels).result?.reward)
     }
 }

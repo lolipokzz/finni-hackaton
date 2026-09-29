@@ -17,8 +17,11 @@
 |---|---|---|
 | Стартовые монеты | 50 | `GameRules.START_BALANCE` |
 | Карманные за неделю | 50 малыш / 60 подросток / 70 взрослый | `GameRules.weekIncome(stage)` |
-| Оплачиваемых заданий за неделю | 2 | `GameRules.TASKS_PER_WEEK` |
-| Награда за задание | 5, с ошибкой 3 | `TaskContent` |
+| Уровней заданий за неделю | 3 (по одному на тему), открываются с неделей | `TaskContent` (`Level.week`) |
+| Награда за уровень | 3 без ошибок, 2 с ошибками; только за первое прохождение | `TaskContent` |
+| Заданий за прохождение уровня | 4 случайных из 6 | `GameRules.TASKS_PER_LEVEL` |
+| Звёзды уровня | 3 без ошибок, 2 с одной ошибкой, 1 с большим числом | `GameRules.levelStars` |
+| Золотое испытание | 30 секунд на задание, без ошибок; без монет | `GameRules.CHALLENGE_SECONDS_PER_TASK` |
 | Награда за приключение недели | 5, с ошибкой 3 | `AdventureContent` |
 | Бонус копилки | +5, если за неделю отложено (за вычетом снятого) ≥ 10 | `GameRules.SAVINGS_BONUS`, `SAVINGS_BONUS_MIN` |
 | Сытость за неделю | −35; столько же нужно купить, чтобы Финни был сыт | `GameRules.WEEKLY_HUNGER` |
@@ -49,7 +52,7 @@ savings_after = savings_before + Σ savingsDelta(tx)
 |---|---|---|---|
 | StartCoins | +50 | 0 | один раз |
 | WeekIncome | +карманные по стадии | 0 | при закрытии недели |
-| TaskReward | +reward или +rewardOnMistake | 0 | лимит заданий |
+| TaskReward | +level.reward или +level.rewardOnMistake | 0 | первое прохождение открытого уровня |
 | AdventureReward | +5 или +3 | 0 | приключение недели, один раз |
 | Purchase | −price | 0 | price ≤ balance |
 | PlannedDeposit | −plan.savings | +plan.savings | при подтверждении плана |
@@ -160,7 +163,10 @@ etaWeeks   = avgDeposit > 0 ? ceil(remaining / avgDeposit) : null
 ## Задания
 
 ```
-rewardPaid = success ? task.reward : task.rewardOnMistake
+mistakes   = число ошибочных ответов уровня
+stars      = mistakes == 0 ? 3 : mistakes == 1 ? 2 : 1
+rewardPaid = mistakes == 0 ? level.reward : level.rewardOnMistake      // 3 или 2
+gold       = уровень пройден && mistakes == 0 && seconds ≤ 30 × 4        // монет не даёт
 ```
 
 Оценка по механикам — `Task.evaluate` (детали формата в [05](05-content-model.md#задания--taskcontentkt)):
@@ -169,10 +175,12 @@ rewardPaid = success ? task.reward : task.rewardOnMistake
 - `Allocate`: `success = Σ кучек == total && mandatory ≥ mandatoryMin && savings ≥ savingsMin`.
 - `ShopList`: `success = все обязательные товары выбраны && Σ price ≤ budget`.
 
-Лимит: не больше 2 заданий за неделю (`tasksDoneThisWeek < TASKS_PER_WEEK`), кроме демо-режима.
+Открытие: уровень доступен, когда пройден предыдущий на тропинке и началась его неделя N (`GameState.levelStatus`);
+в демо — все сразу (**ТЗ 2.5.8**).
+Сверху за неделю: 3 уровня × 3 + приключение 5 = 14 монет, не больше 30% карманных (`EconomyBalanceTest`). Пропущенные
+уровни ждут: наверстать можно, но заработать больше, чем за пропущенные недели, нельзя.
 
-Повтор: неуспешное задание доступно снова со следующей недели; в демо — сразу (эксперт проходит ошибочный и
-правильный вариант подряд, **ТЗ 2.5.8**).
+Повтор: пройденный уровень проходится снова только как золотое испытание — без награды, ради звания.
 
 ## Приключения недели
 
@@ -186,7 +194,8 @@ reward = без ошибок ? adventure.reward : adventure.rewardOnMistake     
 
 ## Конец недели
 
-Неделю можно закрыть, когда план подтверждён, приключение недели пройдено и неделя началась не сегодня
+Неделю можно закрыть, когда план подтверждён, уровни недели и приключение недели пройдены (приключение открывается
+после уровней, `FinishBlock.LEVELS_NOT_PLAYED`) и неделя началась не сегодня
 (`GameState.finishBlock`). В демо-режиме последнее условие не действует: 5 и больше недель проходятся подряд
 (**ТЗ 2.6**).
 

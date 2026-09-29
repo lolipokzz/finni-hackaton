@@ -16,8 +16,6 @@ import ru.larpinovplay.finniapp.domain.pet.model.PetColor
 import ru.larpinovplay.finniapp.domain.pet.model.PetLook
 import ru.larpinovplay.finniapp.domain.shop.model.ShopCategory
 import ru.larpinovplay.finniapp.domain.storage.StorageError
-import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
-import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
 import ru.larpinovplay.finniapp.domain.util.result.EmptyDataSuccess
 import ru.larpinovplay.finniapp.domain.util.result.EmptyResult
 import ru.larpinovplay.finniapp.domain.util.result.Result
@@ -45,14 +43,13 @@ internal object SampleGames {
         val treat = content.shopItems.first { it.category == ShopCategory.OPTIONAL }
         // Недорогая поездка: в примере сохраняется и поездка
         val cheapGoal = SavingsGoal(id = "test-trip", name = "Поход", cost = 10, hint = "Копить недолго", trip = true)
-        val choice = content.tasks.first { it.payload is TaskPayload.Choice }
-        val correct = (choice.payload as TaskPayload.Choice).options.first { it.correct }
 
         var game = GameSnapshot(GameEngine.newGame(DAY_1, startBalance = 100), newborn)
         game = GameEngine.confirmPlan(game, BudgetPlan(mandatory = 30, optional = 50, savings = 20)).game
         game = GameEngine.buy(game, food).game
         game = GameEngine.buy(game, treat).game
-        game = GameEngine.answerTask(game, choice, TaskAnswer.Choice(correct.id)).game
+        game = GameEngine.completeLevel(game, content.levels.first(), mistakes = 1, content.levels).game
+        game = GameEngine.completeChallenge(game, content.levels.first(), mistakes = 0, seconds = 1).game
         game = GameEngine.chooseGoal(game, cheapGoal).game
         game = GameEngine.deposit(game, 20).game
         game = GameEngine.reachGoal(game).game

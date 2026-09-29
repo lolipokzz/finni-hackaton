@@ -339,7 +339,7 @@ private fun DeedMark(deed: Deed, done: Boolean) {
 @Composable
 private fun TasksCard(topics: List<TopicProgress>) {
     Card {
-        CardHeading("Задания", "Выполнено ${topics.sumOf { it.done }} из ${topics.sumOf { it.total }}")
+        CardHeading("Задания", "Пройдено уровней: ${topics.sumOf { it.done }} из ${topics.sumOf { it.total }}")
         topics.forEach { topic ->
             val (icon, tint) = topic.topic.sticker
             val name = topic.topic.title()

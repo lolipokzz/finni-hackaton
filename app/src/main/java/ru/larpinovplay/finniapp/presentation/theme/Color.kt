@@ -54,7 +54,9 @@ object FinniColors {
     val MoodTrack = Color(0xFFE2F7F1)
     val DreamRing = Color(0xFFFF6FA8)
     val DreamTrack = Color(0xFFFBD9E8)
-    val PawNew = Color(0xFFFFB020)       // шаг роста, заработанный на этой неделе
+    val PawNew = Color(0xFFFFB020)       // шаг роста, заработанный на этой неделе; звёзды уровня
+    val Gold = Color(0xFFFFC23D)         // золотой уровень карты заданий
+    val GoldInk = Color(0xFF7A4B00)
     val PawEmpty = Color(0xFFD6ECE6)
     val DeedPending = Color(0xFFFF9A62)
     val WarnInk = Color(0xFFB4471B)      // мягкое предупреждение: «сверх плана», «не вышло»

@@ -3,13 +3,12 @@ package ru.larpinovplay.finniapp.presentation.navigation
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 import ru.larpinovplay.finniapp.presentation.screens.home.HomeSection
-import ru.larpinovplay.finniapp.presentation.screens.tasks.TaskOutcomeUi
 
 /**
  * Граф навигации (docs/07-screens.md#граф-навигации), после того как питомец создан:
  *
  * ```
- * Home ─┬─ Tasks ─┬─ TaskPlay ── TaskResult (диалог) ── назад на Tasks
+ * Home ─┬─ Tasks ─┬─ LevelPlay ── назад на Tasks
  *       │         └─ AdventurePlay ── назад на Tasks
  *       ├─ Shop ── (нехватка монет) ── Tasks
  *       │    └─ (купил одежду) ── Wardrobe
@@ -30,12 +29,9 @@ data object Home : NavKey
 @Serializable
 data object Tasks : NavKey
 
+/** Уровень карты заданий: упражнения и итог на одном экране. [challenge] — золотое испытание пройденного уровня. */
 @Serializable
-data class TaskPlay(val taskId: String) : NavKey
-
-/** Итог задания. Показывается диалогом поверх [Tasks], поэтому несёт результат в самом ключе. */
-@Serializable
-data class TaskResult(val taskId: String, val outcome: TaskOutcomeUi) : NavKey
+data class LevelPlay(val levelId: String, val challenge: Boolean = false) : NavKey
 
 /** Приключение недели: сюжет по шагам, итог показывается на том же экране. */
 @Serializable

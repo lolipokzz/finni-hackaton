@@ -35,7 +35,7 @@ class ProgressViewModel(
             savings = game.savings,
             goalRemaining = game.goalRemaining(),
             completedGoals = game.completedGoals,
-            taskTopics = game.topicProgress(content.tasks),
+            taskTopics = game.topicProgress(content.levels),
             lastWeek = game.history.lastOrNull(),
             weeksCompleted = game.history.size,
             ledgerThisWeek = game.ledger.filter { it.week == game.week },

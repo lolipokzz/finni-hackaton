@@ -39,6 +39,7 @@ enum class FeedbackKey(val id: String) {
 
     // Почему неделю пока нельзя закончить
     FINISH_NO_PLAN("finish.no_plan"),
+    FINISH_NO_LEVELS("finish.no_levels"),
     FINISH_NO_ADVENTURE("finish.no_adventure"),
     FINISH_SAME_DAY("finish.same_day"),
 
@@ -90,6 +91,19 @@ enum class FeedbackKey(val id: String) {
     ADVENTURE_DONE_PERFECT("adventure.done_perfect"),
     ADVENTURE_DONE_MISTAKES("adventure.done_mistakes"),
     ADVENTURE_REPLAY("adventure.replay"),
+
+    // Карта заданий: итог уровня и золотого испытания, почему уровень закрыт
+    LEVEL_DONE_PERFECT("level.done_perfect"),
+    LEVEL_DONE_MISTAKES("level.done_mistakes"),
+    LEVEL_REPLAY("level.replay"),
+    CHALLENGE_GOLD("challenge.gold"),
+    CHALLENGE_MISTAKES("challenge.mistakes"),
+    CHALLENGE_TIME_UP("challenge.time_up"),
+    LEVEL_LOCKED_TOMORROW("level.locked_tomorrow"),
+    LEVEL_LOCKED_NEXT_WEEK("level.locked_next_week"),
+    LEVEL_LOCKED_LATER("level.locked_later"),
+    LEVEL_LOCKED_ORDER("level.locked_order"),
+    ADVENTURE_LOCKED_LEVELS("adventure.locked_levels"),
 
     // Темы заданий
     TOPIC_BUDGET("topic.budget"),

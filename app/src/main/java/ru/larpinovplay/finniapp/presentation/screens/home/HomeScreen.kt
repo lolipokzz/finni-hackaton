@@ -95,6 +95,7 @@ import ru.larpinovplay.finniapp.domain.content.FeedbackKey
 import ru.larpinovplay.finniapp.domain.game.model.Deed
 import ru.larpinovplay.finniapp.domain.game.model.FinishBlock
 import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
+import ru.larpinovplay.finniapp.domain.game.model.required
 import ru.larpinovplay.finniapp.domain.game.model.WeekDeeds
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
 import ru.larpinovplay.finniapp.domain.pet.model.PetColor
@@ -230,7 +231,7 @@ fun HomeScreenContent(
         if (coachStep != null && !dialogOpen) {
             TutorialSpotlight(
                 coachStep.coachText, targets[coachStep],
-                onSkip = { onAction(HomeAction.SkipTutorialStep) }.takeIf { coachStep != TutorialStep.PLAN },
+                onSkip = { onAction(HomeAction.SkipTutorialStep) }.takeIf { !coachStep.required },
                 round = true,
                 petHost = petHost,
             )
@@ -272,7 +273,7 @@ private val TutorialStep.coachText: String
         TutorialStep.PLAN -> "Каждую неделю мне дают монеты. Сначала решим, на что их потратить. Нажми на «План»!"
         TutorialStep.GOAL -> "Давай выберем цель, на которую будем копить! Нажми на копилку."
         TutorialStep.SHOP -> "Мур, я проголодался! Пойдём в магазин — купим мне еды."
-        TutorialStep.TASKS -> "Монеты можно заработать! Нажми на «Задания» — там задачки про деньги."
+        TutorialStep.TASKS -> "Монеты можно заработать! Нажми на «Задания» — пройдём первый урок про деньги."
         TutorialStep.DEEDS -> "Это солнышко недели. Нажми — покажу дела, от которых я расту!"
     }
 
@@ -362,8 +363,8 @@ private fun StatusRow(state: HomeUiState, onAction: (HomeAction) -> Unit) {
             icon = if (task?.adventure == true) R.drawable.ic_adventure else R.drawable.ic_nav_tasks,
             tint = Color(0xFFE6F8F2),
             title = task?.title ?: "Задания сделаны",
-            detail = task?.let { (if (it.adventure) "Приключение" else "Задание") + " · +${it.reward}" } ?: "Новые — на следующей неделе",
-            description = task?.let { (if (it.adventure) "Приключение недели: " else "Задание: ") + "${it.title}, награда ${it.reward} монет" }
+            detail = task?.let { (if (it.adventure) "Приключение" else "Уровень") + " · +${it.reward}" } ?: "Новые — на следующей неделе",
+            description = task?.let { (if (it.adventure) "Приключение недели: " else "Уровень заданий: ") + "${it.title}, награда ${it.reward} монет" }
                 ?: "Задания этой недели сделаны",
             modifier = Modifier.weight(1f),
             onClick = { onAction(HomeAction.OpenSection(HomeSection.TASKS)) },

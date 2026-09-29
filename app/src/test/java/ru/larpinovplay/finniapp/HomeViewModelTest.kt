@@ -1,7 +1,5 @@
 package ru.larpinovplay.finniapp
 
-import ru.larpinovplay.finniapp.domain.task.model.TaskPayload
-import ru.larpinovplay.finniapp.domain.task.model.TaskAnswer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -70,17 +68,24 @@ class HomeViewModelTest {
         assertEquals(FinishBlock.PLAN_NOT_CONFIRMED, vm.state.value?.finishBlock)
     }
 
-    /** ТЗ 2.5.3: активное задание видно на главном экране. Сначала приключение недели — без него неделю не закончить. */
+    /**
+     * ТЗ 2.5.3: активное задание видно на главном экране. Сначала уровни недели по порядку, потом приключение недели —
+     * оно открывается после них, и без него неделю не закончить.
+     */
     @Test
-    fun activeTaskIsAdventureOfWeekFirst() {
+    fun activeTaskIsNextLevelThenAdventureOfWeek() {
         val vm = viewModel()
+        val first = content.levels.first()
+        assertEquals(HomeUiState.ActiveTask(first.title, first.reward, adventure = false), vm.state.value?.activeTask)
+
+        runBlocking { content.levels.filter { it.week == 1 }.forEach { game.completeLevel(it, mistakes = 0) } }
 
         val adventure = content.adventures.first()
         assertEquals(HomeUiState.ActiveTask(adventure.title, adventure.reward, adventure = true), vm.state.value?.activeTask)
     }
 
     @Test
-    fun afterAdventureActiveTaskIsNextTask() {
+    fun afterAdventureActiveTaskIsNextLevel() {
         // Приключения засчитывает репозиторий, поэтому ему нужен их список
         val game = GameRepositoryImpl(FakeGameStore(), clock = clock, adventures = content.adventures)
         runBlocking { game.createPet(SampleGames.newborn) }
@@ -88,8 +93,8 @@ class HomeViewModelTest {
 
         runBlocking { game.completeAdventure(content.adventures.first(), mistakes = 0) }
 
-        val task = checkNotNull(game.requireSnapshot().state.availableTasks(content.tasks).firstOrNull())
-        assertEquals(HomeUiState.ActiveTask(task.title, task.reward, adventure = false), vm.state.value?.activeTask)
+        val level = content.levels.first()
+        assertEquals(HomeUiState.ActiveTask(level.title, level.reward, adventure = false), vm.state.value?.activeTask)
     }
 
     /** Окно плана само не всплывает: Финни зовёт, ребёнок открывает кнопкой «План», закрыть можно и без плана. */
@@ -179,7 +184,7 @@ class HomeViewModelTest {
         assertEquals(false, vm.state.value?.deedsOpen)
     }
 
-    /** Обучение новой игры идёт по настоящим действиям: план → цель → еда → дела недели, и заканчивается. */
+    /** Обучение новой игры идёт по настоящим действиям: план → первый уровень → цель → еда → дела недели. */
     @Test
     fun tutorialFollowsRealActionsAndEnds() {
         runBlocking { game.createPet(SampleGames.newborn, withTutorial = true) }
@@ -190,17 +195,18 @@ class HomeViewModelTest {
         vm.press(BudgetDirection.MANDATORY, increase = true, times = 4)
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 6)
         vm.onAction(HomeAction.ConfirmPlan)
+        assertEquals(TutorialStep.TASKS, step())
+        vm.onAction(HomeAction.SkipTutorialStep)   // первый уровень не пропустить
+        assertEquals(TutorialStep.TASKS, step())
+
+        // Уровень с ошибками тоже засчитывает шаг: важно попробовать, а не угадать
+        runBlocking { game.completeLevel(content.levels.first(), mistakes = 2) }
         assertEquals(TutorialStep.GOAL, step())
 
         runBlocking { game.chooseGoal(content.goals.first()) }
         assertEquals(TutorialStep.SHOP, step())
 
         runBlocking { game.buy(content.shopItems.first { it.category == ShopCategory.MANDATORY }) }
-        assertEquals(TutorialStep.TASKS, step())
-
-        // Любой ответ засчитывает шаг: важно попробовать, а не угадать
-        val task = content.tasks.first { it.payload is TaskPayload.Choice }
-        runBlocking { game.answerTask(task, TaskAnswer.Choice("не-тот-ответ")) }
         assertEquals(TutorialStep.DEEDS, step())
 
         vm.onAction(HomeAction.ShowDeeds)
@@ -213,9 +219,9 @@ class HomeViewModelTest {
         assertEquals(false, vm.state.value?.tutorialDone)
     }
 
-    /** Шаги можно пропускать по одному — кроме плана; конец обучения всё равно спрашивает «Всё понятно?». */
+    /** Шаги можно пропускать по одному — кроме плана и первого уровня; конец обучения всё равно спрашивает «Всё понятно?». */
     @Test
-    fun tutorialStepsCanBeSkippedButNotThePlan() {
+    fun tutorialStepsCanBeSkippedButNotFirstLevelAndPlan() {
         assertNull(viewModel().state.value?.tutorial)   // обычная игра — без обучения
 
         val fresh = GameRepositoryImpl(FakeGameStore(), clock = clock)
@@ -228,7 +234,11 @@ class HomeViewModelTest {
 
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
         vm.onAction(HomeAction.ConfirmPlan)
-        listOf(TutorialStep.GOAL, TutorialStep.SHOP, TutorialStep.TASKS).forEach {
+        vm.onAction(HomeAction.SkipTutorialStep)
+        assertEquals(TutorialStep.TASKS, step())   // первый уровень обязателен
+        runBlocking { fresh.completeLevel(content.levels.first(), mistakes = 0) }
+
+        listOf(TutorialStep.GOAL, TutorialStep.SHOP).forEach {
             assertEquals(it, step())
             vm.onAction(HomeAction.SkipTutorialStep)
         }
