@@ -8,6 +8,9 @@ sealed interface PurchaseResult {
 
     /** Одежда уже в гардеробе: её покупают один раз. */
     data object AlreadyOwned : PurchaseResult
+
+    /** План недели ещё не составлен: сначала монеты раскладывают, потом тратят. */
+    data object NoPlan : PurchaseResult
 }
 
 sealed interface DepositResult {

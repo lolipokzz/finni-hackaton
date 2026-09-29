@@ -12,8 +12,8 @@ enum class TutorialStep { PLAN, TASKS, GOAL, SHOP, DEEDS }
 val GameState.tutorialStep: TutorialStep?
     get() = if (!tutorial) null else TutorialStep.entries.firstOrNull { it !in tutorialSkipped && !it.doneIn(this) }
 
-/** Шаг, который нельзя пропустить. */
-val TutorialStep.required: Boolean get() = this == TutorialStep.PLAN || this == TutorialStep.TASKS
+/** Шаг, который нельзя пропустить: без плана неделя не начнётся. Остальные шаги — подсказки, их можно пропустить. */
+val TutorialStep.required: Boolean get() = this == TutorialStep.PLAN
 
 private fun TutorialStep.doneIn(game: GameState): Boolean = when (this) {
     TutorialStep.PLAN -> game.phase != PeriodPhase.PLANNING

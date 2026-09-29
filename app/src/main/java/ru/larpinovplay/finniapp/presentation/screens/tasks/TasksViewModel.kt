@@ -16,6 +16,7 @@ import ru.larpinovplay.finniapp.domain.game.model.TutorialStep
 import ru.larpinovplay.finniapp.domain.game.model.tutorialStep
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
+import ru.larpinovplay.finniapp.presentation.storage.orSnackbar
 
 /**
  * Карта заданий: неделя за неделей — уровни по трём темам и приключение недели. Уровни недели открываются вместе с ней;
@@ -33,6 +34,16 @@ class TasksViewModel(
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { _state.value = toUiState(it.state) }
         }
+    }
+
+    fun onAction(action: TasksAction) {
+        when (action) {
+            TasksAction.SkipTutorialStep -> skipTutorialStep()
+        }
+    }
+
+    private fun skipTutorialStep() {
+        viewModelScope.launch { game.skipTutorialStep(TutorialStep.TASKS).orSnackbar { skipTutorialStep() } }
     }
 
     private fun toUiState(s: GameState): TasksUiState {

@@ -14,6 +14,7 @@ data class ShopUiState(
     val pending: ShopItem? = null,                // ждёт подтверждения
     val feedback: PurchaseFeedback? = null,
     val coach: Boolean = false,                   // обучение: Финни просит купить еду
+    val planned: Boolean = true,                  // план недели составлен; без него магазин закрыт
 ) {
     /** Сколько на категорию запланировано и сколько уже потрачено за неделю. */
     data class CategoryBudget(val planned: Int, val spent: Int) {

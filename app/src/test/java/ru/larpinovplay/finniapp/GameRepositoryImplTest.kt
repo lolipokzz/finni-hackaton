@@ -152,6 +152,7 @@ class GameRepositoryImplTest {
     @Test
     fun buyingChangesGameAndFeedsPetInOneSnapshot() = runBlocking {
         game.createPet(newborn)
+        game.confirmPlan(plan)
 
         val result = game.buy(food).dataOrNull()
 
@@ -168,11 +169,12 @@ class GameRepositoryImplTest {
         val collector = launch(Dispatchers.Unconfined) { game.snapshot.toList(seen) }
 
         game.createPet(newborn)
+        game.confirmPlan(plan)
         game.buy(food)
         collector.cancel()
 
-        // null → игра создана → куплено. Промежуточного «монеты списаны, питомец не накормлен» нет
-        assertEquals(3, seen.size)
+        // null → игра создана → план → куплено. Промежуточного «монеты списаны, питомец не накормлен» нет
+        assertEquals(4, seen.size)
         seen.filterNotNull().forEach { snapshot ->
             val bought = snapshot.state.purchases.isNotEmpty()
             assertEquals(bought, snapshot.pet.satiety.value > newborn.satiety.value)
@@ -183,6 +185,7 @@ class GameRepositoryImplTest {
     fun ruleRejectionKeepsSnapshotAndWritesNothing() = runBlocking {
         val poor = GameRepositoryImpl(store, startBalance = 1)
         poor.createPet(newborn)
+        poor.confirmPlan(BudgetPlan(optional = 1))
         val before = poor.requireSnapshot()
         val savesBefore = store.saves.size
 
@@ -210,6 +213,46 @@ class GameRepositoryImplTest {
         assertEquals(snapshot, store.saved)
     }
 
+    /** До плана недели магазин закрыт: монеты сначала раскладывают, потом тратят. */
+    @Test
+    fun buyingBeforePlanIsRejected() = runBlocking {
+        game.createPet(newborn)
+
+        assertEquals(PurchaseResult.NoPlan, game.buy(food).dataOrNull())
+        assertEquals(100, game.requireSnapshot().state.balance)
+
+        game.confirmPlan(plan)
+        assertTrue(game.buy(food).dataOrNull() is PurchaseResult.Success)
+    }
+
+    /**
+     * Тупика нет: ребёнок не купил еды, спустил всё на необязательное — и всё равно может закончить неделю голодным
+     * (уровни и приключение монет не требуют). Новая неделя приносит карманные, на них и покупается еда.
+     */
+    @Test
+    fun hungryAndBrokeChildCanStillFinishWeek() = runBlocking {
+        val content = defaultContent()
+        val full = GameRepositoryImpl(FakeGameStore(), clock = clock, adventures = content.adventures, levels = content.levels)
+        full.createPet(newborn)
+        val balance = full.requireSnapshot().state.balance
+        full.confirmPlan(BudgetPlan(optional = balance))
+        val treats = content.shopItems.filter { it.category == ShopCategory.OPTIONAL && !it.isWearable }
+        while (true) {
+            val left = full.requireSnapshot().state.balance
+            val treat = treats.firstOrNull { it.price <= left } ?: break
+            full.buy(treat)
+        }
+        content.levels.filter { it.week == 1 }.forEach { full.completeLevel(it, mistakes = 0) }
+        full.completeAdventure(content.adventures.first(), mistakes = 0)
+        clock.nextDay()
+
+        val result = full.finishWeek().dataOrNull()
+
+        assertTrue(result is FinishWeekResult.Finished)
+        assertTrue(!(result as FinishWeekResult.Finished).summary.deeds.fed)   // голодным — можно, дело «сыт» просто не засчитано
+        assertTrue(full.requireSnapshot().state.balance > 0)                   // карманные новой недели пришли
+    }
+
     @Test
     fun weekStartedTodayIsNotFinishedAndNotSaved() = runBlocking {
         game.createPet(newborn)
@@ -233,6 +276,7 @@ class GameRepositoryImplTest {
     @Test
     fun failedSaveLeavesSnapshotUnchangedAndReportsError() = runBlocking {
         game.createPet(newborn)
+        game.confirmPlan(plan)
         val before = game.requireSnapshot()
         store.saveFailure = StorageError.WRITE_FAILED
 
@@ -246,6 +290,7 @@ class GameRepositoryImplTest {
     @Test
     fun commandsWorkAgainOnceStoreRecovers() = runBlocking {
         game.createPet(newborn)
+        game.confirmPlan(plan)
         store.saveFailure = StorageError.WRITE_FAILED
         game.buy(food)
         store.saveFailure = null

@@ -196,8 +196,6 @@ class HomeViewModelTest {
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 6)
         vm.onAction(HomeAction.ConfirmPlan)
         assertEquals(TutorialStep.TASKS, step())
-        vm.onAction(HomeAction.SkipTutorialStep)   // первый уровень не пропустить
-        assertEquals(TutorialStep.TASKS, step())
 
         // Уровень с ошибками тоже засчитывает шаг: важно попробовать, а не угадать
         runBlocking { game.completeLevel(content.levels.first(), mistakes = 2) }
@@ -219,9 +217,9 @@ class HomeViewModelTest {
         assertEquals(false, vm.state.value?.tutorialDone)
     }
 
-    /** Шаги можно пропускать по одному — кроме плана и первого уровня; конец обучения всё равно спрашивает «Всё понятно?». */
+    /** Шаги можно пропускать по одному — кроме плана; конец обучения всё равно спрашивает «Всё понятно?». */
     @Test
-    fun tutorialStepsCanBeSkippedButNotFirstLevelAndPlan() {
+    fun tutorialStepsCanBeSkippedButNotThePlan() {
         assertNull(viewModel().state.value?.tutorial)   // обычная игра — без обучения
 
         val fresh = GameRepositoryImpl(FakeGameStore(), clock = clock)
@@ -234,11 +232,7 @@ class HomeViewModelTest {
 
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
         vm.onAction(HomeAction.ConfirmPlan)
-        vm.onAction(HomeAction.SkipTutorialStep)
-        assertEquals(TutorialStep.TASKS, step())   // первый уровень обязателен
-        runBlocking { fresh.completeLevel(content.levels.first(), mistakes = 0) }
-
-        listOf(TutorialStep.GOAL, TutorialStep.SHOP).forEach {
+        listOf(TutorialStep.TASKS, TutorialStep.GOAL, TutorialStep.SHOP).forEach {
             assertEquals(it, step())
             vm.onAction(HomeAction.SkipTutorialStep)
         }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.content.Content
 import ru.larpinovplay.finniapp.domain.game.model.GameState
 import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
+import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.model.PurchaseResult
 import ru.larpinovplay.finniapp.domain.game.model.WithdrawResult
 import ru.larpinovplay.finniapp.domain.game.model.budgetDirection
@@ -37,6 +38,7 @@ class ShopViewModel(
             owned = ownedIds(),
             budgets = budgetsOf(game.requireSnapshot().state),
             coach = game.requireSnapshot().state.tutorialStep == TutorialStep.SHOP,
+            planned = game.requireSnapshot().state.phase != PeriodPhase.PLANNING,
         )
     )
     val state: StateFlow<ShopUiState> = _state.asStateFlow()
@@ -46,7 +48,12 @@ class ShopViewModel(
         viewModelScope.launch {
             game.snapshot.filterNotNull().collect { snapshot ->
                 val g = snapshot.state
-                _state.update { it.copy(balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g), coach = g.tutorialStep == TutorialStep.SHOP) }
+                _state.update {
+                    it.copy(
+                        balance = g.balance, weekSatiety = g.weekSatiety, owned = ownedIds(), budgets = budgetsOf(g),
+                        coach = g.tutorialStep == TutorialStep.SHOP, planned = g.phase != PeriodPhase.PLANNING,
+                    )
+                }
             }
         }
     }
@@ -106,8 +113,8 @@ class ShopViewModel(
                         weeksAfter = state.weeksToGoal(state.savings - result.missing),
                     )
                 }
-                // Кнопка у купленной одежды выключена; сюда попадём только при двойном нажатии
-                PurchaseResult.AlreadyOwned -> null
+                // Кнопка у купленной одежды выключена, а без плана — все кнопки; сюда попадём только при двойном нажатии
+                PurchaseResult.AlreadyOwned, PurchaseResult.NoPlan -> null
             }
             _state.update { it.copy(pending = null, feedback = feedback) }
         }
