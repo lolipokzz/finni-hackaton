@@ -104,10 +104,10 @@ class SavingsViewModel(
         }
     }
 
-    /** Шаг — [GameRules.PLAN_STEP], сумма — от шага до всего кошелька. */
+    /** Шаг — [GameRules.PLAN_STEP], сумма — от шага (или всего кошелька, если в нём меньше шага) до всего кошелька. */
     private fun changeDeposit(increase: Boolean) = _state.update {
         val step = if (increase) GameRules.PLAN_STEP else -GameRules.PLAN_STEP
-        it.copy(depositPicked = (it.depositAmount + step).coerceIn(GameRules.PLAN_STEP, it.depositMax))
+        it.copy(depositPicked = (it.depositAmount + step).coerceIn(it.depositMin, it.depositMax))
     }
 
     private fun deposit(amount: Int) {

@@ -33,6 +33,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import ru.larpinovplay.finniapp.domain.content.FeedbackKey
+import ru.larpinovplay.finniapp.presentation.feedback.LocalFeedback
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -617,9 +619,15 @@ private fun OptionRow(icon: Int, tint: Color, title: String, subtitle: String?, 
 }
 
 /** Что станет с копилкой, если взять недостающее: «В копилке 40 → 30, до «Кроватки» не хватит 60». */
+@Composable
 private fun savingsConsequence(fb: PurchaseFeedback.NotEnough): String {
     val change = "В копилке ${fb.savings} → станет ${fb.savingsAfter}"
     val goal = fb.goal ?: return change
-    return "$change. До «${goal.name}» будет не хватать ${fb.goalRemainingAfter}"
+    val remaining = "$change. До «${goal.name}» будет не хватать ${fb.goalRemainingAfter}"
+    // Срок до цели показываем до подтверждения, как и в окне снятия из копилки (ТЗ 2.5.7)
+    val before = fb.weeksBefore
+    val after = fb.weeksAfter
+    if (before == null || after == null || after <= before) return remaining
+    return "$remaining. " + LocalFeedback.current.text(FeedbackKey.WITHDRAW_WEEKS, "before" to before, "after" to after)
 }
 

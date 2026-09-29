@@ -26,6 +26,8 @@ enum class FeedbackKey(val id: String) {
     PERIOD_PLAN_OK("period.b_ok"),
     PERIOD_PLAN_OPTIONAL_OVER("period.b_optional_over"),
     PERIOD_PLAN_SAVINGS_UNDER("period.b_savings_under"),
+    PERIOD_MOOD("period.mood"),
+    PERIOD_MOOD_LASTING("period.mood_lasting"),
     STAGE_UP("stage.up"),
 
     // Дела недели: что сделать (окно на главном экране)
@@ -60,6 +62,7 @@ enum class FeedbackKey(val id: String) {
     SAY_BORED("say.bored"),
     SAY_NEW_TASK("say.new_task"),
     SAY_TOMORROW("say.tomorrow"),
+    SAY_DEEDS_LEFT("say.deeds_left"),
     SAY_ON_TRIP("say.on_trip"),
 
     DEPOSIT_REJECTED("deposit.rejected"),

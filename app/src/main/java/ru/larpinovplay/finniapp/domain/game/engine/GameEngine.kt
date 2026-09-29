@@ -188,6 +188,7 @@ object GameEngine {
             withdrawn = s.withdrawalsThisWeek.sum(),
             savingsBonus = bonus,
             moodDelta = pet.mood.value - before.mood.value,
+            lastingMood = lasting,
             stageBefore = before.growthStage,
             stageAfter = pet.growthStage,
             stepsToNextStage = pet.pointsToNextStage,

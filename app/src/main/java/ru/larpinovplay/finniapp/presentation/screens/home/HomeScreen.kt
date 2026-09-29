@@ -455,7 +455,7 @@ private const val SPEECH_SHOWN_MS = 6_000L
  */
 private val HomeUiState.Speech.important: Boolean
     get() = this == HomeUiState.Speech.PLAN_WEEK || this == HomeUiState.Speech.HUNGRY || this == HomeUiState.Speech.ADVENTURE ||
-        this == HomeUiState.Speech.WEEK_READY
+        this == HomeUiState.Speech.WEEK_READY || this == HomeUiState.Speech.DEEDS_LEFT
 
 /** Облачко: короткая фраза и текстовая ссылка на дело. Нажатие мимо ссылки прячет облачко. */
 @Composable

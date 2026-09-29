@@ -173,6 +173,7 @@ internal data class WeekSummaryDto(
     val withdrawn: Int = 0,
     val savingsBonus: Int = 0,
     val moodDelta: Int,
+    val lastingMood: Int = 0,        // в старых сохранениях поля нет
     val stageBefore: PetGrowthStage,
     val stageAfter: PetGrowthStage,
     val stepsToNextStage: Int? = null,

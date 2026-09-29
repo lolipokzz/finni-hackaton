@@ -384,6 +384,7 @@ class GameEngineTest {
         assertEquals(week.pet.satiety.value - GameRules.WEEKLY_HUNGER, game.pet.satiety.value)
         // Настроение от дел не зависит: неделя просто снижает его
         assertEquals(-GameRules.WEEKLY_MOOD_DECAY, summary.moodDelta)
+        assertEquals(0, summary.lastingMood)
         assertEquals(week.pet.mood.value - GameRules.WEEKLY_MOOD_DECAY, game.pet.mood.value)
     }
 
@@ -517,6 +518,8 @@ class GameEngineTest {
         val (_, summary) = dressed.finish()
 
         assertEquals(2 * GameRules.LASTING_MOOD_PER_ITEM - GameRules.WEEKLY_MOOD_DECAY, summary.moodDelta)
+        // Итоги объясняют изменение: сколько дали одежда и цели (ТЗ 2.5.10)
+        assertEquals(2 * GameRules.LASTING_MOOD_PER_ITEM, summary.lastingMood)
     }
 
     @Test

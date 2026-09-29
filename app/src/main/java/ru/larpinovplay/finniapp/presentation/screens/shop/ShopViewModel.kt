@@ -102,6 +102,8 @@ class ShopViewModel(
                         savings = state.savings,
                         goal = state.goal,
                         goalRemainingAfter = state.goalRemaining(state.savings - result.missing),
+                        weeksBefore = state.weeksToGoal(),
+                        weeksAfter = state.weeksToGoal(state.savings - result.missing),
                     )
                 }
                 // Кнопка у купленной одежды выключена; сюда попадём только при двойном нажатии

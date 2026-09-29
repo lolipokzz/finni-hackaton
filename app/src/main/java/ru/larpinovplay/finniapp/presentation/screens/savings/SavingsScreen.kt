@@ -278,7 +278,10 @@ private fun DreamCard(
                 )
                 StepButton("+", "Отложить больше", enabled = state.canDepositMore) { onChangeDeposit(true) }
                 Spacer(Modifier.width(10.dp))
-                TealButton("Отложить", R.drawable.ic_coin, onDeposit, modifier = Modifier.weight(1f))
+                TealButton("Отложить", R.drawable.ic_coin, onDeposit, modifier = Modifier.weight(1f), enabled = state.canDeposit)
+            }
+            if (!state.canDeposit) {
+                Text("В кошельке пусто — откладывать пока нечего", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted, textAlign = TextAlign.Center)
             }
             state.depositError?.let {
                 Text(it.text(), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.WarnInk, textAlign = TextAlign.Center)

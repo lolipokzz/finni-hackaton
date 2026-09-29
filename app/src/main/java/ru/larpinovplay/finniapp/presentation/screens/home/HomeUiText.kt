@@ -11,6 +11,7 @@ fun Speech.text(): String = LocalFeedback.current.text(
     when (this) {
         Speech.PLAN_WEEK -> FeedbackKey.SAY_PLAN_WEEK
         Speech.WEEK_READY -> FeedbackKey.SAY_WEEK_READY
+        Speech.DEEDS_LEFT -> FeedbackKey.SAY_DEEDS_LEFT
         Speech.ON_TRIP -> FeedbackKey.SAY_ON_TRIP
         Speech.HUNGRY -> FeedbackKey.SAY_HUNGRY
         Speech.ADVENTURE -> FeedbackKey.SAY_ADVENTURE
@@ -26,6 +27,7 @@ val Speech.button: Pair<String, HomeAction>?
     get() = when (this) {
         Speech.PLAN_WEEK -> "Составим план" to HomeAction.OpenPlan
         Speech.WEEK_READY -> "Смотрим!" to HomeAction.ShowDeeds
+        Speech.DEEDS_LEFT -> "Дела недели" to HomeAction.ShowDeeds
         Speech.HUNGRY -> "Сходим в магазин" to HomeAction.OpenSection(HomeSection.SHOP)
         Speech.ADVENTURE -> "Вперёд!" to HomeAction.OpenSection(HomeSection.TASKS)
         Speech.CHOOSE_GOAL -> "В копилку" to HomeAction.OpenSection(HomeSection.SAVINGS)

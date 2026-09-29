@@ -27,7 +27,6 @@ import ru.larpinovplay.finniapp.domain.game.model.weekSatiety
 import ru.larpinovplay.finniapp.domain.game.model.PeriodPhase
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.pet.model.Pet
-import ru.larpinovplay.finniapp.domain.pet.model.PetSatiety
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
 import ru.larpinovplay.finniapp.domain.shop.cheapestFoodFor
@@ -242,19 +241,17 @@ class HomeViewModel(
      */
     private fun speech(game: GameState, pet: Pet, finishBlock: FinishBlock?, tasks: Int, deeds: WeekDeeds): HomeUiState.Speech? = when {
         game.phase == PeriodPhase.PLANNING -> HomeUiState.Speech.PLAN_WEEK
-        finishBlock == null -> HomeUiState.Speech.WEEK_READY
+        // «Мы всё успели» — только когда и правда сделаны все дела, а не просто неделю уже можно закончить
+        finishBlock == null && deeds.all -> HomeUiState.Speech.WEEK_READY
         game.currentTrip != null -> HomeUiState.Speech.ON_TRIP   // Финни в поездке: звать в магазин и к заданиям некого
-        // «Проголодался» — только когда сытость и правда низкая, а не просто еда на неделю ещё не куплена
-        pet.satiety.value <= HUNGRY_SPEECH_AT -> HomeUiState.Speech.HUNGRY
+        // «Проголодался» — только когда сытость и правда низкая (30 и меньше), а не просто еда на неделю ещё не куплена
+        pet.isHungry -> HomeUiState.Speech.HUNGRY
         finishBlock == FinishBlock.ADVENTURE_NOT_PLAYED -> HomeUiState.Speech.ADVENTURE
         game.goal == null -> HomeUiState.Speech.CHOOSE_GOAL
         !deeds.notBored -> HomeUiState.Speech.BORED
+        // Неделю можно закончить, но не все дела сделаны: показать, какие ещё можно успеть
+        finishBlock == null -> HomeUiState.Speech.DEEDS_LEFT
         tasks > 0 -> HomeUiState.Speech.NEW_TASK
         else -> HomeUiState.Speech.TOMORROW
-    }
-
-    private companion object {
-        /** Финни говорит «проголодался» при сытости 30 и ниже (порог голода [PetSatiety.HUNGRY_BELOW]). */
-        const val HUNGRY_SPEECH_AT = PetSatiety.HUNGRY_BELOW
     }
 }

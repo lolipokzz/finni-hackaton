@@ -5,7 +5,7 @@
 
 Колонка «Где» указывает экран (`presentation/screens/…`), логику (`domain/…`, `data/…`) и unit-тест
 (`app/src/test/…`, класс и метод). Все тесты запускаются командой `./gradlew :app:testDebugUnitTest`
-(177 тестов). Ручные сценарии — в [09](09-test-cases.md).
+(180 тестов). Ручные сценарии — в [09](09-test-cases.md).
 
 ## Функциональные требования (ТЗ 2.5)
 
@@ -32,7 +32,7 @@
 | 2.5.7 | Цель: стоимость, накоплено, осталось | Кольцо цели в «Копилке»: «накоплено из стоимости», «осталось». Тест `GameEngineTest.goalRemainingNeverGoesBelowZero` | реализовано |
 | 2.5.7 | Регулярное пополнение | Строка «Копилка» в плане недели уходит в копилку сразу, плюс ручное пополнение (`SavingsScreen`). Тесты `GameEngineTest.confirmedPlanSendsSavingsLineToPiggyBankRightAway`, `depositMovesCoinsToSavingsAndRejectsMoreThanBalance`, `SavingsViewModelTest.depositMovesChosenAmountAndKeepsChoice` | реализовано |
 | 2.5.7 | Понятный расчёт срока по среднему пополнению | «Примерно N нед.»: остаток, делённый на среднее пополнение за последние (до 3) недели, с округлением вверх; пока недель нет — на отложенное на этой неделе (`GameState.weeksToGoal`, `SavingsScreen`, [04](04-rules-and-formulas.md#срок-достижения-цели)). Тест `GameEngineTest.weeksToGoalIsCeilOfRemainingOverWeeklyDeposit` | реализовано |
-| 2.5.7 | Снятие только после подтверждения с предпросмотром | Окно снятия (`WithdrawDialog`): сколько останется и на сколько отодвинется цель. Тесты `SavingsViewModelTest.withdrawWindowShowsHowGoalMovesAway`, `confirmingMovesCoinsToWalletAndClosesWindow` | реализовано |
+| 2.5.7 | Снятие только после подтверждения с предпросмотром | Окно снятия (`WithdrawDialog`) и вариант «Взять из копилки и купить» в магазине: сколько останется, сколько не хватит до цели и как изменится срок. Тесты `SavingsViewModelTest.withdrawWindowShowsHowGoalMovesAway`, `confirmingMovesCoinsToWalletAndClosesWindow`, `ShopViewModelTest.takingFromSavingsShowsHowGoalDeadlineMovesBeforeConfirming` | реализовано |
 | 2.5.8 | Задания минимум по 3 темам | 6 заданий, по 2 в темах «бюджет», «сбережения», «платежи» (`data/content/TaskContent.kt`), плюс 5 приключений недели. Тест `ContentMinimumsTest.atLeastSixTasksCoveringAllThreeTopics` | реализовано |
 | 2.5.8 | Игровая ситуация с выбором, не только тест | Механики «раздели сумму» и «собери покупки» (`TaskPlayScreen`), приключения с оплатой купюрами, сдачей и корзиной (`AdventureScreen`, `PayScene`, `BasketScene`). Тесты `AdventureRulesTest`, `AdventureViewModelTest.wrongAnswerIsExplainedAndBasketCanBeFixed` | реализовано |
 | 2.5.8 | Объяснение после любого ответа | `TaskResultCard` после любого ответа, объяснения в приключениях. Тесты `ContentMinimumsTest.choiceTasksHaveOneRightAnswerAndExplainEveryOption`, `AdventureViewModelTest.mistakesAreExplainedAndOnlyLowerTheReward` | реализовано |
@@ -43,7 +43,7 @@
 | 2.5.9 | Путь восстановления после ошибки | Взять недостающее из копилки или подождать, повтор задания на следующей неделе, скорректировать следующий план. Тесты `ShopViewModelTest.missingCoinsCanBeTakenFromSavingsExactly`, `GameEngineTest.extraDepositCoversWithdrawalWithinTheWeek`, `HomeViewModelTest.nextDayShowsSummaryThenPlanStartingFromLastPlan` | реализовано |
 | 2.5.10 | ≥ 3 состояний/стадий | 3 стадии: малыш, подросток, взрослый (`PetGrowthStage`, `assets/cat/{baby,teen,adult}.glb`), эмоции по сытости и настроению. Тесты `PetTest.stageIsDerivedFromGrowthPoints`, `moodLevelThresholdsAreFortyAndSeventy` | реализовано |
 | 2.5.10 | Развитие по совокупности периодов | Шаги роста за 4 дела недели: сыт, не скучает, копилка по плану, траты по плану (`GameEngine.finishWeek`). Тесты `GameEngineTest.twoWeeksWithAllDeedsGrowPetToTeenAndRaisePocketMoney`, `boredHungryWeekGivesFewStepsAndMoodStopsAtBored`, `PetTest.growthNeverGoesDown`, `EconomyBalanceTest` | реализовано |
-| 2.5.10 | Объяснение причины настроения | Нажатие на показатель → `HomeInfoDialog` объясняет, от чего растёт и падает; итоги недели называют дела. Тест `GameEngineTest.summaryReportsStageChange` | реализовано |
+| 2.5.10 | Объяснение причины настроения | Нажатие на показатель → `HomeInfoDialog` объясняет, от чего растёт и падает; итоги недели объясняют изменение настроения (недельное снижение и поддержка одежды и целей) и называют дела. Тесты `GameEngineTest.summaryReportsStageChange`, `clothesAndReachedGoalsSoftenWeeklyMoodDrop` | реализовано |
 | 2.5.11 | Завершённые задания, прогресс цели, итоги периода | Экран «Прогресс» (`ProgressScreen`): рост, цель, итоги прошлой недели с планом и фактом, задания по темам, сбывшиеся цели, журнал. Тест `GameEngineTest.topicProgressCountsDoneTasksPerTopic` | реализовано |
 | 2.5.11 | Справочник терминов | «Настройки» → «Словарик» (`SettingsScreen`, `glossary`) | реализовано |
 | 2.5.12 | Барьер для взрослого | Пример на сложение двух двузначных чисел (`AdultScreen`, `AdultViewModel`). Тесты `AdultViewModelTest.lockedSectionCannotChangeDataOrSettings`, `wrongAnswersDoNotUnlockAndThreeAttemptsRefreshChallenge` | реализовано |
@@ -82,7 +82,7 @@
 | 3.4 | Только нужные разрешения, каждое обосновано | `RECORD_AUDIO` — только для «Кот повторяет слова»: выключено по умолчанию, доступ спрашивается при включении переключателя в «Настройках» ([06](06-architecture.md)). Тесты `DataStoreSettingsRepositoryTest.voiceRepeatIsOffByDefault`, `SettingsViewModelTest` | реализовано |
 | 3.4 | Запуск ≤ 5 с, отклик ≤ 1 с | На эмуляторе главный экран ~0,6 с, 3D-питомец ~3 с; замер на физическом устройстве не проведён | в работе |
 | 3.4 | Нет падений, потери прогресса и тупиков в сценарии | Сценарий проходится на эмуляторе; ошибки записи показываются и не теряют сохранение (`DataStoreGameStoreTest`, `GameRepositoryImplTest.failedSaveLeavesSnapshotUnchangedAndReportsError`); прогон на устройстве не проведён | в работе |
-| 3.4 | Ключевая логика покрыта тестами | 177 unit-тестов: бюджет, покупки, копилка, рост, сохранение, ViewModel (`./gradlew :app:testDebugUnitTest`) | реализовано |
+| 3.4 | Ключевая логика покрыта тестами | 180 unit-тестов: бюджет, покупки, копилка, рост, сохранение, ViewModel (`./gradlew :app:testDebugUnitTest`) | реализовано |
 | 3.5 | Без аккаунта и персональных данных | Нужны только раскраска и игровое имя питомца, данные не покидают устройство | реализовано |
 | 3.5 | Без рекламы, подписок, покупок и внешних ссылок | Нет SDK рекламы и платежей, нет `INTERNET`, нет ссылок в интерфейсе | реализовано |
 | 3.5 | Тексты не пугают и не стыдят | Правила текстов в [05](05-content-model.md#тексты-обратной-связи--assetscontentfeedbackjson): ошибка — через питомца и следующий шаг. Открытый вопрос: клипы и звуки «ударов» при нажатии на голову и лапы (`PetHits`) стоит обосновать или смягчить | в работе |

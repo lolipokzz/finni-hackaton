@@ -35,9 +35,9 @@ class PetTest {
     }
 
     @Test
-    fun petIsHungryBelowThirty() {
-        assertTrue(PetSatiety(29).isHungry)
-        assertFalse(PetSatiety(30).isHungry)
+    fun petIsHungryAtThirtyOrLower() {
+        assertTrue(PetSatiety(30).isHungry)
+        assertFalse(PetSatiety(31).isHungry)
         assertTrue(pet.changeSatiety(-41).isHungry)
     }
 

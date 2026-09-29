@@ -44,6 +44,7 @@ import ru.larpinovplay.finniapp.presentation.components.TealButton
 import ru.larpinovplay.finniapp.presentation.game.deedText
 import ru.larpinovplay.finniapp.presentation.game.grewText
 import ru.larpinovplay.finniapp.presentation.game.label
+import ru.larpinovplay.finniapp.presentation.game.moodText
 import ru.larpinovplay.finniapp.presentation.game.title
 import ru.larpinovplay.finniapp.presentation.pet.nextStageTitle
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
@@ -79,6 +80,7 @@ fun WeekSummaryDialog(summary: WeekSummary, onDismiss: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (summary.savingsBonus > 0) StatRow("Бонус копилки", "+${summary.savingsBonus} в копилку")
             StatRow("Настроение", if (summary.moodDelta >= 0) "+${summary.moodDelta}" else "${summary.moodDelta}")
+            Text(summary.moodText(), fontSize = 15.sp, lineHeight = 19.sp, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
             StatRow("На новую неделю", "+${summary.nextIncome}", coin = true)
         }
 

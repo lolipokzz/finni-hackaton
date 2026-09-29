@@ -88,6 +88,30 @@ class ShopViewModelTest {
     }
 
     @Test
+    fun takingFromSavingsShowsHowGoalDeadlineMovesBeforeConfirming() {
+        val meat = content.shopItems.first { it.id == "meat" }   // 25
+        val bed = content.goals.first { it.id == "bed" }          // 60
+        val small = GameRepositoryImpl(FakeGameStore(), startBalance = 30, clock = TestClock())
+        runBlocking {
+            small.createPet(SampleGames.newborn)
+            small.confirmPlan(BudgetPlan(optional = 5, savings = 25))   // в кошельке 5, в копилке 25
+            small.chooseGoal(bed)
+        }
+        val vm = ShopViewModel(small, content)
+
+        vm.onAction(ShopAction.BuyClicked(meat))
+        vm.onAction(ShopAction.ConfirmPurchase)
+
+        // ТЗ 2.5.7: до подтверждения видно, как уменьшится копилка и как изменится срок до цели
+        val notEnough = vm.state.value.feedback as PurchaseFeedback.NotEnough
+        assertEquals(20, notEnough.missing)
+        assertEquals(5, notEnough.savingsAfter)
+        assertEquals(55, notEnough.goalRemainingAfter)
+        assertEquals(2, notEnough.weeksBefore)   // осталось 35 при 25 в неделю
+        assertEquals(3, notEnough.weeksAfter)    // осталось 55 при 25 в неделю
+    }
+
+    @Test
     fun savingsAreNotOfferedWhenTheyDoNotCoverTheGap() {
         val meal = content.shopItems.first { it.category == ShopCategory.MANDATORY && it.price >= 25 }
         val small = GameRepositoryImpl(FakeGameStore(), startBalance = 20, clock = TestClock())

@@ -39,6 +39,20 @@ fun Deed.todoText(weekSatiety: Int): String {
     }
 }
 
+/**
+ * Почему за неделю изменилось настроение (ТЗ 2.5.10): неделя его снижает, а одежда и достигнутые цели немного
+ * поддерживают (docs/04-rules-and-formulas.md, «Состояние питомца»).
+ */
+@Composable
+fun WeekSummary.moodText(): String {
+    val feedback = LocalFeedback.current
+    return if (lastingMood > 0) {
+        feedback.text(FeedbackKey.PERIOD_MOOD_LASTING, "decay" to GameRules.WEEKLY_MOOD_DECAY, "lasting" to lastingMood)
+    } else {
+        feedback.text(FeedbackKey.PERIOD_MOOD, "decay" to GameRules.WEEKLY_MOOD_DECAY)
+    }
+}
+
 /** Итог дела за неделю: получилось — что именно, нет — почему и что попробовать. */
 @Composable
 fun WeekSummary.deedText(deed: Deed): String {

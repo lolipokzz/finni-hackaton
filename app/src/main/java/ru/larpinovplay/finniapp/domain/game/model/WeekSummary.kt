@@ -16,6 +16,7 @@ data class WeekSummary(
     val withdrawn: Int,                // сколько за неделю забрано из копилки
     val savingsBonus: Int,             // бонус копилки за неделю, пришедший в копилку
     val moodDelta: Int,
+    val lastingMood: Int = 0,          // сколько настроения за неделю дали одежда и достигнутые цели
     val stageBefore: PetGrowthStage,
     val stageAfter: PetGrowthStage,
     val stepsToNextStage: Int?,        // сколько шагов осталось после этой недели; null — стадия последняя

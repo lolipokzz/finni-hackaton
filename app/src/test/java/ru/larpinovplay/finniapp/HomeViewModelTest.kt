@@ -267,6 +267,39 @@ class HomeViewModelTest {
         assertEquals(HomeUiState.Speech.CHOOSE_GOAL, speechAt(31))
     }
 
+    /**
+     * Неделю можно закончить (следующий день), но «Мы всё успели» — только когда сделаны все четыре дела.
+     * Голодный Финни сначала просит есть, а при несделанных делах зовёт посмотреть, что ещё можно успеть.
+     */
+    @Test
+    fun weekReadyOnlyWhenAllDeedsAreDone() {
+        val meat = content.shopItems.first { it.id == "meat" }   // 25 монет, сытость +45: дело «Финни сыт»
+        /** Неделя с планом и целью, наступил следующий день: неделю уже можно закончить. */
+        fun weekAt(satiety: Int): Pair<GameRepositoryImpl, HomeViewModel> {
+            val game = GameRepositoryImpl(FakeGameStore(), clock = clock)
+            runBlocking {
+                game.createPet(SampleGames.newborn.copy(satiety = PetSatiety(satiety)))
+                game.confirmPlan(BudgetPlan(mandatory = 25, optional = 5, savings = 20))
+                game.chooseGoal(content.goals.first())
+            }
+            clock.nextDay()
+            return game to HomeViewModel(game, content, InMemorySettingsRepository())
+        }
+
+        // Голоден: сначала еда, а не «Мы всё успели»
+        val (_, hungry) = weekAt(20)
+        assertNull(hungry.state.value?.finishBlock)
+        assertEquals(HomeUiState.Speech.HUNGRY, hungry.state.value?.speech)
+
+        // Сыт, но еда на неделю не куплена: дела ещё не все — Финни зовёт посмотреть, что можно успеть
+        val (game, vm) = weekAt(70)
+        assertEquals(HomeUiState.Speech.DEEDS_LEFT, vm.state.value?.speech)
+
+        // Купил еду: сделаны все четыре дела
+        runBlocking { game.buy(meat) }
+        assertEquals(HomeUiState.Speech.WEEK_READY, vm.state.value?.speech)
+    }
+
     @Test
     fun nextDayShowsSummaryThenPlanStartingFromLastPlan() {
         val vm = viewModel()

@@ -20,12 +20,16 @@ data class SavingsUiState(
     val coach: Boolean = false,             // обучение: Финни просит выбрать цель
     val depositPicked: Int = DEFAULT_DEPOSIT,   // сколько ребёнок выбрал отложить кнопками «−»/«+»
 ) {
-    /** Больше кошелька не отложить; но не меньше шага, чтобы «Отложить» при пустом кошельке объяснило нехватку. */
-    val depositMax: Int get() = balance.coerceAtLeast(GameRules.PLAN_STEP)
+    /** Больше кошелька не отложить. */
+    val depositMax: Int get() = balance.coerceAtLeast(0)
+
+    /** Меньше шага не предлагаем, но если в кошельке меньше шага (1–4 монеты), отложить можно и их. */
+    val depositMin: Int get() = minOf(GameRules.PLAN_STEP, depositMax)
 
     /** Сколько отложит кнопка «Отложить»: выбранное, но не больше кошелька (он мог опустеть после выбора). */
-    val depositAmount: Int get() = depositPicked.coerceIn(GameRules.PLAN_STEP, depositMax)
-    val canDepositLess: Boolean get() = depositAmount > GameRules.PLAN_STEP
+    val depositAmount: Int get() = depositPicked.coerceIn(depositMin, depositMax)
+    val canDeposit: Boolean get() = depositAmount > 0
+    val canDepositLess: Boolean get() = depositAmount > depositMin
     val canDepositMore: Boolean get() = depositAmount < depositMax
 
     /**

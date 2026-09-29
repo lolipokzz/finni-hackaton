@@ -111,4 +111,29 @@ class SavingsViewModelTest {
         assertEquals(15, vm.state.value.depositAmount)
         assertEquals(game.requireSnapshot().state.goalRemaining(), vm.state.value.goalRemaining)
     }
+
+    /** Остаток меньше шага (1–4 монеты) тоже можно отложить, а при пустом кошельке кнопка выключена. */
+    @Test
+    fun leftoverCoinsBelowStepCanBeSavedAndEmptyWalletDisablesButton() {
+        runBlocking {
+            game.createPet(SampleGames.newborn)
+            game.chooseGoal(content.goals.first())
+            game.confirmPlan(BudgetPlan(mandatory = 20, optional = 77, savings = 3))
+            game.buy(content.shopItems.first { it.id == "meat" })      // 25
+            game.buy(content.shopItems.first { it.id == "cap" })       // 40
+            game.buy(content.shopItems.first { it.id == "bowtie" })    // 30 → в кошельке 2
+        }
+        val vm = SavingsViewModel(game, content)
+        assertEquals(2, game.requireSnapshot().state.balance)
+        assertEquals(2, vm.state.value.depositAmount)
+        assertFalse(vm.state.value.canDepositLess)
+        assertFalse(vm.state.value.canDepositMore)
+
+        vm.onAction(SavingsAction.Deposit)
+
+        assertEquals(0, game.requireSnapshot().state.balance)
+        assertEquals(5, game.requireSnapshot().state.savings)
+        assertNull(vm.state.value.depositError)
+        assertFalse(vm.state.value.canDeposit)   // кошелёк пуст: отложить нечего
+    }
 }
