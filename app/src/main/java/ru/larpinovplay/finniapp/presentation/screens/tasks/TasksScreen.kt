@@ -129,6 +129,7 @@ fun TasksScreen(
         onOpenAdventure = onOpenAdventure,
         onBack = onBack,
         modifier = modifier,
+        onSkipTutorialStep = { viewModel.onAction(TasksAction.SkipTutorialStep) },
     )
 }
 
@@ -139,6 +140,7 @@ fun TasksScreenContent(
     onOpenAdventure: (Adventure) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onSkipTutorialStep: () -> Unit = {},
 ) {
     // Какой узел раскрыт — только вид. В обучении раскрыт первый уровень: Финни показывает на «Начать»
     var picked by rememberSaveable { mutableStateOf<String?>(null) }
@@ -208,11 +210,10 @@ fun TasksScreenContent(
             }
         }
         if (state.coach) {
-            // Первый уровень не пропустить: он учит тому, что понадобится в плане недели
             TutorialSpotlight(
                 "Это карта заданий. Каждую неделю тут открываются новые уровни. Нажми «Начать» — пройдём первый вместе!",
                 start.all,
-                onSkip = null,
+                onSkip = onSkipTutorialStep,
                 scroll = list,
             )
         }

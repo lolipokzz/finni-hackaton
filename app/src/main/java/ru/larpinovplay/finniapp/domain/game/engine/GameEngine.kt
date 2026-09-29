@@ -54,10 +54,12 @@ object GameEngine {
 
     /**
      * Покупка: списывает монеты и сразу действует на питомца. Одежда ещё и попадает в гардероб навсегда
-     * (надевается отдельно, см. [wear]) и считается тратой недели, как любая покупка.
+     * (надевается отдельно, см. [wear]) и считается тратой недели, как любая покупка. До плана недели покупать нельзя.
      */
     fun buy(game: GameSnapshot, item: ShopItem): Transition<PurchaseResult> {
         val s = game.state
+        // Сначала план, потом траты: иначе монеты недели уходят до того, как ребёнок решил, на что они
+        if (s.phase == PeriodPhase.PLANNING) return Transition(game, PurchaseResult.NoPlan)
         if (item.isWearable && s.owns(item)) return Transition(game, PurchaseResult.AlreadyOwned)
         if (item.price > s.balance) {
             return Transition(game, PurchaseResult.NotEnough(missing = item.price - s.balance))

@@ -14,6 +14,8 @@ import org.junit.Before
 import org.junit.Test
 import ru.larpinovplay.finniapp.data.content.defaultContent
 import ru.larpinovplay.finniapp.data.game.GameRepositoryImpl
+import ru.larpinovplay.finniapp.domain.game.model.BudgetPlan
+import ru.larpinovplay.finniapp.domain.game.repository.requireSnapshot
 import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeAction
 import ru.larpinovplay.finniapp.presentation.screens.wardrobe.WardrobeViewModel
 
@@ -34,6 +36,7 @@ class WardrobeViewModelTest {
     fun toggleWearsAndTakesOff() {
         runBlocking {
             game.createPet(SampleGames.newborn)
+            game.confirmPlan(BudgetPlan(optional = game.requireSnapshot().state.balance))
             game.buy(cap)
         }
         val vm = WardrobeViewModel(game)

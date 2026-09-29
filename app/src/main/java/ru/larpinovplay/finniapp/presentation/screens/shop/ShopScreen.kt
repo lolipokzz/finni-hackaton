@@ -136,7 +136,9 @@ fun ShopScreenContent(
                 modifier = Modifier.weight(1f),
             ) {
                 val budget = state.budgets[state.tab]
-                if (budget != null || state.tab == ShopCategory.MANDATORY) {
+                if (!state.planned) {
+                    item(key = "no-plan", span = { GridItemSpan(maxLineSpan) }) { NoPlanCard(onBack) }
+                } else if (budget != null || state.tab == ShopCategory.MANDATORY) {
                     item(key = "plan-${state.tab}", span = { GridItemSpan(maxLineSpan) }) {
                         PlanCard(state.tab, budget, state.weekSatiety)
                     }
@@ -146,6 +148,7 @@ fun ShopScreenContent(
                         item = item,
                         affordable = item.price <= state.balance,
                         owned = item.id in state.owned,
+                        planned = state.planned,
                         onBuy = { onAction(ShopAction.BuyClicked(item)) },
                         modifier = if (coaching) Modifier.spotlightTarget(goods, item.id) else Modifier,
                     )
@@ -314,6 +317,24 @@ private fun PlanCard(category: ShopCategory, budget: ShopUiState.CategoryBudget?
     }
 }
 
+/** План недели не составлен: магазин ждёт. Кнопка ведёт на главный экран, где Финни зовёт составить план. */
+@Composable
+private fun NoPlanCard(onBack: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .creamCard(RoundedCornerShape(26.dp), elevation = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            LocalFeedback.current.text(FeedbackKey.SHOP_NO_PLAN),
+            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.Ink,
+        )
+        TealButton("К плану недели", R.drawable.ic_arrow_right, onBack)
+    }
+}
+
 /** Дело «Финни сыт»: сколько сытости куплено из нужных на неделю. */
 @Composable
 private fun FoodLine(weekSatiety: Int) {
@@ -390,11 +411,18 @@ private fun EffectChips(item: ShopItem, modifier: Modifier = Modifier) {
  * даст Финни.
  */
 @Composable
-private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, onBuy: () -> Unit, modifier: Modifier = Modifier) {
+private fun ShopItemTile(
+    item: ShopItem,
+    affordable: Boolean,
+    owned: Boolean,
+    planned: Boolean,
+    onBuy: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val shape = RoundedCornerShape(24.dp)
     Surface(
         onClick = onBuy,
-        enabled = !owned,
+        enabled = !owned && planned,
         shape = shape,
         color = Color.Transparent,
         modifier = modifier
@@ -404,6 +432,7 @@ private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, on
                 role = Role.Button
                 contentDescription = when {
                     owned -> "${item.name}: уже есть в гардеробе"
+                    !planned -> "${item.name}, ${item.price} монет. Купить можно после плана недели"
                     affordable -> "${item.name}, ${item.price} монет. Купить"
                     else -> "${item.name}, ${item.price} монет. Монет не хватает"
                 }
@@ -420,7 +449,7 @@ private fun ShopItemTile(item: ShopItem, affordable: Boolean, owned: Boolean, on
                 fontSize = 14.sp, lineHeight = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink,
                 textAlign = TextAlign.Center, minLines = 2, maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
-            PriceTag(item.price, affordable, owned)
+            PriceTag(item.price, affordable && planned, owned)
         }
     }
 }

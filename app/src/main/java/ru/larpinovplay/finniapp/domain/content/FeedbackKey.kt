@@ -40,6 +40,7 @@ enum class FeedbackKey(val id: String) {
     // Почему неделю пока нельзя закончить
     FINISH_NO_PLAN("finish.no_plan"),
     FINISH_NO_LEVELS("finish.no_levels"),
+    SHOP_NO_PLAN("shop.no_plan"),
     FINISH_NO_ADVENTURE("finish.no_adventure"),
     FINISH_SAME_DAY("finish.same_day"),
 

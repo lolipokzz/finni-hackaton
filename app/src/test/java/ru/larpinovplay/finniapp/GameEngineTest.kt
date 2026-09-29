@@ -81,7 +81,7 @@ class GameEngineTest {
 
     @Test
     fun boughtClothesStayInWardrobeAfterWeekEnds() {
-        val (game, result) = GameEngine.buy(newGame(), cap)
+        val (game, result) = GameEngine.buy(newGame().planned(), cap)
 
         assertEquals(PurchaseResult.Success(cap, balanceAfter = 100 - cap.price), result)
         assertEquals(listOf(cap), game.state.wardrobe)
@@ -94,7 +94,7 @@ class GameEngineTest {
 
     @Test
     fun clothesAreBoughtOnlyOnce() {
-        val game = newGame().then { GameEngine.buy(it, cap) }
+        val game = newGame().planned().then { GameEngine.buy(it, cap) }
 
         val (again, result) = GameEngine.buy(game, cap)
 
@@ -112,7 +112,7 @@ class GameEngineTest {
 
     @Test
     fun oneItemPerSlotAndTakingOffFreesIt() {
-        val owner = newGame(startBalance = 200)
+        val owner = newGame(startBalance = 200).planned()
             .then { GameEngine.buy(it, cap) }
             .then { GameEngine.buy(it, glasses) }
         val balance = owner.state.balance
@@ -127,7 +127,7 @@ class GameEngineTest {
 
     @Test
     fun buyingFoodSpendsCoinsFeedsPetAndCoversFood() {
-        val before = newGame()
+        val before = newGame().planned()
 
         val (game, result) = GameEngine.buy(before, food)
 
@@ -141,7 +141,7 @@ class GameEngineTest {
 
     @Test
     fun buyingWithoutEnoughCoinsChangesNothing() {
-        val before = newGame(startBalance = 5)
+        val before = newGame(startBalance = 5).planned()
 
         val (game, result) = GameEngine.buy(before, food)
 
@@ -512,9 +512,9 @@ class GameEngineTest {
         val bowtie = content.shopItems.first { it.id == "bowtie" }
         val glasses = content.shopItems.first { it.id == "glasses" }
         val dressed = newGame(startBalance = 1_000)
+            .planned(mandatory = food.price)
             .then { GameEngine.buy(it, bowtie) }
             .then { GameEngine.buy(it, glasses) }
-            .planned(mandatory = food.price)
 
         val (_, summary) = dressed.finish()
 
@@ -624,7 +624,8 @@ class GameEngineTest {
     fun tutorialStartsWithPlanThenFirstLevel() {
         val start = newGame().let { it.copy(state = it.state.copy(tutorial = true)) }
         assertEquals(TutorialStep.PLAN, start.state.tutorialStep)
-        assertTrue(TutorialStep.PLAN.required && TutorialStep.TASKS.required)
+        assertTrue(TutorialStep.PLAN.required)
+        assertFalse(TutorialStep.TASKS.required)   // уровень — подсказка, его можно пропустить
 
         val planned = start.planned(mandatory = food.price)
         assertEquals(TutorialStep.TASKS, planned.state.tutorialStep)
