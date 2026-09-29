@@ -179,7 +179,7 @@ class HomeViewModelTest {
         assertEquals(false, vm.state.value?.deedsOpen)
     }
 
-    /** Обучение новой игры идёт по настоящим действиям: план → мечта → еда → дела недели, и заканчивается. */
+    /** Обучение новой игры идёт по настоящим действиям: план → цель → еда → дела недели, и заканчивается. */
     @Test
     fun tutorialFollowsRealActionsAndEnds() {
         runBlocking { game.createPet(SampleGames.newborn, withTutorial = true) }
@@ -247,7 +247,7 @@ class HomeViewModelTest {
 
         vm.press(BudgetDirection.OPTIONAL, increase = true, times = 10)
         vm.onAction(HomeAction.ConfirmPlan)
-        // Финни сыт (70), поэтому о еде не просит: следующее важное — выбрать мечту
+        // Финни сыт (70), поэтому о еде не просит: следующее важное — выбрать цель
         assertEquals(HomeUiState.Speech.CHOOSE_GOAL, vm.state.value?.speech)
     }
 

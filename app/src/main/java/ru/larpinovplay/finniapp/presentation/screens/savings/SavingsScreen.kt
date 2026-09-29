@@ -83,8 +83,8 @@ import androidx.compose.ui.geometry.Size
  * Копилка, ТЗ 2.5.7: цели с понятной стоимостью, выбранная цель выделена; видны накоплено,
  * осталось и срок по среднему пополнению; можно регулярно переводить монеты в копилку и забирать их.
  *
- * Сверху — мечта в большом розовом кольце: то же кольцо, что вокруг «Копилки» в меню главного экрана,
- * только крупно. Под ним — все мечты плитками, как товары в магазине.
+ * Сверху — цель в большом розовом кольце: то же кольцо, что вокруг «Копилки» в меню главного экрана,
+ * только крупно. Под ним — все цели плитками, как товары в магазине.
  */
 @Composable
 fun SavingsScreen(
@@ -103,7 +103,7 @@ fun SavingsScreenContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Обучение: мечты — единственное, что можно нажать; какую выбрать — решает ребёнок
+    // Обучение: цели — единственное, что можно нажать; какую выбрать — решает ребёнок
     val dreams = remember { SpotlightTargets() }
     val list = rememberLazyGridState()
     Box(modifier = modifier.fillMaxSize()) {
@@ -180,10 +180,10 @@ fun SavingsScreenContent(
     state.reached?.let { goal -> DreamCameTrueDialog(goal, onDismiss = { onAction(SavingsAction.DismissReached) }) }
 }
 
-// ---------- Мечта ----------
+// ---------- Цель ----------
 
 /**
- * Большое кольцо мечты: розовая дуга растёт по мере накопления, в середине — сама мечта.
+ * Большое кольцо цели: розовая дуга растёт по мере накопления, в середине — сама цель.
  * Заполнение плавно догоняет новое значение после «Отложить».
  */
 @Composable
@@ -290,7 +290,7 @@ private fun DreamCard(
     }
 }
 
-/** Мечта ещё не выбрана, но монеты в копилке уже могут быть: например, отложенные по плану недели. */
+/** Цель ещё не выбрана, но монеты в копилке уже могут быть: например, отложенные по плану недели. */
 @Composable
 private fun NoDreamCard(savings: Int, onWithdraw: () -> Unit) {
     Column(
@@ -312,9 +312,9 @@ private fun NoDreamCard(savings: Int, onWithdraw: () -> Unit) {
     }
 }
 
-// ---------- Все мечты ----------
+// ---------- Все цели ----------
 
-/** Плитка мечты: картинка, название и цена. Выбранная — в бирюзовой рамке и со словом «копим», не только цветом. */
+/** Плитка цели: картинка, название и цена. Выбранная — в бирюзовой рамке и со словом «копим», не только цветом. */
 @Composable
 private fun GoalTile(goal: SavingsGoal, selected: Boolean, completed: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(26.dp)
@@ -394,11 +394,11 @@ private fun GoalHeader(goal: SavingsGoal, title: String, subtitle: String) {
     }
 }
 
-/** Смена мечты: монеты в копилке никуда не деваются, меняется только то, на что они копятся. */
+/** Смена цели: монеты в копилке никуда не деваются, меняется только то, на что они копятся. */
 @Composable
 private fun SwitchGoalDialog(goal: SavingsGoal, savings: Int, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     CardDialog(onDismiss = onDismiss) {
-        // Название мечты не склоняется в «Копим на …», поэтому оно в подстроке, а не в вопросе
+        // Название цели не склоняется в «Копим на …», поэтому оно в подстроке, а не в вопросе
         GoalHeader(goal, "Новая цель?", "${goal.name} · ${goal.cost} монет")
         Text(goal.hint, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
         DashedDivider()
@@ -413,7 +413,7 @@ private fun SwitchGoalDialog(goal: SavingsGoal, savings: Int, onConfirm: () -> U
     }
 }
 
-/** Мечта сбылась: праздник вместе с Финни и что это ему дало. */
+/** Цель достигнута: праздник вместе с Финни и что это ему дало. */
 @Composable
 private fun DreamCameTrueDialog(goal: SavingsGoal, onDismiss: () -> Unit) {
     CardDialog(onDismiss = onDismiss) {

@@ -19,7 +19,7 @@ import java.time.LocalDate
 /**
  * Баланс экономики (docs/11-economy.md, раздел 9): пять демо-недель для разных стратегий ребёнка через
  * настоящий движок. Главный принцип — ни одна крайняя стратегия не выигрывает: у каждой свой минус,
- * а сбалансированный план растит Финни быстрее всех и приводит к первой мечте. Если правка чисел ломает
+ * а сбалансированный план растит Финни быстрее всех и приводит к первой цели. Если правка чисел ломает
  * этот тест, она ломает и то, чему учит игра.
  */
 class EconomyBalanceTest {
@@ -77,7 +77,7 @@ class EconomyBalanceTest {
         assertTrue(run.weeks.all { it.deeds.all })
         assertEquals(PetGrowthStage.ADULT, run.game.pet.growthStage)   // подросток на 2-й неделе, взрослый на 4-й
         assertNotNull(run.goalWeek)
-        assertTrue("мечта на неделе ${run.goalWeek}", run.goalWeek!! <= 4)
+        assertTrue("цель на неделе ${run.goalWeek}", run.goalWeek!! <= 4)
     }
 
     @Test

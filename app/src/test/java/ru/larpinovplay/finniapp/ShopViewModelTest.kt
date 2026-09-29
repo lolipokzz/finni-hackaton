@@ -77,7 +77,7 @@ class ShopViewModelTest {
         assertEquals(meal.price - 10, notEnough.missing)
         assertTrue(notEnough.canTakeFromSavings)
         assertEquals(90 - notEnough.missing, notEnough.savingsAfter)
-        assertNull(notEnough.goalRemainingAfter)   // мечта не выбрана
+        assertNull(notEnough.goalRemainingAfter)   // цель не выбрана
 
         vm.onAction(ShopAction.BuyWithSavings)
 

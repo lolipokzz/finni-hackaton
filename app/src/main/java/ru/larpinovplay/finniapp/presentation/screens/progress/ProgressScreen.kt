@@ -77,7 +77,7 @@ import ru.larpinovplay.finniapp.presentation.task.title
 import ru.larpinovplay.finniapp.presentation.theme.FinniColors
 
 /**
- * Прогресс (ТЗ 2.5.10, 2.5.11): как растёт Финни, мечта, итоги прошлой недели, задания по темам и журнал монет.
+ * Прогресс (ТЗ 2.5.10, 2.5.11): как растёт Финни, цель, итоги прошлой недели, задания по темам и журнал монет.
  * Тот же язык наклеек, что у главного экрана: те же наклейки дел, лапки роста и кольцевые шкалы-полоски.
  */
 @Composable
@@ -226,7 +226,7 @@ private fun StageLadder(current: PetGrowthStage) {
     }
 }
 
-// ---------- Мечта ----------
+// ---------- Цель ----------
 
 @Composable
 private fun DreamCard(state: ProgressUiState) {
@@ -236,8 +236,8 @@ private fun DreamCard(state: ProgressUiState) {
             CardSticker(goal?.icon ?: R.drawable.ic_deed_pig, FinniColors.DreamTint, size = 64.dp, iconScale = 0.62f)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (goal == null) {
-                    Text("Мечта не выбрана", fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
-                    Text("В копилке ${state.savings}. Выбери мечту в «Копилке»", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
+                    Text("Цель не выбрана", fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink)
+                    Text("В копилке ${state.savings}. Выбери цель в «Копилке»", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = FinniColors.InkMuted)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(goal.name, fontSize = 17.sp, fontWeight = FontWeight.Black, color = FinniColors.Ink, modifier = Modifier.weight(1f))
@@ -361,13 +361,13 @@ private fun TasksCard(topics: List<TopicProgress>) {
     }
 }
 
-// ---------- Сбывшиеся мечты ----------
+// ---------- Достигнутые цели ----------
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CompletedDreamsCard(goals: List<SavingsGoal>) {
     Card {
-        CardHeading("Сбывшиеся мечты", "Уже у Финни: ${goals.size}")
+        CardHeading("Достигнутые цели", "Уже у Финни: ${goals.size}")
         FlowRow(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             goals.forEach { goal ->
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {

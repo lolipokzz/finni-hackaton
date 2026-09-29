@@ -67,7 +67,7 @@ class SavingsViewModel(
 
     private fun reachGoal() {
         viewModelScope.launch {
-            val reached = game.reachGoal().orSnackbar { reachGoal() } ?: return@launch   // второй тап: мечта уже куплена
+            val reached = game.reachGoal().orSnackbar { reachGoal() } ?: return@launch   // второй тап: цель уже достигнута
             _state.update { it.copy(reached = reached) }
         }
     }
@@ -95,7 +95,7 @@ class SavingsViewModel(
         }
     }
 
-    /** Окно смены мечты или снятия закрывается вместе с новым состоянием: старые цифры не мелькнут. */
+    /** Окно смены цели или снятия закрывается вместе с новым состоянием: старые цифры не мелькнут. */
     private fun confirmSwitch() {
         val goal = _state.value.switchTo ?: return
         viewModelScope.launch {

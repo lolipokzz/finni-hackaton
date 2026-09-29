@@ -97,7 +97,7 @@ import ru.larpinovplay.finniapp.presentation.theme.FinniColors
  *
  * Знакомство (ТЗ 2.5.1) идёт в комнате с настоящим 3D-питомцем: Финни здоровается и сам рассказывает о себе,
  * ребёнок выбирает раскраску (кот перекрашивается сразу) и имя, потом три коротких урока — карманные и план,
- * дела недели, мечта. Уроки можно пропустить. В конце питомец создаётся, и неделя начинается с окна плана —
+ * дела недели, цель. Уроки можно пропустить. В конце питомец создаётся, и неделя начинается с окна плана —
  * первого настоящего решения.
  */
 @Composable
@@ -147,7 +147,7 @@ private fun CreationStep.speech(): Pair<String?, String> = when (this) {
     CreationStep.NAME -> null to "А как меня будут звать? Можно оставить «Финни»."
     CreationStep.PLAN -> "Карманные монеты" to "Каждую неделю мне дают карманные. Ты раскладываешь их на три кучки — это план недели."
     CreationStep.GROW -> "Дела недели" to "Я расту, когда за неделю получаются четыре дела. Каждое — шаг роста!"
-    CreationStep.DREAM -> "Мечта" to "А ещё мы вместе копим на мечту. Монеты из копилки превращаются в кроватку, велосипед или море!"
+    CreationStep.DREAM -> "Цель" to "А ещё мы вместе копим на цель. Монеты из копилки превращаются в кроватку, велосипед или море!"
 }
 
 private fun CreationStep.button(): String = when (this) {
@@ -385,7 +385,7 @@ private fun PlanLesson() {
     val parts = listOf(
         Triple(R.drawable.ic_meter_apple, Color(0xFFFFF0E6), "Обязательное" to "еда"),
         Triple(R.drawable.ic_meter_smile, Color(0xFFFFF5C9), "Необязательное" to "радости"),
-        Triple(R.drawable.ic_deed_pig, FinniColors.DreamTint, "Копилка" to "на мечту"),
+        Triple(R.drawable.ic_deed_pig, FinniColors.DreamTint, "Копилка" to "на цель"),
     )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -431,7 +431,7 @@ private fun GrowLesson() {
     }
 }
 
-/** Мечты копилки: что ждёт впереди. */
+/** Цели копилки: что ждёт впереди. */
 @Composable
 private fun DreamLesson() {
     val dreams = listOf(R.drawable.ic_bed to "Кроватка", R.drawable.ic_goal_bike to "Велосипед", R.drawable.ic_goal_sea to "Море")

@@ -268,7 +268,7 @@ fun HomeScreenContent(
 private val TutorialStep.coachText: String
     get() = when (this) {
         TutorialStep.PLAN -> "Каждую неделю мне дают монеты. Сначала решим, на что их потратить. Нажми на «План»!"
-        TutorialStep.GOAL -> "Давай выберем мечту, на которую будем копить! Нажми на копилку."
+        TutorialStep.GOAL -> "Давай выберем цель, на которую будем копить! Нажми на копилку."
         TutorialStep.SHOP -> "Мур, я проголодался! Пойдём в магазин — купим мне еды."
         TutorialStep.TASKS -> "Монеты можно заработать! Нажми на «Задания» — там задачки про деньги."
         TutorialStep.DEEDS -> "Это солнышко недели. Нажми — покажу дела, от которых я расту!"
@@ -284,7 +284,7 @@ private fun TutorialDoneDialog(onDone: () -> Unit) {
         CardTitle("Обучение пройдено!", "Мур! Спасибо, что помогаешь мне с монетами")
         listOf(
             Triple(R.drawable.ic_week_plan, Color(0xFFE6EEFF), "План — в начале недели раздели монеты"),
-            Triple(R.drawable.ic_nav_savings, Color(0xFFFFE6F0), "Копилка — копим на мечту"),
+            Triple(R.drawable.ic_nav_savings, Color(0xFFFFE6F0), "Копилка — копим на цель"),
             Triple(R.drawable.ic_nav_shop, Color(0xFFFFF0E6), "Магазин — еда и радости для меня"),
             Triple(R.drawable.ic_nav_tasks, Color(0xFFE6F8F2), "Задания — решай и зарабатывай монеты"),
             Triple(R.drawable.ic_week_sun, Color(0xFFFFF5C9), "Солнышко — дела недели, от них я расту"),
@@ -639,14 +639,14 @@ private fun BottomMenu(state: HomeUiState, onAction: (HomeAction) -> Unit, targe
         MenuItem(
             "Копилка",
             Modifier.weight(1f),
-            description = goal?.let { "Копилка. Мечта: ${it.name}, ${state.savings} из ${it.cost}" },
+            description = goal?.let { "Копилка. Цель: ${it.name}, ${state.savings} из ${it.cost}" },
             iconModifier = target(TutorialStep.GOAL),
             onClick = { open(HomeSection.SAVINGS) },
         ) {
             if (goal == null) {
                 Sticker(R.drawable.ic_nav_savings, Color(0xFFFFE6F0))
             } else {
-                // Кольцо мечты: сколько уже накоплено на цель
+                // Кольцо цели: сколько уже накоплено
                 MeterRing(
                     value = (state.savings * 100 / goal.cost.coerceAtLeast(1)),
                     color = FinniColors.DreamRing,
