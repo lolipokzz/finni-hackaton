@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.larpinovplay.finniapp.domain.content.Content
+import ru.larpinovplay.finniapp.domain.game.engine.GameRules
 import ru.larpinovplay.finniapp.domain.game.repository.GameRepository
 import ru.larpinovplay.finniapp.domain.settings.model.AppSettings
 import ru.larpinovplay.finniapp.domain.settings.repository.SettingsRepository
@@ -37,11 +38,12 @@ class AdultViewModel(
 
     init {
         viewModelScope.launch {
-            combine(game.snapshot, settings.observeSettings()) { snapshot, prefs -> snapshot to prefs }
-                .collect { (snapshot, prefs) ->
-                    _state.update { it.copy(snapshot = snapshot, settings = prefs,
-                        topics = snapshot?.state?.topicProgress(content.levels).orEmpty()) }
-                }
+            combine(game.snapshot, game.gameBeforeDemo, settings.observeSettings()) { snapshot, beforeDemo, prefs ->
+                Triple(snapshot, beforeDemo, prefs)
+            }.collect { (snapshot, beforeDemo, prefs) ->
+                _state.update { it.copy(snapshot = snapshot, gameBeforeDemo = beforeDemo, settings = prefs,
+                    topics = snapshot?.state?.topicProgress(content.levels).orEmpty()) }
+            }
         }
     }
 
@@ -51,6 +53,7 @@ class AdultViewModel(
             AdultAction.Unlock -> unlock()
             is AdultAction.SetSound -> updateSettings { it.copy(soundEnabled = action.enabled) }
             is AdultAction.SetAnimations -> updateSettings { it.copy(animationsEnabled = action.enabled) }
+            AdultAction.AddDemoCoins -> addDemoCoins()
             is AdultAction.Request -> request(action.confirmation)
             AdultAction.DismissConfirmation -> dismissConfirmation()
             AdultAction.Confirm -> confirm()
@@ -82,6 +85,11 @@ class AdultViewModel(
         viewModelScope.launch { settings.updateSettings(transform).orSnackbar { updateSettings(transform) } }
     }
 
+    private fun addDemoCoins() {
+        if (!_state.value.unlocked || _state.value.busy) return
+        viewModelScope.launch { game.addDemoCoins(GameRules.DEMO_COINS).orSnackbar { addDemoCoins() } }
+    }
+
     private fun request(action: AdultConfirmation) {
         if (_state.value.unlocked && !_state.value.busy) _state.update { it.copy(pending = action, error = null) }
     }
@@ -104,6 +112,7 @@ class AdultViewModel(
                     if (settingsResult is Result.Error) settingsResult else game.resetProfile()
                 }
                 AdultConfirmation.DEMO -> game.resetToDemo()
+                AdultConfirmation.EXIT_DEMO -> game.exitDemo()
             }
             when (result) {
                 is Result.Success -> {
