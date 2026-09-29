@@ -1,291 +1,232 @@
 # 02 — Доменная модель
 
-Все сущности ниже — чистый Kotlin без зависимостей от Android. Они живут в модуле `:domain`
-(см. [06](06-architecture.md)) и сериализуются целиком как один агрегат `GameState`.
+Все сущности ниже — чистый Kotlin без зависимостей от Android. Они лежат в пакете `domain` модуля `:app`
+(см. [06](06-architecture.md#модули-и-пакеты)). Игра хранится и меняется целиком — одним снимком `GameSnapshot`.
 
 ## Схема
 
 ```mermaid
 classDiagram
-  GameState "1" --> "1" Profile
-  GameState "1" --> "1" Pet
-  GameState "1" --> "1" Wallet
-  GameState "1" --> "1" Period : current
-  GameState "1" --> "*" PeriodSummary : history
-  GameState "1" --> "*" Transaction : ledger
-  GameState "1" --> "0..1" GoalProgress
+  GameSnapshot "1" --> "1" GameState : state
+  GameSnapshot "1" --> "1" Pet : pet
+  GameState "1" --> "0..1" BudgetPlan : plan
+  GameState "1" --> "*" LedgerEntry : ledger
+  GameState "1" --> "*" ShopItem : purchases, wardrobe
+  GameState "1" --> "0..1" SavingsGoal : goal
+  GameState "1" --> "*" SavingsGoal : completedGoals
+  GameState "1" --> "0..1" Trip
   GameState "1" --> "*" TaskResult
-  GameState "1" --> "1" Settings
-  Pet --> PetAppearance
-  Pet --> PetState
-  Pet --> PetStage
-  Period --> BudgetPlan
-  Period --> PeriodFacts
-  Period --> PeriodPhase
+  GameState "1" --> "*" AdventureResult
+  GameState "1" --> "*" WeekSummary : history
+  Pet --> PetLook
+  Pet --> PetSatiety
+  Pet --> PetMood
+  WeekSummary --> WeekDeeds
+  WeekSummary --> BudgetPlan
+  LedgerEntry --> LedgerReason
 ```
 
-Справочники (контент, только чтение): `Item`, `Task`, `Goal`, `PetSpecies`, `PetColor`, `EconomyConfig`.
-Они загружаются из JSON и в `GameState` попадают только по `id` (см. [05](05-content-model.md)).
+Справочники контента (только чтение): `ShopItem`, `SavingsGoal`, `Task`, `Adventure` — собраны в `Content`
+(см. [05](05-content-model.md)). Купленные товары и цели попадают в игру копией целиком, поэтому старое сохранение
+остаётся понятным, даже если в контенте поменяли цену.
 
-## GameState — корневой агрегат
-
-Единственный объект, который сохраняется на диск и который меняет игровой движок.
-Любая команда пользователя — это функция `(GameState, Command) → Outcome`, где `Outcome`
-содержит новый `GameState` и список объяснений для экрана (см. [06](06-architecture.md#api-игрового-движка-контракт-между-разработчиками)).
+## GameSnapshot — корневой агрегат
 
 ```kotlin
-@Serializable
+data class GameSnapshot(val state: GameState, val pet: Pet)
+data class Transition<out R>(val game: GameSnapshot, val result: R)
+```
+
+Единственный объект, который сохраняется на диск и который меняет игровой движок. Команда — функция
+`(GameSnapshot, аргументы) → Transition`: новый снимок и результат для экрана (см.
+[06](06-architecture.md#игровой-движок)). Питомец лежит рядом с игрой, а не отдельно, поэтому покупка списывает
+монеты и кормит питомца одной записью.
+
+Инварианты (проверяют `GameEngineTest`, `GameRepositoryImplTest`, `PetTest`):
+
+- `balance >= 0` и `savings >= 0`: покупка, пополнение и снятие сверх остатка отклоняются.
+- Баланс и копилка меняются только вместе с записью журнала `LedgerEntry` (единственная функция — `post` в
+  `GameEngine`).
+- Сытость в `0..100`, настроение в `20..100` — ограничиваются при каждом изменении.
+- Очки роста только растут, стадия выводится из них и не понижается.
+- Отклонённая правилами команда возвращает тот же снимок и ничего не пишет на диск.
+
+## GameState
+
+```kotlin
 data class GameState(
-    val schemaVersion: Int = 1,
-    val profile: Profile,
-    val pet: Pet,
-    val wallet: Wallet,
-    val period: Period,                       // текущий период
-    val history: List<PeriodSummary> = emptyList(),
-    val ledger: List<Transaction> = emptyList(),
-    val goal: GoalProgress? = null,           // null — цель ещё не выбрана
-    val completedGoals: List<CompletedGoal> = emptyList(),
+    val demoMode: Boolean = false,
+    val balance: Int = 0,                               // монеты в кошельке
+    val savings: Int = 0,                               // монеты в копилке, общие для любой цели
+    val week: Int = 1,                                  // номер недели (игрового периода)
+    val phase: PeriodPhase = PeriodPhase.PLANNING,      // PLANNING → ACTIVE
+    val plan: BudgetPlan? = null,                       // null, пока план недели не подтверждён
+    val periodStartedOn: LocalDate? = null,             // день начала недели (неделя — не чаще раза в день)
+    val ledger: List<LedgerEntry> = emptyList(),        // журнал всех движений монет
+    val purchases: List<ShopItem> = emptyList(),        // покупки этой недели, обнуляются в конце недели
+    val wardrobe: List<ShopItem> = emptyList(),         // купленная одежда, остаётся навсегда
+    val goal: SavingsGoal? = null,                      // выбранная цель; null — не выбрана
+    val completedGoals: List<SavingsGoal> = emptyList(),
+    val trip: Trip? = null,                             // последняя поездка (цель-поездка)
+    val depositsThisWeek: List<Int> = emptyList(),
+    val depositsByWeek: List<Int> = emptyList(),        // отложено за каждую закрытую неделю (для срока цели)
+    val withdrawalsThisWeek: List<Int> = emptyList(),
     val taskResults: List<TaskResult> = emptyList(),
-    val settings: Settings = Settings(),
+    val tasksDoneThisWeek: Int = 0,
+    val adventureResults: List<AdventureResult> = emptyList(),
+    val history: List<WeekSummary> = emptyList(),       // итоги закрытых недель
+    val tutorial: Boolean = false,                      // идёт обучение на главном экране
+    val tutorialSkipped: Set<TutorialStep> = emptySet(),
 )
 ```
 
-Инварианты, которые проверяет тест `GameStateInvariantsTest` после каждой команды:
+Производные значения (считаются, не хранятся):
 
-- `wallet.balance >= 0` и `wallet.savings >= 0`.
-- `wallet.balance == сумма balanceDelta по ledger`, `wallet.savings == сумма savingsDelta по ledger`.
-- `period.index == history.size + 1`.
-- `pet.stage` в истории никогда не понижается.
-- Все `PetState` значения в диапазоне `0..100`.
-
-## Profile
-
-```kotlin
-@Serializable
-data class Profile(
-    val id: String,              // UUID, генерируется при создании
-    val nickname: String,        // игровое имя, 1..16 символов, НЕ реальное имя
-    val createdAt: Long,         // epoch millis, только для отображения
-    val onboardingSeen: Boolean = true,
-)
-```
-
-Никаких полей для телефона, e-mail, возраста, фото. Это проверяют эксперты (**ТЗ 2.5.1, 3.5**).
+| Свойство | Что это |
+|---|---|
+| `savedThisWeek` | отложено за неделю за вычетом снятого |
+| `spentThisWeek(category)` | потрачено на обязательное или необязательное |
+| `weekIncome` | карманные (или стартовые) монеты этой недели |
+| `tasksPerWeek` | лимит заданий в неделю; `null` в демо |
+| `taskStatus(task)` | `AVAILABLE`, `DONE`, `RETRY_NEXT_WEEK`, `LIMIT_REACHED` |
+| `adventureOfWeek(adventures)` | приключение, которое ждёт на этой неделе |
+| `finishBlock(today, adventures)` | почему неделю пока нельзя закончить: `PLAN_NOT_CONFIRMED`, `ADVENTURE_NOT_PLAYED`, `SAME_DAY` |
+| `goalRemaining()`, `weeksToGoal()` | сколько осталось до цели и примерно за сколько недель ([04](04-rules-and-formulas.md#срок-достижения-цели)) |
+| `currentTrip` | поездка, в которой питомец сейчас |
+| `tutorialStep` | текущий шаг обучения: `PLAN`, `GOAL`, `SHOP`, `TASKS`, `DEEDS` |
+| `GameSnapshot.weekDeeds` | четыре дела недели: сыт, не скучает, копилка по плану, траты по плану |
 
 ## Pet
 
 ```kotlin
-@Serializable
 data class Pet(
-    val name: String,                // игровое имя питомца, 1..16 символов
-    val appearance: PetAppearance,
-    val state: PetState,
-    val stage: PetStage,
-    val growthPoints: Int,           // накопленные очки роста, только растут
+    val name: String,                                   // игровое имя питомца
+    val look: PetLook,                                  // раскраска: PetColor, 9 вариантов
+    val satiety: PetSatiety,                            // сытость 0..100, обратимо
+    val mood: PetMood,                                  // настроение 20..100, обратимо
+    val growthPoints: Int,                              // очки (шаги) роста, только растут
+    val outfit: Map<WearableSlot, String> = emptyMap(), // что надето: место → id вещи
 )
-
-@Serializable
-data class PetAppearance(
-    val speciesId: String,           // из pets.json, например "cat"
-    val colorId: String,             // из pets.json, например "orange"
-    val accessoryId: String? = null, // открывается при достижении цели
-)
-
-@Serializable
-data class PetState(
-    val satiety: Int,   // сытость 0..100
-    val care: Int,      // уход 0..100
-    val mood: Int,      // настроение 0..100
-)
-
-enum class PetStage { BABY, TEEN, ADULT }   // Малыш, Подросток, Взрослый
 ```
 
-Производные значения, которые считает `PetRules` (не хранятся):
+Производные: `growthStage` (`BABY` 0+, `TEEN` 8+, `ADULT` 16+ очков), `pointsToNextStage`, `isHungry`
+(сытость < 30), `mood.level` (`BORED` < 40, `NEUTRAL` 40–69, `HAPPY` ≥ 70). Новый питомец (`Pet.newborn`): сытость 70,
+настроение 50, 0 очков. Состояние на экране показано иконкой, числом и подписью, не только цветом (**ТЗ 3.6**).
 
-- `moodLabel`: `HAPPY` (mood ≥ 70), `CALM` (40..69), `SAD` (< 40).
-- `flags`: `HUNGRY` если satiety < 30, `UNKEMPT` если care < 30.
-- Каждое значение отображается иконкой + подписью + числом, не только цветом (**ТЗ 3.6**).
+Профиля в привычном смысле нет: игрок — это питомец. Имя, раскраска и игра хранятся только на устройстве; полей для
+реального имени, телефона, e-mail, возраста и фото нет (**ТЗ 2.5.1, 3.5**).
 
-## Wallet и Transaction (журнал)
+## Журнал: LedgerEntry и LedgerReason
 
 ```kotlin
-@Serializable
-data class Wallet(
-    val balance: Money,   // доступно сейчас
-    val savings: Money,   // отложено, единый пул для текущей цели
-)
+data class LedgerEntry(val week: Int, val reason: LedgerReason, val balanceDelta: Int, val savingsDelta: Int = 0)
 
-typealias Money = Int
-
-@Serializable
-data class Transaction(
-    val id: String,
-    val periodIndex: Int,
-    val timestamp: Long,
-    val type: TransactionType,
-    val balanceDelta: Money,     // как изменился баланс (может быть 0)
-    val savingsDelta: Money,     // как изменились накопления (может быть 0)
-    val title: String,           // «Карманные деньги», «Корм», «Задание: Список покупок»
-    val refId: String? = null,   // itemId / taskId / goalId
-)
-
-enum class TransactionType {
-    START_BALANCE, PERIOD_INCOME, TASK_REWARD, DAILY_BONUS, ADULT_BONUS,
-    PURCHASE, SAVINGS_DEPOSIT, SAVINGS_WITHDRAW, GOAL_REACHED
+sealed interface LedgerReason {
+    data object StartCoins                               // стартовые монеты
+    data object WeekIncome                               // карманные за неделю
+    data class Purchase(val itemName: String)
+    data object Deposit                                  // пополнение копилки вручную
+    data object PlannedDeposit                           // строка «Копилка» из плана недели
+    data object Withdraw                                 // монеты из копилки обратно в кошелёк
+    data object SavingsBonus                             // бонус копилки
+    data class GoalReached(val goalName: String)         // цель куплена из копилки
+    data class TaskReward(val taskTitle: String)
+    data class AdventureReward(val adventureTitle: String)
 }
 ```
 
-Правило **ТЗ 2.5.4**: баланс не меняется без объяснения. Технически это значит: любой код, который
-меняет `wallet`, обязан добавить `Transaction`. Единственная функция, которая это делает —
-`Wallet.apply(tx)` в движке; прямое создание `Wallet.copy(balance = ...)` в других местах запрещено ревью.
+Правило **ТЗ 2.5.4**: баланс не меняется без объяснения. У каждой записи есть причина и сумма; как её назвать
+словами, решает слой представления (`LedgerReason.text()`, ключи `ledger.*` в `feedback.json`). Журнал недели
+показан на экране «Прогресс».
 
-## Period, BudgetPlan, PeriodFacts
+## Неделя: BudgetPlan, WeekDeeds, WeekSummary
 
 ```kotlin
-@Serializable
-data class Period(
-    val index: Int,                       // 1, 2, 3...
-    val phase: PeriodPhase,
-    val plan: BudgetPlan,                 // до подтверждения — черновик
-    val facts: PeriodFacts = PeriodFacts(),
-    val budgetAtPlanning: Money,          // баланс в момент составления плана
-    val tasksDoneThisPeriod: Int = 0,
-    val mandatoryNeeds: List<String>,     // теги, которые надо закрыть: ["food", "care"]
-    val eventId: String? = null,          // событие периода из content, опционально
-)
+enum class PeriodPhase { PLANNING, ACTIVE }
 
-enum class PeriodPhase { PLANNING, ACTIVE, CLOSED }
-
-@Serializable
-data class BudgetPlan(
-    val mandatory: Money = 0,
-    val optional: Money = 0,
-    val savings: Money = 0,
-    val confirmed: Boolean = false,
-) {
-    val total get() = mandatory + optional + savings
+data class BudgetPlan(val mandatory: Int = 0, val optional: Int = 0, val savings: Int = 0) {
+    val total: Int get() = mandatory + optional + savings
 }
 
-@Serializable
-data class PeriodFacts(
-    val mandatorySpent: Money = 0,
-    val optionalSpent: Money = 0,
-    val saved: Money = 0,                 // депозиты минус снятия за период
-    val purchasedItemIds: List<String> = emptyList(),
-    val coveredNeeds: Set<String> = emptySet(),  // какие теги обязательного закрыты
-)
-```
+data class WeekDeeds(
+    val fed: Boolean,              // куплено еды на недельную сытость
+    val notBored: Boolean,         // настроение не ниже «спокойного»
+    val savingsOnPlan: Boolean,    // отложено больше нуля и не меньше обещанного
+    val spendingOnPlan: Boolean,   // необязательного куплено не больше плана
+) { val steps: Int }               // сколько дел сделано — столько шагов роста
 
-## PeriodSummary — итоги закрытого периода
-
-Считается один раз при закрытии и хранится в `history`. Именно это показывает экран итогов и
-раздел «Прогресс».
-
-```kotlin
-@Serializable
-data class PeriodSummary(
-    val index: Int,
+data class WeekSummary(
+    val week: Int,
     val plan: BudgetPlan,
-    val facts: PeriodFacts,
-    val mandatoryCovered: Boolean,   // критерий A
-    val planKept: Boolean,           // критерий B
-    val savedSomething: Boolean,     // критерий C
-    val score: Int,                  // 0..3 = A + B + C
+    val deeds: WeekDeeds,
+    val spentMandatory: Int, val spentOptional: Int,
+    val saved: Int, val withdrawn: Int, val savingsBonus: Int,
     val moodDelta: Int,
-    val growthPointsAfter: Int,
-    val stageBefore: PetStage,
-    val stageAfter: PetStage,
-    val explanation: List<String>,   // готовые фразы для ребёнка
+    val stageBefore: PetGrowthStage, val stageAfter: PetGrowthStage,
+    val stepsToNextStage: Int?,
+    val nextIncome: Int,
 )
 ```
 
-## Goal и GoalProgress
+План — не отдельные кошельки, а намерение: покупки идут из общего баланса, а в итогах план сравнивается с фактом
+(`WeekSummary.fact(direction)`). `WeekSummary` считается один раз при закрытии недели и хранится в `history`: его
+показывают окно итогов недели и экран «Прогресс».
+
+## Цель, поездка
 
 ```kotlin
-@Serializable
-data class GoalProgress(
-    val goalId: String,          // из goals.json
-    val chosenInPeriod: Int,
-)
-
-@Serializable
-data class CompletedGoal(val goalId: String, val periodIndex: Int)
+data class SavingsGoal(val id: String, val name: String, val cost: Int, val hint: String, val trip: Boolean = false)
+data class Trip(val goalId: String, val week: Int)
 ```
 
-Сумма накоплений живёт в `Wallet.savings`, а не в цели: при смене цели копилка сохраняется.
-Производные: `remaining = goal.cost - savings`, `progressPercent`, `etaPeriods` (см. [04](04-rules-and-formulas.md#срок-достижения-цели)).
+Сумма накоплений живёт в `GameState.savings`, а не в цели: при смене цели копилка сохраняется. Достигнутая цель
+переходит в `completedGoals` и каждую неделю немного радует питомца; цель-поездка (`trip = true`) отправляет его
+в поездку на эту неделю.
 
-## Task и TaskResult
-
-Задание — контент. Результат — состояние.
+## Задания и приключения
 
 ```kotlin
-@Serializable
-data class TaskResult(
-    val taskId: String,
-    val periodIndex: Int,
-    val success: Boolean,
-    val rewardPaid: Money,
-    val answerSummary: String,   // что выбрал ребёнок, для экрана прогресса
-)
+data class TaskResult(val taskId: String, val week: Int, val success: Boolean, val reward: Int)
+data class AdventureResult(val adventureId: String, val week: Int, val perfect: Boolean, val reward: Int)
 ```
 
-Статус задания вычисляется: `DONE` если есть успешный результат; `RETRY_AVAILABLE` если последний
-результат неуспешен и прошёл хотя бы один период; `LOCKED_THIS_PERIOD` если исчерпан лимит на период;
-иначе `AVAILABLE`.
+Сами задания и приключения — контент ([05](05-content-model.md)). Статус задания вычисляется `GameState.taskStatus`:
+`DONE`, если есть успешный результат; в обычной игре `RETRY_NEXT_WEEK` после ошибки на этой неделе и
+`LIMIT_REACHED` после 2 заданий за неделю; иначе `AVAILABLE`. В демо лимита и ожидания нет.
 
-## Settings
+## Настройки
 
 ```kotlin
-@Serializable
-data class Settings(
+data class AppSettings(
     val soundEnabled: Boolean = true,
     val animationsEnabled: Boolean = true,
-    val demoMode: Boolean = false,
-    val lastDailyBonusDate: String? = null,  // "2026-09-15", только для обычного режима
+    val tipsEnabled: Boolean = true,
+    val voiceRepeatEnabled: Boolean = false,   // «Кот повторяет слова», нужен микрофон
 )
 ```
 
-## Команды и ошибки движка
+Хранятся отдельно от игры (`settings.json`), поэтому сброс игры их не трогает, а «Удалить все данные» возвращает к
+значениям по умолчанию.
+
+## Исходы команд и ошибки
+
+Исход по правилам — не исключение, а значение в результате команды:
 
 ```kotlin
-sealed interface Command {
-    data class CreateProfile(val nickname: String, val petName: String, val appearance: PetAppearance) : Command
-    data class UpdatePlan(val mandatory: Money, val optional: Money, val savings: Money) : Command
-    data object ConfirmPlan : Command
-    data class BuyItem(val itemId: String) : Command
-    data class Deposit(val amount: Money) : Command
-    data class Withdraw(val amount: Money) : Command
-    data class ChooseGoal(val goalId: String) : Command
-    data object ReachGoal : Command
-    data class AnswerTask(val taskId: String, val answer: TaskAnswer) : Command
-    data object ClosePeriod : Command
-    data class ClaimDailyBonus(val today: String) : Command
-    data class AdultBonus(val amount: Money, val reason: String) : Command
-    data object ResetToDemo : Command
-}
-
-sealed interface GameError {
-    data class InsufficientFunds(val missing: Money, val options: List<RecoveryOption>) : GameError
-    data class PlanExceedsBudget(val total: Money, val available: Money) : GameError
-    data object PlanNotConfirmed : GameError
-    data object PlanAlreadyConfirmed : GameError
-    data object TaskLimitReached : GameError
-    data object TaskAlreadyDone : GameError
-    data class InvalidAmount(val reason: String) : GameError
-    data object GoalNotChosen : GameError
-    data object GoalNotReached : GameError
-    data object WrongPhase : GameError
-}
-
-sealed interface RecoveryOption {
-    data class DoTask(val taskId: String, val reward: Money) : RecoveryOption
-    data class WithdrawFromSavings(val amount: Money) : RecoveryOption
-    data class CheaperItem(val itemId: String, val price: Money) : RecoveryOption
-    data object WaitNextPeriod : RecoveryOption
-}
+sealed interface PurchaseResult { Success(item, balanceAfter); NotEnough(missing); AlreadyOwned }
+sealed interface DepositResult { Success; Rejected(balance) }
+sealed interface WithdrawResult { Success; Rejected(savings) }
+sealed interface ConfirmPlanResult { Success; Rejected(budget) }
+sealed interface FinishWeekResult { Finished(summary); Blocked(reason: FinishBlock) }
 ```
 
-Ошибки — это не исключения, а значения. Каждая ошибка имеет готовый текст для ребёнка в
-`content/strings/feedback.json` (см. [05](05-content-model.md#тексты-обратной-связи--feedbackjson)).
+Сбой сохранения — отдельно: `Result.Error(StorageError)` с причинами `READ_FAILED`, `WRITE_FAILED`, `NO_SPACE`,
+`NO_ACCESS`, `CORRUPTED`, `INCOMPATIBLE_VERSION` (`domain/storage/StorageError.kt`). Тексты для ребёнка — в
+`feedback.json` (ключи `storage.*`, [05](05-content-model.md#тексты-обратной-связи--assetscontentfeedbackjson)).
+
+## Формат сохранения
+
+Снимок пишется в `files/datastore/game.json` через DTO (`data/game/store/GameSaveDto.kt`): `GameSaveFile(version,
+game: GameSnapshotDto?)`, где `GameSnapshotDto` повторяет `GameState` и `Pet` полями. Текущая версия формата —
+`GAME_SAVE_VERSION = 2`; сохранение другой версии сбрасывается с сообщением. Настройки — в `settings.json`
+(`SettingsSaveFile`).

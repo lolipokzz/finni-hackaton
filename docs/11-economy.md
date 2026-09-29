@@ -272,16 +272,17 @@
 
 ## 10. Что поменять в коде
 
-| Что                                                                          | Где                                                                                                                          |
-|------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| Числа доходов, наград, целей, стадий и настроения                            | `GameRules` → `EconomyConfig`, `TaskContent`, `AdventureContent`, `GoalContent`, `PetGrowthStage`                            |
-| Настроение не зависит от дел, распад −15, пол 20, подпись «скучает»          | `GameEngine.finishWeek`, `PetMood`, `HomeInfoDialog`, тексты в `feedback.json`                                               |
-| Четыре дела недели вместо трёх звёзд, шаги роста 8 и 16                      | Новый `WeekDeeds` (считается из `GameState` в любой момент недели), `GameEngine.finishWeek`, `WeekSummary`, `PetGrowthStage` |
-| Значки дел на главном экране, шкала шагов на «Прогрессе», дела в итогах      | `HomeScreen`, `ProgressScreen`, `WeekSummaryDialog`, тексты в `feedback.json`                                                |
-| Цель даёт +10 и +3 в неделю вместо +30                                       | `GameEngine.reachGoal`, пассивный бонус в `finishWeek`                                                                       |
-| Стадия меняет доход, нужды и открывает товары                                | `GameRules`/`EconomyConfig` по стадиям, `ShopItem.unlockStage`                                                               |
-| Подсказка нужд в плане: цена закрытия нужд (20), а не самая дешёвая еда (10) | `HomeViewModel.newPlanDraft`                                                                                                 |
-| Бонус копилки +5                                                             | `GameEngine.finishWeek`, новая запись журнала                                                                                |
-| Тип товара, ярус и стадия открытия                                           | `ShopItem`: `kind` (расходуется / навсегда), `subcategory`, `unlockStage`; экран магазина — подкатегории внутри двух вкладок |
-| Вещи навсегда: список купленного и пассивный бонус                           | `GameState.owned`, `GameEngine.finishWeek`                                                                                   |
-| Прогон стратегий как тест                                                    | Новый `EconomyBalanceTest`                                                                                                   |
+| Что | Где | Статус |
+|---|---|---|
+| Числа доходов, наград, целей, стадий и настроения | `GameRules`, `TaskContent`, `AdventureContent`, `GoalContent`, `PetGrowthStage` | сделано |
+| Настроение не зависит от дел, распад −15, пол 20, подпись «скучает» | `GameEngine.finishWeek`, `PetMood`, `HomeInfoDialog`, тексты в `feedback.json` | сделано |
+| Четыре дела недели вместо трёх звёзд, шаги роста 8 и 16 | `WeekDeeds` (считается из снимка в любой момент недели), `GameEngine.finishWeek`, `WeekSummary`, `PetGrowthStage` | сделано |
+| Значки дел на главном экране, шкала шагов на «Прогрессе», дела в итогах | `HomeScreen`, `DeedsDialog`, `ProgressScreen`, `WeekSummaryDialog`, тексты в `feedback.json` | сделано |
+| Цель даёт +10 и +3 в неделю вместо +30 | `GameEngine.reachGoal`, пассивный бонус в `finishWeek` | сделано |
+| Стадия меняет доход | `GameRules.weekIncome(stage)` | сделано |
+| Стадия меняет нужды и открывает товары | нужды по стадии, `ShopItem.unlockStage` | нет |
+| Подсказка нужд в плане: цена закрытия нужд (20), а не самая дешёвая еда (10) | `cheapestFoodFor`, `HomeViewModel.newPlanDraft` | сделано |
+| Бонус копилки +5 | `GameEngine.finishWeek`, запись журнала `SavingsBonus` | сделано |
+| Тип товара, ярус и стадия открытия | `ShopItem`: `kind`, `subcategory`, `unlockStage`; подкатегории в магазине | нет: одежда отмечена полем `slot` |
+| Вещи навсегда: список купленного и пассивный бонус | `GameState.wardrobe`, `GameEngine.finishWeek` | сделано |
+| Прогон стратегий как тест | `EconomyBalanceTest` | сделано |
